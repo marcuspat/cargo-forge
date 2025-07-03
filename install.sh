@@ -104,10 +104,10 @@ install_cargo_forge() {
         echo "Version: $(cargo-forge --version)"
         echo ""
         echo "To get started, run:"
-        echo "  ${YELLOW}cargo forge new${NC}"
+        echo "  ${YELLOW}cargo-forge new${NC}"
         echo ""
         echo "For shell completions, see:"
-        echo "  ${YELLOW}cargo forge completions --help${NC}"
+        echo "  ${YELLOW}cargo-forge completions --help${NC}"
     else
         echo "${YELLOW}cargo-forge installed to $INSTALL_DIR${NC}"
         echo "Make sure $INSTALL_DIR is in your PATH:"

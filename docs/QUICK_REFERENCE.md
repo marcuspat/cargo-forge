@@ -3,7 +3,7 @@
 ## Command Overview
 
 ```bash
-cargo forge <COMMAND> [OPTIONS]
+cargo-forge <COMMAND> [OPTIONS]
 ```
 
 ### Commands
@@ -18,37 +18,37 @@ cargo forge <COMMAND> [OPTIONS]
 
 ### Interactive Mode (Recommended)
 ```bash
-cargo forge new
+cargo-forge new
 # Follow the interactive prompts
 ```
 
 ### Quick Project Creation
 ```bash
 # API Server
-cargo forge new my-api --project-type api-server
+cargo-forge new my-api --project-type api-server
 
 # CLI Tool
-cargo forge new my-cli --project-type cli-tool
+cargo-forge new my-cli --project-type cli-tool
 
 # Library
-cargo forge new my-lib --project-type library
+cargo-forge new my-lib --project-type library
 
 # WASM App
-cargo forge new my-app --project-type wasm-app
+cargo-forge new my-app --project-type wasm-app
 
 # Game
-cargo forge new my-game --project-type game-engine
+cargo-forge new my-game --project-type game-engine
 
 # Embedded
-cargo forge new my-firmware --project-type embedded
+cargo-forge new my-firmware --project-type embedded
 
 # Workspace
-cargo forge new my-workspace --project-type workspace
+cargo-forge new my-workspace --project-type workspace
 ```
 
 ### Non-Interactive Mode (CI/Scripts)
 ```bash
-cargo forge new my-project \
+cargo-forge new my-project \
   --project-type api-server \
   --author "Jane Doe" \
   --non-interactive
@@ -56,12 +56,12 @@ cargo forge new my-project \
 
 ### Dry Run (Preview)
 ```bash
-cargo forge new my-project --dry-run
+cargo-forge new my-project --dry-run
 ```
 
 ### From Configuration
 ```bash
-cargo forge new my-project --from-config ~/.forge/defaults.toml
+cargo-forge new my-project --from-config ~/.forge/defaults.toml
 ```
 
 ## Options Reference
@@ -181,7 +181,7 @@ cargo install cargo-forge --force
 
 ### Debug mode
 ```bash
-RUST_LOG=debug cargo forge new my-project
+RUST_LOG=debug cargo-forge new my-project
 ```
 
 ### Clean install
@@ -238,28 +238,28 @@ my-project/
 
 ### New API with all features
 ```bash
-cargo forge new my-api \
+cargo-forge new my-api \
   --project-type api-server
 # Select: PostgreSQL, JWT auth, Docker, GitHub Actions
 ```
 
 ### Library for crates.io
 ```bash
-cargo forge new my-crate \
+cargo-forge new my-crate \
   --project-type library \
   --license "MIT OR Apache-2.0"
 ```
 
 ### Quick CLI tool
 ```bash
-cargo forge new my-tool \
+cargo-forge new my-tool \
   --project-type cli-tool \
   --non-interactive
 ```
 
 ### WASM app with webpack
 ```bash
-cargo forge new my-wasm-app \
+cargo-forge new my-wasm-app \
   --project-type wasm-app
 # The template includes webpack config
 ```
@@ -306,7 +306,7 @@ cargo forge new my-wasm-app \
 
 ## Getting Help
 
-- Run: `cargo forge help`
+- Run: `cargo-forge help`
 - Docs: `https://docs.rs/cargo-forge`
 - Issues: `https://github.com/marcuspat/cargo-forge/issues`
 

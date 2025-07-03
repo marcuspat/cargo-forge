@@ -9,7 +9,7 @@ This directory contains visual assets for the Cargo-Forge project documentation.
 An animated GIF demonstrating the cargo-forge tool in action. The GIF should show:
 
 1. **Initial Command** (0-3s)
-   - Terminal showing: `cargo forge new`
+   - Terminal showing: `cargo-forge new`
    - Clear, readable font (recommended: 14-16px)
 
 2. **Interactive Prompts** (3-15s)
@@ -63,7 +63,7 @@ Set Width 800
 Set Height 600
 Set Theme "Dracula"
 
-Type "cargo forge new"
+Type "cargo-forge new"
 Enter
 Sleep 2s
 

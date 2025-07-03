@@ -36,7 +36,7 @@ Yes! Cargo-Forge is completely free and open source under the MIT/Apache-2.0 dua
 cargo install cargo-forge
 ```
 
-That's it! The command will be available as `cargo forge`.
+That's it! The command will be available as `cargo-forge`.
 
 ### Can I install from source?
 
@@ -69,7 +69,7 @@ cargo run --git https://github.com/marcuspat/cargo-forge -- new my-project
 The simplest way is to run:
 
 ```bash
-cargo forge new
+cargo-forge new
 ```
 
 This starts the interactive mode where you can choose all options step by step.
@@ -79,7 +79,7 @@ This starts the interactive mode where you can choose all options step by step.
 Yes! Use the `--non-interactive` flag:
 
 ```bash
-cargo forge new my-project --project-type api-server --non-interactive
+cargo-forge new my-project --project-type api-server --non-interactive
 ```
 
 This uses sensible defaults without prompting for input.
@@ -100,7 +100,7 @@ always_add_ci = true
 Yes, use the `--dry-run` flag:
 
 ```bash
-cargo forge new my-project --dry-run
+cargo-forge new my-project --dry-run
 ```
 
 This shows what would be created without actually generating files.
@@ -111,7 +111,7 @@ Use the `init` command in your project directory:
 
 ```bash
 cd existing-project
-cargo forge init --project-type library
+cargo-forge init --project-type library
 ```
 
 ## Project Types
@@ -150,7 +150,7 @@ Common features include:
 
 ### Can I add features after project creation?
 
-Currently, features must be selected during generation. We're working on a `cargo forge add-feature` command for future releases.
+Currently, features must be selected during generation. We're working on a `cargo-forge add-feature` command for future releases.
 
 ### How do I create custom templates?
 
@@ -181,7 +181,7 @@ Templates are embedded in the binary using `include_dir!`, making Cargo-Forge a 
 Not directly in templates, but you can pass values through the CLI:
 
 ```bash
-cargo forge new my-project --author "$USER"
+cargo-forge new my-project --author "$USER"
 ```
 
 ### Does Cargo-Forge support Windows paths?
@@ -211,7 +211,7 @@ Check for:
 Enable debug logging:
 
 ```bash
-RUST_LOG=debug cargo forge new my-project
+RUST_LOG=debug cargo-forge new my-project
 ```
 
 ### Where are the error logs?
@@ -219,7 +219,7 @@ RUST_LOG=debug cargo forge new my-project
 Cargo-Forge outputs errors directly to stderr. Capture them with:
 
 ```bash
-cargo forge new my-project 2> error.log
+cargo-forge new my-project 2> error.log
 ```
 
 ## Best Practices
@@ -244,7 +244,7 @@ Absolutely! Generated files are just a starting point. Modify them to fit your n
 
 ### What's the recommended workflow?
 
-1. Run `cargo forge new` interactively
+1. Run `cargo-forge new` interactively
 2. Review generated files
 3. Run tests to ensure everything works
 4. Start implementing your features
@@ -286,7 +286,7 @@ Yes, Cargo-Forge is designed to be scriptable:
 ```bash
 #!/bin/bash
 for proj in api cli lib; do
-  cargo forge new "$proj-service" \
+  cargo-forge new "$proj-service" \
     --project-type "$proj" \
     --non-interactive
 done

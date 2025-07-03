@@ -703,7 +703,7 @@ To add Cargo-Forge features to an existing project:
 
 ```bash
 # Initialize in current directory
-cargo forge init --project-type <type>
+cargo-forge init --project-type <type>
 
 # This will:
 # - Detect existing files

@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.3] - 2025-07-03
+### Fixed
+- Fixed all command examples to use correct `cargo-forge` syntax instead of `cargo forge`
+- Updated installation documentation for consistency
+- Ensured all documentation uses the proper binary name format
+
 ## [0.1.2] - 2025-07-03
 ### Fixed
 - Removed marketing language and fluff from all documentation

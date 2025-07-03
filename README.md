@@ -21,13 +21,13 @@
 cargo install cargo-forge
 
 # Create a new project interactively
-cargo forge new
+cargo-forge new
 
 # Or specify project type directly
-cargo forge new my-api --project-type api-server
+cargo-forge new my-api --project-type api-server
 
 # Initialize in current directory
-cargo forge init --project-type library
+cargo-forge init --project-type library
 ```
 
 📖 **[Detailed Installation Guide](INSTALLATION.md)** - Including shell completions, pre-built binaries, and platform-specific instructions.
@@ -95,7 +95,7 @@ Enable features during project creation:
 ### Interactive Mode (Recommended)
 
 ```bash
-$ cargo forge new
+$ cargo-forge new
 ⚒️ Welcome to Cargo-Forge!
 ? What's your project name? › my-awesome-api
 ? Select project type › API Server
@@ -111,37 +111,37 @@ $ cargo forge new
 
 ```bash
 # Create an API server with PostgreSQL and JWT auth
-cargo forge new my-api \
+cargo-forge new my-api \
   --project-type api-server \
   --author "Jane Doe" \
   --description "My awesome API"
 
 # Create a CLI tool in non-interactive mode (great for CI)
-cargo forge new my-cli \
+cargo-forge new my-cli \
   --project-type cli-tool \
   --non-interactive
 
 # Initialize a library in current directory
-cargo forge init --project-type library
+cargo-forge init --project-type library
 
 # Dry run to preview what will be created
-cargo forge new my-project --dry-run
+cargo-forge new my-project --dry-run
 
 # Use saved configuration
-cargo forge new my-project --from-config ~/.forge/defaults.toml
+cargo-forge new my-project --from-config ~/.forge/defaults.toml
 ```
 
 ### Advanced Usage
 
 ```bash
 # Create a workspace with multiple crates
-cargo forge new my-workspace --project-type workspace
+cargo-forge new my-workspace --project-type workspace
 
 # Generate a game with Bevy engine
-cargo forge new my-game --project-type game-engine
+cargo-forge new my-game --project-type game-engine
 
 # Create an embedded project for STM32
-cargo forge new my-firmware --project-type embedded
+cargo-forge new my-firmware --project-type embedded
 ```
 
 ## 📁 Generated Project Structure
@@ -352,7 +352,7 @@ ls -la .
 **Q: Template rendering fails**
 ```bash
 # Validate your input
-cargo forge new --dry-run
+cargo-forge new --dry-run
 # Check for special characters in project name
 ```
 

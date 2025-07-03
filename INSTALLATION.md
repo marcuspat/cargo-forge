@@ -21,7 +21,7 @@ This will:
 - Download the latest version from crates.io
 - Compile it with optimizations
 - Install the binary to `~/.cargo/bin/`
-- Make it available as both `cargo-forge` and `cargo forge`
+- Make it available as `cargo-forge`
 
 ### Requirements
 - Rust 1.70.0 or later
@@ -166,9 +166,6 @@ After installation, verify that cargo-forge is working:
 ```bash
 # Check version
 cargo-forge --version
-
-# Or using cargo subcommand syntax
-cargo forge --version
 
 # View help
 cargo-forge --help

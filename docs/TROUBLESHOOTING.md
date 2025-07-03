@@ -29,7 +29,7 @@ export PATH="$HOME/.cargo/bin:$PATH"
 
 # Verify installation
 which cargo-forge
-cargo forge --version
+cargo-forge --version
 ```
 
 ### Installation fails with linking errors
@@ -83,7 +83,7 @@ CARGO_INSTALL_ROOT=/custom/path cargo install cargo-forge
    
    # Remove or use different name
    rm -rf my-project  # Careful!
-   cargo forge new my-project-v2
+   cargo-forge new my-project-v2
    ```
 
 2. **No write permissions**
@@ -93,7 +93,7 @@ CARGO_INSTALL_ROOT=/custom/path cargo install cargo-forge
    
    # Create in writable location
    cd ~/projects
-   cargo forge new my-project
+   cargo-forge new my-project
    ```
 
 3. **Invalid project name**
@@ -113,10 +113,10 @@ CARGO_INSTALL_ROOT=/custom/path cargo install cargo-forge
 cargo install cargo-forge --force
 
 # Check installation integrity
-cargo forge --version
+cargo-forge --version
 
 # If persists, report issue with:
-cargo forge new my-project --verbose
+cargo-forge new my-project --verbose
 ```
 
 ### "Failed to render template"
@@ -136,7 +136,7 @@ cargo forge new my-project --verbose
 2. **Missing required variables**
    ```bash
    # Use defaults or provide all required info
-   cargo forge new my-project \
+   cargo-forge new my-project \
      --author "Your Name" \
      --description "Project description"
    ```
@@ -338,13 +338,13 @@ sudo pacman -S base-devel openssl
 2. **Use faster disk**
    ```bash
    # Generate in RAM disk if available
-   cargo forge new /tmp/my-project
+   cargo-forge new /tmp/my-project
    ```
 
 3. **Skip optional features**
    ```bash
    # Minimal generation
-   cargo forge new my-project --non-interactive
+   cargo-forge new my-project --non-interactive
    ```
 
 ### High memory usage
@@ -442,10 +442,10 @@ export RUST_LOG=debug
 export CARGO_FORGE_DEBUG=1
 
 # Run with verbose flag
-cargo forge new my-project --verbose
+cargo-forge new my-project --verbose
 
 # Capture full output
-cargo forge new my-project --verbose 2>&1 | tee forge-debug.log
+cargo-forge new my-project --verbose 2>&1 | tee forge-debug.log
 ```
 
 ## Reporting Issues
@@ -454,7 +454,7 @@ When reporting issues, include:
 
 1. **System Information**
    ```bash
-   cargo forge --version
+   cargo-forge --version
    rustc --version
    cargo --version
    uname -a  # or OS version
@@ -462,7 +462,7 @@ When reporting issues, include:
 
 2. **Complete Error Message**
    ```bash
-   cargo forge new test-project 2>&1 | tee error.log
+   cargo-forge new test-project 2>&1 | tee error.log
    ```
 
 3. **Steps to Reproduce**
@@ -472,7 +472,7 @@ When reporting issues, include:
 
 4. **Debug Log**
    ```bash
-   RUST_LOG=debug cargo forge new test-project 2>&1 > debug.log
+   RUST_LOG=debug cargo-forge new test-project 2>&1 > debug.log
    ```
 
 ## Getting Help
