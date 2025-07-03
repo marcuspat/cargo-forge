@@ -1,9 +1,9 @@
 [package]
 name = "cargo-forge"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 authors = ["The Cargo-Forge Contributors"]
-description = "A powerful, interactive Rust project generator with intelligent templates and enterprise features"
+description = "An interactive Rust project generator with templates and common features"
 readme = "README.md"
 repository = "https://github.com/marcuspat/cargo-forge"
 homepage = "https://cargo-forge.rs"

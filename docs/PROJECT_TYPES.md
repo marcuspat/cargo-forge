@@ -60,7 +60,7 @@ use anyhow::Result;
 
 #[derive(Parser)]
 #[command(name = "my-cli")]
-#[command(about = "A blazing fast CLI tool", long_about = None)]
+#[command(about = "A CLI tool", long_about = None)]
 struct Cli {
     #[command(subcommand)]
     command: Commands,
@@ -735,5 +735,3 @@ Some project types can be converted:
 
 - [Cargo-Forge Repository](https://github.com/marcuspat/cargo-forge)
 - [Documentation](https://docs.rs/cargo-forge)
-- Video Tutorials (coming soon)
-- Community Discord (coming soon)

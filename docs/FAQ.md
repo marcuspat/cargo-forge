@@ -342,12 +342,10 @@ Check the [roadmap](https://github.com/marcuspat/cargo-forge/projects) for plann
 
 - [Documentation](https://docs.rs/cargo-forge)
 - [GitHub Discussions](https://github.com/marcuspat/cargo-forge/discussions)
-- Discord Server (coming soon)
-- Video Tutorials (coming soon)
 
 ### Is there commercial support available?
 
-While Cargo-Forge is open source, commercial support may be available for enterprise users in the future.
+Cargo-Forge is open source software.
 
 ### How do I become a Cargo-Forge expert?
 

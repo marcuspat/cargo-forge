@@ -486,7 +486,6 @@ When reporting issues, include:
 
 2. **Community**
    - [GitHub Discussions](https://github.com/marcuspat/cargo-forge/discussions)
-   - Discord Server (coming soon)
    - Stack Overflow - tag: cargo-forge
 
 3. **Direct Support**

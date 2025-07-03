@@ -309,7 +309,6 @@ cargo forge new my-wasm-app \
 - Run: `cargo forge help`
 - Docs: `https://docs.rs/cargo-forge`
 - Issues: `https://github.com/marcuspat/cargo-forge/issues`
-- Discord: (coming soon)
 
 ---
 

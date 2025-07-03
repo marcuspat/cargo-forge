@@ -2,7 +2,7 @@
 
 # ⚒️ Cargo-Forge
 
-**A powerful, interactive Rust project generator with intelligent templates and enterprise features**
+**An interactive Rust project generator with templates and common features**
 
 [![Crates.io](https://img.shields.io/crates/v/cargo-forge.svg)](https://crates.io/crates/cargo-forge)
 [![Documentation](https://docs.rs/cargo-forge/badge.svg)](https://docs.rs/cargo-forge)
@@ -10,9 +10,7 @@
 [![License](https://img.shields.io/crates/l/cargo-forge.svg)](https://github.com/marcuspat/cargo-forge#license)
 [![Test Coverage](https://img.shields.io/badge/coverage-45.84%25-yellow.svg)](https://github.com/marcuspat/cargo-forge)
 
-<!-- Demo GIF placeholder - add demo recording here -->
-
-*Generate production-ready Rust projects in seconds with intelligent templates, best practices, and optional features*
+*Generate Rust projects with templates and optional features*
 
 </div>
 
@@ -38,7 +36,7 @@ cargo forge init --project-type library
 
 ### 🎯 Project Types
 
-Cargo-Forge supports 7 specialized project types, each with tailored templates and best practices:
+Cargo-Forge supports 7 project types with templates:
 
 | Type | Description | Key Features |
 |------|-------------|--------------|
@@ -52,7 +50,7 @@ Cargo-Forge supports 7 specialized project types, each with tailored templates a
 
 ### 🛠️ Optional Features
 
-Enable powerful features during project creation:
+Enable features during project creation:
 
 #### **CI/CD Integration**
 - **GitHub Actions**: Automated testing, releases, and deployment
@@ -81,7 +79,7 @@ Enable powerful features during project creation:
 |---------|------------|----------------|
 | **Interactive Mode** | ✅ Built-in with beautiful TUI | ❌ Requires manual input |
 | **Project Types** | ✅ 7 specialized types | ⚠️ Generic templates |
-| **Smart Defaults** | ✅ Intelligent suggestions | ❌ Manual configuration |
+| **Defaults** | ✅ Pre-configured options | ❌ Manual configuration |
 | **Feature Combinations** | ✅ Validated combinations | ⚠️ No validation |
 | **Dry Run Mode** | ✅ Preview before creation | ❌ Not available |
 | **Config Files** | ✅ Save/load preferences | ⚠️ Limited support |
@@ -296,7 +294,7 @@ CMD ["app"]
 
 ## 🔒 Security
 
-Cargo-Forge follows security best practices:
+Cargo-Forge security features:
 
 - No hardcoded secrets in templates
 - Secure default configurations
@@ -361,9 +359,7 @@ cargo forge new --dry-run
 ### Getting Help
 
 - 📖 [Documentation](https://docs.rs/cargo-forge)
-- 💬 Discord Community (coming soon)
 - 🐛 [Issue Tracker](https://github.com/marcuspat/cargo-forge/issues)
-- 📧 Email Support (coming soon)
 
 ## 📚 Documentation
 
@@ -386,9 +382,9 @@ at your option.
 
 ## 🙏 Acknowledgments
 
-- The Rust community for invaluable feedback
+- The Rust community for feedback
 - Contributors who help make Cargo-Forge better
-- Projects that inspired us: cargo-generate, create-react-app, Rails generators
+- Similar projects: cargo-generate, create-react-app
 
 ---
 
