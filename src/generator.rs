@@ -23,13 +23,18 @@ impl Generator {
     }
 
     pub fn generate(&self, config: &ProjectConfig, output_dir: &Path) -> Result<()> {
-        // Directory should already be created by the caller
-        // Just verify that it exists and is a directory
-        if !output_dir.exists() {
-            return Err(anyhow!("Output directory does not exist: {}", output_dir.display()));
-        }
-        if !output_dir.is_dir() {
-            return Err(anyhow!("Output path is not a directory: {}", output_dir.display()));
+        // Create directory if it doesn't exist, but check for conflicts first
+        if output_dir.exists() {
+            if !output_dir.is_dir() {
+                return Err(anyhow!("Output path exists but is not a directory: {}", output_dir.display()));
+            }
+            // Directory exists and is a directory - check if it's empty for safety
+            if output_dir.read_dir()?.next().is_some() {
+                return Err(anyhow!("Directory '{}' is not empty", output_dir.display()));
+            }
+        } else {
+            // Create the directory
+            fs::create_dir_all(output_dir)?;
         }
         
         // Only create src and tests directories for non-workspace projects
