@@ -1,5 +1,5 @@
 #!/bin/sh
-# Cargo Forge Installation Script
+# Cargo-Forge Installation Script
 # This script downloads and installs the latest version of cargo-forge
 
 set -e
@@ -11,7 +11,7 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # Configuration
-REPO="yourusername/cargo-forge"
+REPO="marcuspat/cargo-forge"
 INSTALL_DIR="${CARGO_HOME:-$HOME/.cargo}/bin"
 BINARY_NAME="cargo-forge"
 
@@ -117,7 +117,7 @@ install_cargo_forge() {
 
 # Main
 main() {
-    echo "${GREEN}⚒️  Cargo Forge Installer${NC}"
+    echo "${GREEN}⚒️  Cargo-Forge Installer${NC}"
     echo ""
     
     # Check for curl

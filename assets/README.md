@@ -1,6 +1,6 @@
-# Cargo Forge Assets
+# Cargo-Forge Assets
 
-This directory contains visual assets for the Cargo Forge project documentation.
+This directory contains visual assets for the Cargo-Forge project documentation.
 
 ## Required Assets
 
@@ -96,7 +96,7 @@ Sleep 2s
 
 ### Additional Assets (Optional)
 
-- `logo.png`: High-resolution Cargo Forge logo
+- `logo.png`: High-resolution Cargo-Forge logo
 - `architecture.png`: Diagram showing project structure
 - `comparison-chart.png`: Visual comparison with cargo-generate
 - `screenshots/`: Directory with UI screenshots

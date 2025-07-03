@@ -1,6 +1,6 @@
-# Cargo Forge Project Types Guide
+# Cargo-Forge Project Types Guide
 
-This guide provides detailed information about each project type supported by Cargo Forge, including use cases, generated structure, and customization options.
+This guide provides detailed information about each project type supported by Cargo-Forge, including use cases, generated structure, and customization options.
 
 ## Table of Contents
 
@@ -699,7 +699,7 @@ Different project types can be combined with various features:
 
 ### From Existing Project
 
-To add Cargo Forge features to an existing project:
+To add Cargo-Forge features to an existing project:
 
 ```bash
 # Initialize in current directory
@@ -733,7 +733,7 @@ Some project types can be converted:
 
 ## Further Resources
 
-- [Cargo Forge Examples](https://github.com/cargo-forge/examples)
-- [Template Repository](https://github.com/cargo-forge/templates)
-- [Video Tutorials](https://youtube.com/cargo-forge)
-- [Community Discord](https://discord.gg/cargo-forge)
+- [Cargo-Forge Repository](https://github.com/marcuspat/cargo-forge)
+- [Documentation](https://docs.rs/cargo-forge)
+- Video Tutorials (coming soon)
+- Community Discord (coming soon)

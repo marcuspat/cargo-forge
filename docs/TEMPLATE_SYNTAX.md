@@ -1,6 +1,6 @@
-# Cargo Forge Template Syntax Guide
+# Cargo-Forge Template Syntax Guide
 
-Cargo Forge uses the [Tera](https://tera.netlify.app/) template engine for generating project files. This guide covers the syntax, custom filters, and best practices for creating and modifying templates.
+Cargo-Forge uses the [Tera](https://tera.netlify.app/) template engine for generating project files. This guide covers the syntax, custom filters, and best practices for creating and modifying templates.
 
 ## Table of Contents
 
@@ -168,7 +168,7 @@ members = ["{{ member }}"]
 
 ### Custom Filters
 
-Cargo Forge provides these custom filters:
+Cargo-Forge provides these custom filters:
 
 #### Case Conversion
 ```tera
@@ -530,4 +530,4 @@ When contributing new templates:
 4. Ensure cross-platform compatibility
 5. Add integration tests
 
-See [CONTRIBUTING.md](../CONTRIBUTING.md) for more details on contributing to Cargo Forge.
+See [CONTRIBUTING.md](../CONTRIBUTING.md) for more details on contributing to Cargo-Forge.

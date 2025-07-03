@@ -101,7 +101,7 @@ fn main() -> Result<()> {
         }
         None => {
             display_logo();
-            println!("{}", "🔨 Welcome to Cargo Forge!".bright_cyan().bold());
+            println!("{}", "🔨 Welcome to Cargo-Forge!".bright_cyan().bold());
             println!("{}", "Starting interactive project creation...\n".bright_white());
             
             let forge = Forge::new(".");

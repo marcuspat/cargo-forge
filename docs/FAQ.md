@@ -1,14 +1,14 @@
-# Cargo Forge - Frequently Asked Questions
+# Cargo-Forge - Frequently Asked Questions
 
 ## General Questions
 
-### What is Cargo Forge?
+### What is Cargo-Forge?
 
-Cargo Forge is an interactive, intelligent Rust project generator that creates production-ready project structures with best practices, optional features, and comprehensive tooling setup. It's designed to get you from idea to implementation faster than traditional boilerplate approaches.
+Cargo-Forge is an interactive, intelligent Rust project generator that creates production-ready project structures with best practices, optional features, and comprehensive tooling setup. It's designed to get you from idea to implementation faster than traditional boilerplate approaches.
 
-### How does Cargo Forge differ from cargo-generate?
+### How does Cargo-Forge differ from cargo-generate?
 
-While both tools generate Rust projects from templates, Cargo Forge offers several unique advantages:
+While both tools generate Rust projects from templates, Cargo-Forge offers several unique advantages:
 
 - **Interactive TUI**: Beautiful terminal interface for selecting options
 - **Intelligent defaults**: Smart suggestions based on project type
@@ -17,9 +17,9 @@ While both tools generate Rust projects from templates, Cargo Forge offers sever
 - **Feature integration**: Seamlessly combines multiple features (auth, database, CI)
 - **Dry-run mode**: Preview what will be generated before creation
 
-### Is Cargo Forge free to use?
+### Is Cargo-Forge free to use?
 
-Yes! Cargo Forge is completely free and open source under the MIT/Apache-2.0 dual license. There are no paid tiers or premium features - everything is available to everyone.
+Yes! Cargo-Forge is completely free and open source under the MIT/Apache-2.0 dual license. There are no paid tiers or premium features - everything is available to everyone.
 
 ### What are the system requirements?
 
@@ -30,7 +30,7 @@ Yes! Cargo Forge is completely free and open source under the MIT/Apache-2.0 dua
 
 ## Installation & Setup
 
-### How do I install Cargo Forge?
+### How do I install Cargo-Forge?
 
 ```bash
 cargo install cargo-forge
@@ -43,23 +43,23 @@ That's it! The command will be available as `cargo forge`.
 Yes, you can build from source:
 
 ```bash
-git clone https://github.com/cargo-forge/cargo-forge
+git clone https://github.com/marcuspat/cargo-forge
 cd cargo-forge
 cargo install --path .
 ```
 
-### How do I update Cargo Forge?
+### How do I update Cargo-Forge?
 
 ```bash
 cargo install cargo-forge --force
 ```
 
-### Can I use Cargo Forge without installing it?
+### Can I use Cargo-Forge without installing it?
 
 Yes, using cargo-run:
 
 ```bash
-cargo run --git https://github.com/cargo-forge/cargo-forge -- new my-project
+cargo run --git https://github.com/marcuspat/cargo-forge -- new my-project
 ```
 
 ## Usage Questions
@@ -74,7 +74,7 @@ cargo forge new
 
 This starts the interactive mode where you can choose all options step by step.
 
-### Can I use Cargo Forge in CI/CD pipelines?
+### Can I use Cargo-Forge in CI/CD pipelines?
 
 Yes! Use the `--non-interactive` flag:
 
@@ -105,7 +105,7 @@ cargo forge new my-project --dry-run
 
 This shows what would be created without actually generating files.
 
-### How do I use Cargo Forge with existing projects?
+### How do I use Cargo-Forge with existing projects?
 
 Use the `init` command in your project directory:
 
@@ -154,7 +154,7 @@ Currently, features must be selected during generation. We're working on a `carg
 
 ### How do I create custom templates?
 
-While Cargo Forge uses built-in templates, you can:
+While Cargo-Forge uses built-in templates, you can:
 1. Fork the repository
 2. Modify templates in the `templates/` directory
 3. Build and use your custom version
@@ -168,13 +168,13 @@ Not directly, but you can:
 
 ## Technical Questions
 
-### What template engine does Cargo Forge use?
+### What template engine does Cargo-Forge use?
 
-Cargo Forge uses [Tera](https://tera.netlify.app/), a Jinja2-like template engine for Rust.
+Cargo-Forge uses [Tera](https://tera.netlify.app/), a Jinja2-like template engine for Rust.
 
 ### How are templates packaged?
 
-Templates are embedded in the binary using `include_dir!`, making Cargo Forge a single self-contained executable.
+Templates are embedded in the binary using `include_dir!`, making Cargo-Forge a single self-contained executable.
 
 ### Can I use environment variables in templates?
 
@@ -184,9 +184,9 @@ Not directly in templates, but you can pass values through the CLI:
 cargo forge new my-project --author "$USER"
 ```
 
-### Does Cargo Forge support Windows paths?
+### Does Cargo-Forge support Windows paths?
 
-Yes, Cargo Forge automatically handles path conversions across platforms.
+Yes, Cargo-Forge automatically handles path conversions across platforms.
 
 ## Troubleshooting
 
@@ -216,7 +216,7 @@ RUST_LOG=debug cargo forge new my-project
 
 ### Where are the error logs?
 
-Cargo Forge outputs errors directly to stderr. Capture them with:
+Cargo-Forge outputs errors directly to stderr. Capture them with:
 
 ```bash
 cargo forge new my-project 2> error.log
@@ -228,7 +228,7 @@ cargo forge new my-project 2> error.log
 
 Yes! Commit all generated files so other developers can:
 - See the complete project structure
-- Build without running Cargo Forge
+- Build without running Cargo-Forge
 - Track changes over time
 
 ### How often should I update project dependencies?
@@ -252,7 +252,7 @@ Absolutely! Generated files are just a starting point. Modify them to fit your n
 
 ## Contributing
 
-### How can I contribute to Cargo Forge?
+### How can I contribute to Cargo-Forge?
 
 We welcome contributions! See [CONTRIBUTING.md](../CONTRIBUTING.md) for:
 - Code contributions
@@ -263,7 +263,7 @@ We welcome contributions! See [CONTRIBUTING.md](../CONTRIBUTING.md) for:
 
 ### Where do I report bugs?
 
-Use the [GitHub issue tracker](https://github.com/cargo-forge/cargo-forge/issues) with:
+Use the [GitHub issue tracker](https://github.com/marcuspat/cargo-forge/issues) with:
 - Clear description
 - Steps to reproduce
 - Expected vs actual behavior
@@ -275,13 +275,13 @@ Yes! New project types are welcome. See the contributing guide for details on ad
 
 ### How do I suggest new features?
 
-Open a discussion on [GitHub Discussions](https://github.com/cargo-forge/cargo-forge/discussions) or create a feature request issue.
+Open a discussion on [GitHub Discussions](https://github.com/marcuspat/cargo-forge/discussions) or create a feature request issue.
 
 ## Advanced Usage
 
-### Can I script Cargo Forge?
+### Can I script Cargo-Forge?
 
-Yes, Cargo Forge is designed to be scriptable:
+Yes, Cargo-Forge is designed to be scriptable:
 
 ```bash
 #!/bin/bash
@@ -294,7 +294,7 @@ done
 
 ### How do I integrate with other tools?
 
-Cargo Forge generates standard Rust projects that work with:
+Cargo-Forge generates standard Rust projects that work with:
 - cargo-watch
 - cargo-release
 - cargo-audit
@@ -312,7 +312,7 @@ my-registry = { index = "https://my-registry.com/index" }
 
 ### Is there an API or library interface?
 
-Currently, Cargo Forge is CLI-only. A library API is planned for future releases.
+Currently, Cargo-Forge is CLI-only. A library API is planned for future releases.
 
 ## Future Plans
 
@@ -327,7 +327,7 @@ Upcoming features include:
 
 ### When will X feature be available?
 
-Check the [roadmap](https://github.com/cargo-forge/cargo-forge/projects) for planned features and timelines.
+Check the [roadmap](https://github.com/marcuspat/cargo-forge/projects) for planned features and timelines.
 
 ### How can I stay updated?
 
@@ -341,15 +341,15 @@ Check the [roadmap](https://github.com/cargo-forge/cargo-forge/projects) for pla
 ### Where can I get more help?
 
 - [Documentation](https://docs.rs/cargo-forge)
-- [GitHub Discussions](https://github.com/cargo-forge/cargo-forge/discussions)
-- [Discord Server](https://discord.gg/cargo-forge)
-- [Video Tutorials](https://youtube.com/cargo-forge)
+- [GitHub Discussions](https://github.com/marcuspat/cargo-forge/discussions)
+- Discord Server (coming soon)
+- Video Tutorials (coming soon)
 
 ### Is there commercial support available?
 
-While Cargo Forge is open source, commercial support may be available for enterprise users. Contact support@cargo-forge.rs for inquiries.
+While Cargo-Forge is open source, commercial support may be available for enterprise users in the future.
 
-### How do I become a Cargo Forge expert?
+### How do I become a Cargo-Forge expert?
 
 1. Read all documentation
 2. Try each project type
@@ -359,4 +359,4 @@ While Cargo Forge is open source, commercial support may be available for enterp
 
 ---
 
-*Don't see your question? Ask on [Discord](https://discord.gg/cargo-forge) or open a [discussion](https://github.com/cargo-forge/cargo-forge/discussions)!*
+*Don't see your question? Open a [discussion](https://github.com/marcuspat/cargo-forge/discussions) on GitHub!*

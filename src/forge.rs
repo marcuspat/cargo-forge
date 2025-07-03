@@ -131,7 +131,7 @@ impl Forge {
     }
 
     pub fn run(&self) -> Result<()> {
-        println!("{}", "🔨 Welcome to Cargo Forge!".bright_cyan().bold());
+        println!("{}", "🔨 Welcome to Cargo-Forge!".bright_cyan().bold());
         println!("{}", "Let's create your new Rust project.\n".bright_white());
 
         // Collect project context through interactive prompts

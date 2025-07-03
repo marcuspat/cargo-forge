@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2025-07-03
+### Fixed
+- Corrected all "cargo forge" references to "cargo-forge" for consistency
+- Updated all repository URLs to correct GitHub path
+- Documentation accuracy improvements to ensure proper crate installation and usage
+
+## [0.1.0] - 2025-01-03
 ### Added
 - Initial release of cargo-forge
 - Interactive project creation with beautiful TUI
@@ -50,8 +57,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Version History
 
-### [0.1.0] - TBD
+### [0.1.1] - 2025-07-03
+- Documentation fixes and repository URL corrections
+
+### [0.1.0] - 2025-01-03
 - Initial release
 
-[Unreleased]: https://github.com/yourusername/cargo-forge/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/yourusername/cargo-forge/releases/tag/v0.1.0
+[Unreleased]: https://github.com/marcuspat/cargo-forge/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/marcuspat/cargo-forge/compare/v0.1.0...v0.1.1
+[0.1.0]: https://github.com/marcuspat/cargo-forge/releases/tag/v0.1.0

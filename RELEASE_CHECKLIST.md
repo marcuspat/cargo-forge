@@ -1,4 +1,4 @@
-# Release Checklist for Cargo Forge
+# Release Checklist for Cargo-Forge
 
 This checklist ensures a smooth release process for cargo-forge. Follow these steps in order.
 
@@ -139,9 +139,9 @@ After successful release:
 ## Release Communication Template
 
 ```markdown
-🎉 Cargo Forge v0.1.0 Released!
+🎉 Cargo-Forge v0.1.0 Released!
 
-We're excited to announce the first release of Cargo Forge, a powerful Rust project generator.
+We're excited to announce the first release of Cargo-Forge, a powerful Rust project generator.
 
 ✨ Highlights:
 - Interactive project creation
@@ -152,9 +152,9 @@ We're excited to announce the first release of Cargo Forge, a powerful Rust proj
 
 📦 Install: `cargo install cargo-forge`
 📖 Docs: https://docs.rs/cargo-forge
-🐛 Issues: https://github.com/yourusername/cargo-forge/issues
+🐛 Issues: https://github.com/marcuspat/cargo-forge/issues
 
-Full changelog: https://github.com/yourusername/cargo-forge/blob/main/CHANGELOG.md
+Full changelog: https://github.com/marcuspat/cargo-forge/blob/main/CHANGELOG.md
 ```
 
 ## Notes

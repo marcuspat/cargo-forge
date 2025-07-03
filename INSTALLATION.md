@@ -34,12 +34,12 @@ Pre-compiled binaries are available for major platforms:
 ### Automatic Installation (Unix-like systems)
 
 ```bash
-curl -sSf https://raw.githubusercontent.com/yourusername/cargo-forge/main/install.sh | sh
+curl -sSf https://raw.githubusercontent.com/marcuspat/cargo-forge/main/install.sh | sh
 ```
 
 ### Manual Installation
 
-1. Download the appropriate binary from the [latest release](https://github.com/yourusername/cargo-forge/releases/latest):
+1. Download the appropriate binary from the [latest release](https://github.com/marcuspat/cargo-forge/releases/latest):
    - Linux x86_64: `cargo-forge-x86_64-linux.tar.gz`
    - Linux ARM64: `cargo-forge-aarch64-linux.tar.gz`
    - macOS x86_64 (Intel): `cargo-forge-x86_64-macos.tar.gz`
@@ -72,7 +72,7 @@ To build from the latest development version:
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/cargo-forge.git
+git clone https://github.com/marcuspat/cargo-forge.git
 cd cargo-forge
 
 # Build and install
@@ -93,14 +93,14 @@ cargo run -- new my-project
 
 ## Shell Completions
 
-Cargo Forge supports shell completions for bash, zsh, and fish.
+Cargo-Forge supports shell completions for bash, zsh, and fish.
 
 ### Bash
 
 Add to your `~/.bashrc` or `~/.bash_profile`:
 
 ```bash
-# Cargo Forge completions
+# Cargo-Forge completions
 if command -v cargo-forge &> /dev/null; then
     eval "$(cargo-forge completions bash)"
 fi
@@ -111,7 +111,7 @@ fi
 Add to your `~/.zshrc`:
 
 ```zsh
-# Cargo Forge completions
+# Cargo-Forge completions
 if command -v cargo-forge &> /dev/null; then
     eval "$(cargo-forge completions zsh)"
 fi
@@ -122,7 +122,7 @@ fi
 Add to your `~/.config/fish/config.fish`:
 
 ```fish
-# Cargo Forge completions
+# Cargo-Forge completions
 if command -v cargo-forge > /dev/null
     cargo-forge completions fish | source
 end
@@ -134,7 +134,7 @@ You can also install completion files manually:
 
 ```bash
 # Download completions archive from release
-wget https://github.com/yourusername/cargo-forge/releases/latest/download/shell-completions.tar.gz
+wget https://github.com/marcuspat/cargo-forge/releases/latest/download/shell-completions.tar.gz
 tar xzf shell-completions.tar.gz
 
 # Bash (requires bash-completion package)
@@ -191,7 +191,7 @@ Download and install the latest binary following the same steps as initial insta
 
 ### Update Notifications
 
-Cargo Forge will notify you when a new version is available (can be disabled in config).
+Cargo-Forge will notify you when a new version is available (can be disabled in config).
 
 ## Uninstalling
 
@@ -319,8 +319,8 @@ If you get permission errors:
 If you encounter any issues:
 
 1. Check the [FAQ](docs/FAQ.md)
-2. Search [existing issues](https://github.com/yourusername/cargo-forge/issues)
-3. Join our [Discord community](https://discord.gg/rust-forge)
+2. Search [existing issues](https://github.com/marcuspat/cargo-forge/issues)
+3. Join our Discord community (coming soon)
 4. Create a new issue with:
    - Your OS and version
    - Installation method used

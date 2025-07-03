@@ -1,16 +1,16 @@
 <div align="center">
 
-# ⚒️ Cargo Forge
+# ⚒️ Cargo-Forge
 
 **A powerful, interactive Rust project generator with intelligent templates and enterprise features**
 
 [![Crates.io](https://img.shields.io/crates/v/cargo-forge.svg)](https://crates.io/crates/cargo-forge)
 [![Documentation](https://docs.rs/cargo-forge/badge.svg)](https://docs.rs/cargo-forge)
-[![CI](https://github.com/yourusername/cargo-forge/workflows/CI/badge.svg)](https://github.com/yourusername/cargo-forge/actions)
-[![License](https://img.shields.io/crates/l/cargo-forge.svg)](https://github.com/yourusername/cargo-forge#license)
-[![Test Coverage](https://img.shields.io/badge/coverage-45.84%25-yellow.svg)](https://github.com/yourusername/cargo-forge)
+[![CI](https://github.com/marcuspat/cargo-forge/workflows/CI/badge.svg)](https://github.com/marcuspat/cargo-forge/actions)
+[![License](https://img.shields.io/crates/l/cargo-forge.svg)](https://github.com/marcuspat/cargo-forge#license)
+[![Test Coverage](https://img.shields.io/badge/coverage-45.84%25-yellow.svg)](https://github.com/marcuspat/cargo-forge)
 
-<img src="assets/cargo-forge-demo.gif" alt="Cargo Forge Demo" width="800">
+<!-- Demo GIF placeholder - add demo recording here -->
 
 *Generate production-ready Rust projects in seconds with intelligent templates, best practices, and optional features*
 
@@ -38,7 +38,7 @@ cargo forge init --project-type library
 
 ### 🎯 Project Types
 
-Cargo Forge supports 7 specialized project types, each with tailored templates and best practices:
+Cargo-Forge supports 7 specialized project types, each with tailored templates and best practices:
 
 | Type | Description | Key Features |
 |------|-------------|--------------|
@@ -98,7 +98,7 @@ Enable powerful features during project creation:
 
 ```bash
 $ cargo forge new
-⚒️ Welcome to Cargo Forge!
+⚒️ Welcome to Cargo-Forge!
 ? What's your project name? › my-awesome-api
 ? Select project type › API Server
 ? Add authentication? › JWT
@@ -221,7 +221,7 @@ expires_in = "24h"
 
 ## 📊 Template Syntax
 
-Cargo Forge uses Tera templates with custom helpers:
+Cargo-Forge uses Tera templates with custom helpers:
 
 ```rust
 // Conditional compilation based on features
@@ -296,7 +296,7 @@ CMD ["app"]
 
 ## 🔒 Security
 
-Cargo Forge follows security best practices:
+Cargo-Forge follows security best practices:
 
 - No hardcoded secrets in templates
 - Secure default configurations
@@ -327,7 +327,7 @@ cargo build --release
 
 ## 📈 Performance
 
-Cargo Forge is optimized for speed:
+Cargo-Forge is optimized for speed:
 
 - Project generation: ~1.5 seconds
 - Template rendering: <100ms
@@ -361,9 +361,9 @@ cargo forge new --dry-run
 ### Getting Help
 
 - 📖 [Documentation](https://docs.rs/cargo-forge)
-- 💬 [Discord Community](https://discord.gg/rust-forge)
-- 🐛 [Issue Tracker](https://github.com/yourusername/cargo-forge/issues)
-- 📧 [Email Support](mailto:support@cargo-forge.rs)
+- 💬 Discord Community (coming soon)
+- 🐛 [Issue Tracker](https://github.com/marcuspat/cargo-forge/issues)
+- 📧 Email Support (coming soon)
 
 ## 📚 Documentation
 
@@ -387,7 +387,7 @@ at your option.
 ## 🙏 Acknowledgments
 
 - The Rust community for invaluable feedback
-- Contributors who help make Cargo Forge better
+- Contributors who help make Cargo-Forge better
 - Projects that inspired us: cargo-generate, create-react-app, Rails generators
 
 ---
@@ -396,6 +396,6 @@ at your option.
 
 **Built with ❤️ by the Rust community**
 
-[Website](https://cargo-forge.rs) • [Documentation](https://docs.rs/cargo-forge) • [Crates.io](https://crates.io/crates/cargo-forge)
+[Documentation](https://docs.rs/cargo-forge) • [Crates.io](https://crates.io/crates/cargo-forge)
 
 </div>

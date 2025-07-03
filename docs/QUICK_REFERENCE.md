@@ -1,4 +1,4 @@
-# Cargo Forge Quick Reference
+# Cargo-Forge Quick Reference
 
 ## Command Overview
 
@@ -174,7 +174,7 @@ style = "subcommands"  # simple, subcommands
 export PATH="$HOME/.cargo/bin:$PATH"
 ```
 
-### Update Cargo Forge
+### Update Cargo-Forge
 ```bash
 cargo install cargo-forge --force
 ```
@@ -275,7 +275,7 @@ cargo forge new my-wasm-app \
    ```bash
    git init
    git add .
-   git commit -m "Initial commit from Cargo Forge"
+   git commit -m "Initial commit from Cargo-Forge"
    ```
 
 3. **Check compilation**
@@ -308,8 +308,8 @@ cargo forge new my-wasm-app \
 
 - Run: `cargo forge help`
 - Docs: `https://docs.rs/cargo-forge`
-- Issues: `https://github.com/cargo-forge/cargo-forge/issues`
-- Discord: `https://discord.gg/cargo-forge`
+- Issues: `https://github.com/marcuspat/cargo-forge/issues`
+- Discord: (coming soon)
 
 ---
 

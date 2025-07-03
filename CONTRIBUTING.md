@@ -1,6 +1,6 @@
-# Contributing to Cargo Forge
+# Contributing to Cargo-Forge
 
-First off, thank you for considering contributing to Cargo Forge! It's people like you that make Cargo Forge such a great tool for the Rust community.
+First off, thank you for considering contributing to Cargo-Forge! It's people like you that make Cargo-Forge such a great tool for the Rust community.
 
 ## Table of Contents
 
@@ -78,7 +78,7 @@ Look for issues labeled `good first issue` or `help wanted`. These are great sta
 
 ```bash
 # Clone your fork
-git clone https://github.com/yourusername/cargo-forge
+git clone https://github.com/marcuspat/cargo-forge
 cd cargo-forge
 
 # Build the project
@@ -216,7 +216,7 @@ impl Plugin for MyFeaturePlugin {
 
 ### Template Syntax
 
-Cargo Forge uses [Tera](https://tera.netlify.app/) templates. Key features:
+Cargo-Forge uses [Tera](https://tera.netlify.app/) templates. Key features:
 
 ```rust
 // Variables
@@ -485,7 +485,7 @@ cargo release patch # or minor, major
 
 ## Getting Help
 
-- **Discord**: Join our [Discord server](https://discord.gg/rust-forge)
+- **Discord**: Join our Discord server (coming soon)
 - **Discussions**: Use GitHub Discussions for questions
 - **Issues**: Report bugs via GitHub Issues
 
@@ -496,4 +496,4 @@ Contributors are recognized in:
 - GitHub contributors page
 - Annual contributor spotlight blog posts
 
-Thank you for contributing to Cargo Forge!
+Thank you for contributing to Cargo-Forge!

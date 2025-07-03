@@ -1,6 +1,6 @@
-# Cargo Forge Troubleshooting Guide
+# Cargo-Forge Troubleshooting Guide
 
-This guide helps you resolve common issues when using Cargo Forge.
+This guide helps you resolve common issues when using Cargo-Forge.
 
 ## Table of Contents
 
@@ -105,7 +105,7 @@ CARGO_INSTALL_ROOT=/custom/path cargo install cargo-forge
 
 ### "Template not found" error
 
-**Problem**: Cargo Forge cannot find template files.
+**Problem**: Cargo-Forge cannot find template files.
 
 **Solution**:
 ```bash
@@ -271,7 +271,7 @@ cargo tree
 
 **Problem**: Backslashes in paths cause issues.
 
-**Solution**: Cargo Forge handles this automatically, but if issues persist:
+**Solution**: Cargo-Forge handles this automatically, but if issues persist:
 ```rust
 // Use PathBuf for cross-platform paths
 use std::path::PathBuf;
@@ -349,7 +349,7 @@ sudo pacman -S base-devel openssl
 
 ### High memory usage
 
-**Problem**: Cargo Forge uses too much memory.
+**Problem**: Cargo-Forge uses too much memory.
 
 **Solution**:
 - Close other applications
@@ -485,18 +485,17 @@ When reporting issues, include:
    - Template examples
 
 2. **Community**
-   - [GitHub Discussions](https://github.com/cargo-forge/cargo-forge/discussions)
-   - [Discord Server](https://discord.gg/cargo-forge)
-   - [Stack Overflow](https://stackoverflow.com/questions/tagged/cargo-forge)
+   - [GitHub Discussions](https://github.com/marcuspat/cargo-forge/discussions)
+   - Discord Server (coming soon)
+   - Stack Overflow - tag: cargo-forge
 
 3. **Direct Support**
-   - [Issue Tracker](https://github.com/cargo-forge/cargo-forge/issues)
-   - Email: support@cargo-forge.rs
+   - [Issue Tracker](https://github.com/marcuspat/cargo-forge/issues)
 
 ### Quick Fixes Checklist
 
 - [ ] Rust toolchain up to date?
-- [ ] Cargo Forge latest version?
+- [ ] Cargo-Forge latest version?
 - [ ] Valid project name?
 - [ ] Sufficient disk space?
 - [ ] Required system dependencies installed?
@@ -514,8 +513,8 @@ rm -rf ~/.cargo/registry/cache/cargo-forge*
 cargo install cargo-forge
 
 # Manual template usage
-git clone https://github.com/cargo-forge/templates
-cd templates
+git clone https://github.com/marcuspat/cargo-forge
+cd cargo-forge/templates
 # Manually copy and customize templates
 ```
 
