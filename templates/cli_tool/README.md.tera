@@ -1,0 +1,203 @@
+# {{ name }}
+
+{{ description }}
+
+## Features
+
+- Modern CLI built with [clap](https://github.com/clap-rs/clap)
+- Subcommand-based interface
+- Colored output for better readability
+- Configurable verbosity levels
+- Shell completion support
+{% if config %}
+- Configuration file management
+{% endif %}
+{% if interactive %}
+- Interactive mode with prompts
+- Progress indicators for long operations
+{% endif %}
+{% if http %}
+- HTTP client for API interactions
+{% endif %}
+
+## Installation
+
+### From Source
+
+```bash
+git clone <repository-url>
+cd {{ name }}
+cargo install --path .
+```
+
+### From Crates.io
+
+```bash
+cargo install {{ name }}
+```
+
+## Usage
+
+```bash
+{{ name }} [OPTIONS] <COMMAND>
+```
+
+### Commands
+
+- `hello` - Example command that prints a greeting
+- `init` - Initialize a new project
+{% if config %}
+- `config` - Manage configuration settings
+{% endif %}
+{% if interactive %}
+- `interactive` - Enter interactive mode
+{% endif %}
+- `help` - Print help information
+
+### Options
+
+- `-v, --verbose` - Increase logging verbosity (can be used multiple times)
+- `-q, --quiet` - Suppress all output
+{% if config %}
+- `-c, --config <FILE>` - Specify config file path
+{% endif %}
+- `-h, --help` - Print help information
+- `-V, --version` - Print version information
+
+## Examples
+
+### Basic Usage
+
+```bash
+# Print a greeting
+{{ name }} hello --name Alice
+
+# Initialize a new project
+{{ name }} init my-project --path /path/to/project
+
+# Get help for a specific command
+{{ name }} help init
+```
+
+{% if config %}
+### Configuration
+
+```bash
+# Show current configuration
+{{ name }} config show
+
+# Set a configuration value
+{{ name }} config set key value
+
+# Get a specific configuration value
+{{ name }} config get key
+```
+{% endif %}
+
+### Verbose Output
+
+```bash
+# Enable debug logging
+{{ name }} -v hello
+
+# Enable trace logging
+{{ name }} -vv hello
+```
+
+{% if interactive %}
+### Interactive Mode
+
+```bash
+# Enter interactive mode
+{{ name }} interactive
+```
+
+In interactive mode, you can:
+- Create new projects with guided prompts
+- Configure settings interactively
+- Execute commands with a menu-driven interface
+{% endif %}
+
+## Configuration
+
+{% if config %}
+Configuration files are stored in:
+- Linux: `~/.config/{{ name }}/config.toml`
+- macOS: `~/Library/Application Support/{{ author }}.{{ name }}/config.toml`
+- Windows: `%APPDATA%\{{ author }}\{{ name }}\config.toml`
+
+Example configuration:
+
+```toml
+[general]
+default_author = "{{ author }}"
+color_output = true
+
+[paths]
+projects_dir = "~/projects"
+```
+{% else %}
+This CLI tool does not use configuration files. All options must be specified via command-line arguments or environment variables.
+{% endif %}
+
+## Shell Completion
+
+Generate shell completion scripts:
+
+```bash
+# Bash
+{{ name }} completions bash > /etc/bash_completion.d/{{ name }}
+
+# Zsh
+{{ name }} completions zsh > /usr/local/share/zsh/site-functions/_{{ name }}
+
+# Fish
+{{ name }} completions fish > ~/.config/fish/completions/{{ name }}.fish
+
+# PowerShell
+{{ name }} completions powershell > {{ name }}.ps1
+```
+
+## Development
+
+### Building
+
+```bash
+# Debug build
+cargo build
+
+# Release build
+cargo build --release
+```
+
+### Testing
+
+```bash
+# Run all tests
+cargo test
+
+# Run with output
+cargo test -- --nocapture
+```
+
+### Linting
+
+```bash
+# Format code
+cargo fmt
+
+# Run clippy
+cargo clippy -- -D warnings
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the {{ license }} License.

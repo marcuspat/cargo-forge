@@ -1,0 +1,150 @@
+#![no_std]
+#![no_main]
+
+use cortex_m;
+use cortex_m_rt::entry;
+{% for feature in features %}
+{% if feature == "panic-halt" %}use panic_halt as _;{% endif %}
+{% if feature == "panic-rtt" %}use panic_rtt_target as _;{% endif %}
+{% if feature == "rtt" %}use rtt_target::{rprintln, rtt_init_print};{% endif %}
+{% if feature == "semihosting" %}use cortex_m_semihosting::hprintln;{% endif %}
+{% endfor %}
+
+// HAL imports - adjust based on your target microcontroller
+{% for feature in features %}
+{% if feature == "stm32f4" %}
+use stm32f4xx_hal::{
+    gpio::GpioExt,
+    pac,
+    prelude::*,
+    timer::DelayMs,
+};
+{% endif %}
+{% if feature == "stm32f1" %}
+use stm32f1xx_hal::{
+    gpio::GpioExt,
+    pac,
+    prelude::*,
+    timer::DelayMs,
+};
+{% endif %}
+{% if feature == "rp2040" %}
+use rp_pico::{
+    entry,
+    hal::{
+        clocks::{init_clocks_and_plls, Clock},
+        pac,
+        sio::Sio,
+        watchdog::Watchdog,
+        Timer,
+    },
+    XOSC_CRYSTAL_FREQ,
+};
+{% endif %}
+{% endfor %}
+
+#[entry]
+fn main() -> ! {
+    {% if "rtt" in features %}
+    rtt_init_print!();
+    rprintln!("{{ project_name }} starting up...");
+    {% endif %}
+    
+    {% if "semihosting" in features %}
+    hprintln!("{{ project_name }} starting up...").unwrap();
+    {% endif %}
+
+    // Initialize the hardware
+    let mut peripherals = pac::Peripherals::take().unwrap();
+    let core_peripherals = cortex_m::Peripherals::take().unwrap();
+    
+    {% if "stm32f4" in features %}
+    // Configure the system clock
+    let rcc = peripherals.RCC.constrain();
+    let clocks = rcc.cfgr.freeze();
+    
+    // Configure GPIO
+    let gpioa = peripherals.GPIOA.split();
+    let mut led = gpioa.pa5.into_push_pull_output(); // Built-in LED on many F4 boards
+    
+    // Configure timer for delays
+    let mut delay = core_peripherals.SYST.delay(&clocks);
+    {% endif %}
+    
+    {% if "stm32f1" in features %}
+    // Configure the system clock  
+    let mut rcc = peripherals.RCC.constrain();
+    let mut flash = peripherals.FLASH.constrain();
+    let clocks = rcc.cfgr.freeze(&mut flash.acr);
+    
+    // Configure GPIO
+    let mut gpioc = peripherals.GPIOC.split(&mut rcc.apb2);
+    let mut led = gpioc.pc13.into_push_pull_output(&mut gpioc.crh); // Built-in LED on Blue Pill
+    
+    // Configure timer for delays
+    let mut delay = core_peripherals.SYST.delay(&clocks);
+    {% endif %}
+    
+    {% if "rp2040" in features %}
+    // Initialize clocks
+    let mut watchdog = Watchdog::new(peripherals.WATCHDOG);
+    let clocks = init_clocks_and_plls(
+        XOSC_CRYSTAL_FREQ,
+        peripherals.XOSC,
+        peripherals.CLOCKS,
+        peripherals.PLL_SYS,
+        peripherals.PLL_USB,
+        &mut peripherals.RESETS,
+        &mut watchdog,
+    )
+    .ok()
+    .unwrap();
+    
+    // Initialize SIO
+    let sio = Sio::new(peripherals.SIO);
+    let pins = rp_pico::Pins::new(
+        peripherals.IO_BANK0,
+        peripherals.PADS_BANK0,
+        sio.gpio_bank0,
+        &mut peripherals.RESETS,
+    );
+    
+    // Configure built-in LED
+    let mut led = pins.led.into_push_pull_output();
+    
+    // Configure timer
+    let timer = Timer::new(peripherals.TIMER, &mut peripherals.RESETS);
+    let mut delay = timer.count_down();
+    {% endif %}
+
+    {% if "rtt" in features %}
+    rprintln!("Hardware initialized successfully!");
+    {% endif %}
+    
+    {% if "semihosting" in features %}
+    hprintln!("Hardware initialized successfully!").unwrap();
+    {% endif %}
+
+    // Main application loop
+    loop {
+        {% if "stm32f4" in features or "stm32f1" in features %}
+        led.set_high();
+        delay.delay_ms(500u16);
+        led.set_low();
+        delay.delay_ms(500u16);
+        {% endif %}
+        
+        {% if "rp2040" in features %}
+        led.set_high().unwrap();
+        delay.start(500.millis());
+        let _ = nb::block!(delay.wait());
+        led.set_low().unwrap();
+        delay.start(500.millis());
+        let _ = nb::block!(delay.wait());
+        {% endif %}
+        
+        {% if "rtt" in features %}
+        rprintln!("LED blink cycle completed");
+        {% endif %}
+    }
+}

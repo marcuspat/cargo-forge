@@ -1,0 +1,185 @@
+use jsonwebtoken::{encode, decode, Header, Algorithm, Validation, EncodingKey, DecodingKey};
+use serde::{Deserialize, Serialize};
+use chrono::{Utc, Duration};
+use std::env;
+use once_cell::sync::Lazy;
+
+// Global JWT configuration
+static JWT_SECRET: Lazy<String> = Lazy::new(|| {
+    env::var("JWT_SECRET").expect("JWT_SECRET must be set")
+});
+
+static JWT_EXPIRATION: Lazy<i64> = Lazy::new(|| {
+    env::var("JWT_EXPIRATION")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(86400) // 24 hours default
+});
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Claims {
+    pub sub: String,      // Subject (user ID)
+    pub email: String,    
+    pub exp: i64,         // Expiry time
+    pub iat: i64,         // Issued at
+    pub roles: Vec<String>,
+    {% if has_feature(feature="multi-tenant", features=features) %}
+    pub tenant_id: Option<String>,
+    {% endif %}
+}
+
+impl Claims {
+    pub fn new(user_id: String, email: String, roles: Vec<String>) -> Self {
+        let now = Utc::now();
+        let exp = (now + Duration::seconds(*JWT_EXPIRATION)).timestamp();
+        
+        Self {
+            sub: user_id,
+            email,
+            exp,
+            iat: now.timestamp(),
+            roles,
+            {% if has_feature(feature="multi-tenant", features=features) %}
+            tenant_id: None,
+            {% endif %}
+        }
+    }
+    
+    {% if has_feature(feature="multi-tenant", features=features) %}
+    pub fn with_tenant(mut self, tenant_id: String) -> Self {
+        self.tenant_id = Some(tenant_id);
+        self
+    }
+    {% endif %}
+    
+    pub fn is_expired(&self) -> bool {
+        Utc::now().timestamp() > self.exp
+    }
+    
+    pub fn has_role(&self, role: &str) -> bool {
+        self.roles.contains(&role.to_string())
+    }
+}
+
+pub struct JwtManager {
+    encoding_key: EncodingKey,
+    decoding_key: DecodingKey,
+    validation: Validation,
+}
+
+impl JwtManager {
+    pub fn new() -> Self {
+        Self {
+            encoding_key: EncodingKey::from_secret(JWT_SECRET.as_bytes()),
+            decoding_key: DecodingKey::from_secret(JWT_SECRET.as_bytes()),
+            validation: Validation::new(Algorithm::HS256),
+        }
+    }
+    
+    pub fn generate_token(&self, claims: &Claims) -> Result<String, jsonwebtoken::errors::Error> {
+        encode(&Header::default(), claims, &self.encoding_key)
+    }
+    
+    pub fn verify_token(&self, token: &str) -> Result<Claims, jsonwebtoken::errors::Error> {
+        let token_data = decode::<Claims>(token, &self.decoding_key, &self.validation)?;
+        
+        // Additional validation
+        if token_data.claims.is_expired() {
+            return Err(jsonwebtoken::errors::Error::from(jsonwebtoken::errors::ErrorKind::ExpiredSignature));
+        }
+        
+        Ok(token_data.claims)
+    }
+    
+    pub fn refresh_token(&self, claims: &Claims) -> Result<String, jsonwebtoken::errors::Error> {
+        let mut new_claims = claims.clone();
+        new_claims.iat = Utc::now().timestamp();
+        new_claims.exp = (Utc::now() + Duration::seconds(*JWT_EXPIRATION)).timestamp();
+        
+        self.generate_token(&new_claims)
+    }
+}
+
+impl Default for JwtManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+/// Generate a secure random token for refresh tokens or API keys
+pub fn generate_secure_token() -> String {
+    use rand::Rng;
+    const CHARSET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ\
+                            abcdefghijklmnopqrstuvwxyz\
+                            0123456789";
+    const TOKEN_LEN: usize = 32;
+    let mut rng = rand::thread_rng();
+    
+    (0..TOKEN_LEN)
+        .map(|_| {
+            let idx = rng.gen_range(0..CHARSET.len());
+            CHARSET[idx] as char
+        })
+        .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    
+    #[test]
+    fn test_jwt_generation_and_verification() {
+        std::env::set_var("JWT_SECRET", "test_secret_key_for_testing_only_32_chars_long");
+        std::env::set_var("JWT_EXPIRATION", "3600");
+        
+        let jwt_manager = JwtManager::new();
+        let claims = Claims::new(
+            "user123".to_string(),
+            "user@example.com".to_string(),
+            vec!["user".to_string(), "admin".to_string()]
+        );
+        
+        let token = jwt_manager.generate_token(&claims).unwrap();
+        assert!(!token.is_empty());
+        
+        let verified_claims = jwt_manager.verify_token(&token).unwrap();
+        assert_eq!(verified_claims.sub, "user123");
+        assert_eq!(verified_claims.email, "user@example.com");
+        assert!(verified_claims.has_role("admin"));
+        assert!(!verified_claims.has_role("superadmin"));
+    }
+    
+    #[test]
+    fn test_token_expiry() {
+        std::env::set_var("JWT_SECRET", "test_secret_key_for_testing_only_32_chars_long");
+        
+        let claims = Claims {
+            sub: "user123".to_string(),
+            email: "user@example.com".to_string(),
+            exp: Utc::now().timestamp() - 3600, // Expired 1 hour ago
+            iat: Utc::now().timestamp() - 7200, // Issued 2 hours ago
+            roles: vec!["user".to_string()],
+            {% if has_feature(feature="multi-tenant", features=features) %}
+            tenant_id: None,
+            {% endif %}
+        };
+        
+        assert!(claims.is_expired());
+        
+        let jwt_manager = JwtManager::new();
+        let token = jwt_manager.generate_token(&claims).unwrap();
+        
+        // Should fail verification due to expiry
+        assert!(jwt_manager.verify_token(&token).is_err());
+    }
+    
+    #[test]
+    fn test_secure_token_generation() {
+        let token1 = generate_secure_token();
+        let token2 = generate_secure_token();
+        
+        assert_eq!(token1.len(), 32);
+        assert_eq!(token2.len(), 32);
+        assert_ne!(token1, token2); // Should be different
+    }
+}

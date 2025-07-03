@@ -1,0 +1,263 @@
+//! Property-based testing with proptest
+//!
+//! This module demonstrates how to use proptest for property-based testing.
+//! Property-based tests generate random inputs and verify that certain
+//! properties hold for all valid inputs.
+
+use proptest::prelude::*;
+
+/// Example of testing string operations
+#[cfg(test)]
+mod string_tests {
+    use super::*;
+
+    proptest! {
+        #[test]
+        fn test_string_length_is_consistent(s in ".*") {
+            let len = s.len();
+            prop_assert_eq!(s.chars().count(), len);
+        }
+
+        #[test]
+        fn test_string_push_increases_length(
+            mut s in ".*",
+            c in any::<char>()
+        ) {
+            let original_len = s.len();
+            s.push(c);
+            prop_assert!(s.len() > original_len);
+        }
+
+        #[test]
+        fn test_string_reverse_twice_is_identity(s in ".*") {
+            let original = s.clone();
+            let reversed: String = s.chars().rev().collect();
+            let double_reversed: String = reversed.chars().rev().collect();
+            prop_assert_eq!(original, double_reversed);
+        }
+    }
+}
+
+/// Example of testing numeric operations
+#[cfg(test)]
+mod numeric_tests {
+    use super::*;
+
+    proptest! {
+        #[test]
+        fn test_addition_is_commutative(a in any::<i32>(), b in any::<i32>()) {
+            // Skip cases that would overflow
+            prop_assume!(a.checked_add(b).is_some());
+            prop_assert_eq!(a + b, b + a);
+        }
+
+        #[test]
+        fn test_multiplication_by_zero(n in any::<i32>()) {
+            prop_assert_eq!(n * 0, 0);
+            prop_assert_eq!(0 * n, 0);
+        }
+
+        #[test]
+        fn test_absolute_value_is_non_negative(n in any::<i32>()) {
+            prop_assume!(n != i32::MIN); // Avoid overflow
+            prop_assert!(n.abs() >= 0);
+        }
+    }
+}
+
+/// Example of testing collection operations
+#[cfg(test)]
+mod collection_tests {
+    use super::*;
+
+    proptest! {
+        #[test]
+        fn test_vec_push_pop_consistency(
+            mut vec in prop::collection::vec(any::<i32>(), 0..100),
+            item in any::<i32>()
+        ) {
+            vec.push(item);
+            let popped = vec.pop();
+            prop_assert_eq!(popped, Some(item));
+        }
+
+        #[test]
+        fn test_vec_len_after_push(
+            mut vec in prop::collection::vec(any::<i32>(), 0..100),
+            item in any::<i32>()
+        ) {
+            let original_len = vec.len();
+            vec.push(item);
+            prop_assert_eq!(vec.len(), original_len + 1);
+        }
+
+        #[test]
+        fn test_vec_sort_idempotent(mut vec in prop::collection::vec(any::<i32>(), 0..100)) {
+            vec.sort();
+            let sorted_once = vec.clone();
+            vec.sort();
+            prop_assert_eq!(vec, sorted_once);
+        }
+    }
+}
+
+/// Custom generators for domain-specific testing
+#[cfg(test)]
+mod custom_generators {
+    use super::*;
+
+    /// Generate a valid email-like string
+    fn email_strategy() -> impl Strategy<Value = String> {
+        (
+            "[a-z]{3,10}",  // username
+            "[a-z]{3,8}",   // domain
+            "[a-z]{2,4}"    // tld
+        ).prop_map(|(user, domain, tld)| {
+            format!("{}@{}.{}", user, domain, tld)
+        })
+    }
+
+    /// Generate a positive even number
+    fn positive_even() -> impl Strategy<Value = u32> {
+        (1u32..1000).prop_map(|n| n * 2)
+    }
+
+    proptest! {
+        #[test]
+        fn test_email_contains_at_symbol(email in email_strategy()) {
+            prop_assert!(email.contains('@'));
+            prop_assert!(email.contains('.'));
+        }
+
+        #[test]
+        fn test_positive_even_properties(n in positive_even()) {
+            prop_assert!(n > 0);
+            prop_assert_eq!(n % 2, 0);
+        }
+    }
+}
+
+/// Example of testing with preconditions
+#[cfg(test)]
+mod conditional_tests {
+    use super::*;
+
+    proptest! {
+        #[test]
+        fn test_division_with_non_zero_divisor(
+            dividend in any::<f64>(),
+            divisor in any::<f64>()
+        ) {
+            prop_assume!(divisor != 0.0);
+            prop_assume!(divisor.is_finite());
+            prop_assume!(dividend.is_finite());
+            
+            let result = dividend / divisor;
+            prop_assert!(result.is_finite() || result.is_infinite());
+        }
+    }
+}
+
+/// Example of testing state machines or complex objects
+#[cfg(test)]
+mod state_machine_tests {
+    use super::*;
+    use std::collections::HashMap;
+
+    #[derive(Debug, Clone)]
+    struct Counter {
+        value: i32,
+        max_value: i32,
+    }
+
+    impl Counter {
+        fn new(max_value: i32) -> Self {
+            Self {
+                value: 0,
+                max_value,
+            }
+        }
+
+        fn increment(&mut self) -> bool {
+            if self.value < self.max_value {
+                self.value += 1;
+                true
+            } else {
+                false
+            }
+        }
+
+        fn decrement(&mut self) -> bool {
+            if self.value > 0 {
+                self.value -= 1;
+                true
+            } else {
+                false
+            }
+        }
+
+        fn reset(&mut self) {
+            self.value = 0;
+        }
+    }
+
+    #[derive(Debug, Clone)]
+    enum CounterAction {
+        Increment,
+        Decrement,
+        Reset,
+    }
+
+    fn counter_action_strategy() -> impl Strategy<Value = CounterAction> {
+        prop_oneof![
+            Just(CounterAction::Increment),
+            Just(CounterAction::Decrement),
+            Just(CounterAction::Reset),
+        ]
+    }
+
+    proptest! {
+        #[test]
+        fn test_counter_invariants(
+            max_value in 1..100i32,
+            actions in prop::collection::vec(counter_action_strategy(), 0..50)
+        ) {
+            let mut counter = Counter::new(max_value);
+            
+            for action in actions {
+                match action {
+                    CounterAction::Increment => { counter.increment(); },
+                    CounterAction::Decrement => { counter.decrement(); },
+                    CounterAction::Reset => counter.reset(),
+                }
+                
+                // Invariants that should always hold
+                prop_assert!(counter.value >= 0);
+                prop_assert!(counter.value <= max_value);
+            }
+        }
+    }
+}
+
+/// Performance-oriented property tests
+#[cfg(test)]
+mod performance_tests {
+    use super::*;
+    use std::time::Instant;
+
+    proptest! {
+        #[test]
+        fn test_sorting_performance_is_reasonable(
+            vec in prop::collection::vec(any::<i32>(), 0..10000)
+        ) {
+            let mut test_vec = vec.clone();
+            let start = Instant::now();
+            test_vec.sort();
+            let duration = start.elapsed();
+            
+            // Sorting should complete reasonably quickly
+            // This is a very generous bound for demonstration
+            prop_assert!(duration.as_millis() < 1000);
+        }
+    }
+}

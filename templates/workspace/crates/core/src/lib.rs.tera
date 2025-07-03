@@ -1,0 +1,92 @@
+//! Core library for {{ project_name }}
+//!
+//! This crate contains the shared business logic and data structures
+//! used across the entire {{ project_name }} workspace.
+
+use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
+use std::fmt;
+use thiserror::Error;
+use uuid::Uuid;
+
+pub mod error;
+pub mod models;
+pub mod utils;
+
+pub use error::{Result, CoreError};
+pub use models::*;
+
+/// Core configuration for the application
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Config {
+    pub app_name: String,
+    pub version: String,
+    pub environment: Environment,
+    pub created_at: DateTime<Utc>,
+}
+
+impl Default for Config {
+    fn default() -> Self {
+        Self {
+            app_name: "{{ project_name }}".to_string(),
+            version: env!("CARGO_PKG_VERSION").to_string(),
+            environment: Environment::Development,
+            created_at: Utc::now(),
+        }
+    }
+}
+
+/// Application environment
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub enum Environment {
+    Development,
+    Testing,
+    Staging,
+    Production,
+}
+
+impl fmt::Display for Environment {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Environment::Development => write!(f, "development"),
+            Environment::Testing => write!(f, "testing"),
+            Environment::Staging => write!(f, "staging"),
+            Environment::Production => write!(f, "production"),
+        }
+    }
+}
+
+/// Generate a new UUID v4
+pub fn generate_id() -> Uuid {
+    Uuid::new_v4()
+}
+
+/// Get the current timestamp
+pub fn now() -> DateTime<Utc> {
+    Utc::now()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_config_default() {
+        let config = Config::default();
+        assert_eq!(config.app_name, "{{ project_name }}");
+        assert_eq!(config.environment, Environment::Development);
+    }
+
+    #[test]
+    fn test_generate_id() {
+        let id1 = generate_id();
+        let id2 = generate_id();
+        assert_ne!(id1, id2);
+    }
+
+    #[test]
+    fn test_environment_display() {
+        assert_eq!(Environment::Development.to_string(), "development");
+        assert_eq!(Environment::Production.to_string(), "production");
+    }
+}

@@ -1,0 +1,477 @@
+use axum::{
+    routing::{get, post},
+    Router,
+    Json,
+    extract::{Query, State, Path},
+    response::{IntoResponse, Redirect},
+    http::StatusCode,
+};
+use serde::{Deserialize, Serialize};
+use std::sync::Arc;
+use validator::Validate;
+
+use crate::auth::{
+    jwt::{JwtManager, Claims},
+    password::{PasswordManager, PasswordValidator},
+    {% if has_oauth %}
+    oauth::{OAuthProviders, OAuthUser},
+    {% endif %}
+    middleware::{AuthenticatedUser, OptionalAuth},
+};
+{% if has_database %}
+use crate::db::DbPool;
+{% endif %}
+
+#[derive(Debug, Serialize, Deserialize, Validate)]
+pub struct LoginRequest {
+    #[validate(email(message = "Invalid email address"))]
+    pub email: String,
+    #[validate(length(min = 8, message = "Password must be at least 8 characters"))]
+    pub password: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct LoginResponse {
+    pub access_token: String,
+    pub token_type: String,
+    pub expires_in: i64,
+    pub user: UserInfo,
+}
+
+#[derive(Debug, Serialize, Deserialize, Validate)]
+pub struct RegisterRequest {
+    #[validate(email(message = "Invalid email address"))]
+    pub email: String,
+    #[validate(length(min = 8, message = "Password must be at least 8 characters"))]
+    pub password: String,
+    #[validate(length(min = 1, max = 100, message = "Name must be between 1 and 100 characters"))]
+    pub name: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct UserInfo {
+    pub id: String,
+    pub email: String,
+    pub name: String,
+    pub roles: Vec<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct OAuthCallback {
+    pub code: String,
+    pub state: String,
+}
+
+#[derive(Clone)]
+pub struct AuthState {
+    pub jwt_manager: Arc<JwtManager>,
+    pub password_manager: Arc<PasswordManager>,
+    {% if has_oauth %}
+    pub oauth_providers: Arc<OAuthProviders>,
+    {% endif %}
+    {% if has_database %}
+    pub pool: DbPool,
+    {% endif %}
+}
+
+pub fn auth_routes(state: AuthState) -> Router {
+    Router::new()
+        .route("/auth/login", post(login))
+        .route("/auth/register", post(register))
+        .route("/auth/logout", post(logout))
+        .route("/auth/refresh", post(refresh_token))
+        .route("/auth/me", get(get_current_user))
+        {% if has_oauth %}
+        .route("/auth/oauth/:provider", get(oauth_redirect))
+        .route("/auth/oauth/:provider/callback", get(oauth_callback))
+        {% endif %}
+        .route("/auth/verify-email/:token", get(verify_email))
+        .route("/auth/forgot-password", post(forgot_password))
+        .route("/auth/reset-password", post(reset_password))
+        .with_state(state)
+}
+
+async fn login(
+    State(state): State<AuthState>,
+    Json(payload): Json<LoginRequest>,
+) -> Result<Json<LoginResponse>, AuthApiError> {
+    // Validate request
+    payload.validate()?;
+    
+    {% if has_database %}
+    // Find user by email
+    let user = sqlx::query!(
+        "SELECT id, email, name, password_hash, roles FROM users WHERE email = $1",
+        payload.email.to_lowercase()
+    )
+    .fetch_optional(&state.pool)
+    .await?
+    .ok_or(AuthApiError::InvalidCredentials)?;
+    
+    // Verify password
+    if !state.password_manager.verify_password(&payload.password, &user.password_hash)? {
+        return Err(AuthApiError::InvalidCredentials);
+    }
+    
+    let roles: Vec<String> = serde_json::from_value(user.roles)
+        .unwrap_or_else(|_| vec!["user".to_string()]);
+    
+    // Generate JWT token
+    let claims = Claims::new(
+        user.id.to_string(),
+        user.email.clone(),
+        roles.clone(),
+    );
+    {% else %}
+    // Mock implementation without database
+    let claims = Claims::new(
+        "user123".to_string(),
+        payload.email.clone(),
+        vec!["user".to_string()],
+    );
+    let user_name = "Test User";
+    let roles = vec!["user".to_string()];
+    {% endif %}
+    
+    let token = state.jwt_manager.generate_token(&claims)?;
+    
+    Ok(Json(LoginResponse {
+        access_token: token,
+        token_type: "Bearer".to_string(),
+        expires_in: 86400, // 24 hours
+        user: UserInfo {
+            {% if has_database %}
+            id: user.id.to_string(),
+            email: user.email,
+            name: user.name,
+            {% else %}
+            id: "user123".to_string(),
+            email: payload.email,
+            name: user_name.to_string(),
+            {% endif %}
+            roles,
+        },
+    }))
+}
+
+async fn register(
+    State(state): State<AuthState>,
+    Json(payload): Json<RegisterRequest>,
+) -> Result<Json<LoginResponse>, AuthApiError> {
+    // Validate request
+    payload.validate()?;
+    
+    // Validate password strength
+    let validator = PasswordValidator::new();
+    validator.validate(&payload.password)
+        .map_err(|errors| AuthApiError::ValidationError(errors.join(", ")))?;
+    
+    // Hash password
+    let password_hash = state.password_manager.hash_password(&payload.password)?;
+    
+    {% if has_database %}
+    // Check if user already exists
+    let existing = sqlx::query!(
+        "SELECT id FROM users WHERE email = $1",
+        payload.email.to_lowercase()
+    )
+    .fetch_optional(&state.pool)
+    .await?;
+    
+    if existing.is_some() {
+        return Err(AuthApiError::UserAlreadyExists);
+    }
+    
+    // Create user
+    let user = sqlx::query!(
+        r#"
+        INSERT INTO users (email, name, password_hash, roles)
+        VALUES ($1, $2, $3, $4)
+        RETURNING id, email, name, roles
+        "#,
+        payload.email.to_lowercase(),
+        payload.name,
+        password_hash,
+        serde_json::json!(["user"])
+    )
+    .fetch_one(&state.pool)
+    .await?;
+    
+    let roles: Vec<String> = serde_json::from_value(user.roles)
+        .unwrap_or_else(|_| vec!["user".to_string()]);
+    
+    // Generate token for immediate login
+    let claims = Claims::new(
+        user.id.to_string(),
+        user.email.clone(),
+        roles.clone(),
+    );
+    {% else %}
+    // Mock implementation
+    let claims = Claims::new(
+        "new_user_id".to_string(),
+        payload.email.clone(),
+        vec!["user".to_string()],
+    );
+    let roles = vec!["user".to_string()];
+    {% endif %}
+    
+    let token = state.jwt_manager.generate_token(&claims)?;
+    
+    Ok(Json(LoginResponse {
+        access_token: token,
+        token_type: "Bearer".to_string(),
+        expires_in: 86400,
+        user: UserInfo {
+            {% if has_database %}
+            id: user.id.to_string(),
+            email: user.email,
+            name: user.name,
+            {% else %}
+            id: "new_user_id".to_string(),
+            email: payload.email,
+            name: payload.name,
+            {% endif %}
+            roles,
+        },
+    }))
+}
+
+async fn logout(
+    _user: AuthenticatedUser,
+) -> impl IntoResponse {
+    // In a real implementation, you might want to:
+    // - Add the token to a blacklist
+    // - Clear any server-side sessions
+    // - Log the logout event
+    
+    Json(json!({ "message": "Logged out successfully" }))
+}
+
+async fn refresh_token(
+    State(state): State<AuthState>,
+    user: AuthenticatedUser,
+) -> Result<Json<LoginResponse>, AuthApiError> {
+    // Generate new token with refreshed expiry
+    let claims = Claims::new(
+        user.user_id.clone(),
+        user.email.clone(),
+        user.roles.clone(),
+    );
+    
+    let token = state.jwt_manager.refresh_token(&claims)?;
+    
+    Ok(Json(LoginResponse {
+        access_token: token,
+        token_type: "Bearer".to_string(),
+        expires_in: 86400,
+        user: UserInfo {
+            id: user.user_id,
+            email: user.email,
+            name: "".to_string(), // Would be fetched from DB in real implementation
+            roles: user.roles,
+        },
+    }))
+}
+
+async fn get_current_user(
+    user: AuthenticatedUser,
+) -> Json<UserInfo> {
+    Json(UserInfo {
+        id: user.user_id,
+        email: user.email,
+        name: "".to_string(), // Would be fetched from DB
+        roles: user.roles,
+    })
+}
+
+{% if has_oauth %}
+async fn oauth_redirect(
+    State(state): State<AuthState>,
+    Path(provider): Path<String>,
+) -> Result<impl IntoResponse, AuthApiError> {
+    let oauth_client = state.oauth_providers
+        .create_client(&provider)
+        .map_err(|_| AuthApiError::OAuthProviderNotConfigured)?;
+    
+    let (auth_url, _csrf_token) = oauth_client.get_authorization_url(
+        state.oauth_providers
+            .get(&provider)
+            .map(|c| c.scopes.clone())
+            .unwrap_or_default()
+    );
+    
+    Ok(Redirect::to(auth_url.as_str()))
+}
+
+async fn oauth_callback(
+    State(state): State<AuthState>,
+    Path(provider): Path<String>,
+    Query(params): Query<OAuthCallback>,
+) -> Result<Json<LoginResponse>, AuthApiError> {
+    let oauth_client = state.oauth_providers
+        .create_client(&provider)
+        .map_err(|_| AuthApiError::OAuthProviderNotConfigured)?;
+    
+    // Exchange code for token
+    let token_response = oauth_client.exchange_code(params.code)
+        .await
+        .map_err(|_| AuthApiError::OAuthError)?;
+    
+    // Get user info from provider
+    let oauth_user = oauth_client.get_user_info(token_response.access_token().secret())
+        .await
+        .map_err(|_| AuthApiError::OAuthError)?;
+    
+    {% if has_database %}
+    // Find or create user
+    let user = sqlx::query!(
+        r#"
+        INSERT INTO users (email, name, oauth_provider, oauth_id, roles)
+        VALUES ($1, $2, $3, $4, $5)
+        ON CONFLICT (email) DO UPDATE
+        SET name = EXCLUDED.name,
+            oauth_provider = EXCLUDED.oauth_provider,
+            oauth_id = EXCLUDED.oauth_id,
+            updated_at = NOW()
+        RETURNING id, email, name, roles
+        "#,
+        oauth_user.email.to_lowercase(),
+        oauth_user.name,
+        provider,
+        oauth_user.id,
+        serde_json::json!(["user"])
+    )
+    .fetch_one(&state.pool)
+    .await?;
+    
+    let roles: Vec<String> = serde_json::from_value(user.roles)
+        .unwrap_or_else(|_| vec!["user".to_string()]);
+    
+    // Generate JWT token
+    let claims = Claims::new(
+        user.id.to_string(),
+        user.email.clone(),
+        roles.clone(),
+    );
+    {% else %}
+    let claims = Claims::new(
+        oauth_user.id,
+        oauth_user.email.clone(),
+        vec!["user".to_string()],
+    );
+    let roles = vec!["user".to_string()];
+    {% endif %}
+    
+    let token = state.jwt_manager.generate_token(&claims)?;
+    
+    Ok(Json(LoginResponse {
+        access_token: token,
+        token_type: "Bearer".to_string(),
+        expires_in: 86400,
+        user: UserInfo {
+            {% if has_database %}
+            id: user.id.to_string(),
+            email: user.email,
+            name: user.name,
+            {% else %}
+            id: oauth_user.id,
+            email: oauth_user.email.clone(),
+            name: oauth_user.name,
+            {% endif %}
+            roles,
+        },
+    }))
+}
+{% endif %}
+
+async fn verify_email(
+    Path(token): Path<String>,
+) -> impl IntoResponse {
+    // TODO: Implement email verification
+    Json(json!({ "message": "Email verification not implemented" }))
+}
+
+async fn forgot_password(
+    Json(payload): Json<serde_json::Value>,
+) -> impl IntoResponse {
+    // TODO: Implement forgot password
+    Json(json!({ "message": "Password reset email sent" }))
+}
+
+async fn reset_password(
+    Json(payload): Json<serde_json::Value>,
+) -> impl IntoResponse {
+    // TODO: Implement reset password
+    Json(json!({ "message": "Password reset successful" }))
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum AuthApiError {
+    #[error("Invalid credentials")]
+    InvalidCredentials,
+    
+    #[error("User already exists")]
+    UserAlreadyExists,
+    
+    #[error("Validation error: {0}")]
+    ValidationError(String),
+    
+    {% if has_oauth %}
+    #[error("OAuth provider not configured")]
+    OAuthProviderNotConfigured,
+    
+    #[error("OAuth error")]
+    OAuthError,
+    {% endif %}
+    
+    {% if has_database %}
+    #[error("Database error")]
+    DatabaseError(#[from] sqlx::Error),
+    {% endif %}
+    
+    #[error("Password error")]
+    PasswordError(#[from] argon2::password_hash::Error),
+    
+    #[error("JWT error")]
+    JwtError(#[from] jsonwebtoken::errors::Error),
+}
+
+impl From<validator::ValidationErrors> for AuthApiError {
+    fn from(errors: validator::ValidationErrors) -> Self {
+        let messages: Vec<String> = errors
+            .field_errors()
+            .into_iter()
+            .flat_map(|(field, errors)| {
+                errors.into_iter().map(move |error| {
+                    format!("{}: {}", field, error.message.clone().unwrap_or_default())
+                })
+            })
+            .collect();
+        
+        Self::ValidationError(messages.join(", "))
+    }
+}
+
+impl IntoResponse for AuthApiError {
+    fn into_response(self) -> axum::response::Response {
+        let (status, error_message) = match &self {
+            Self::InvalidCredentials => (StatusCode::UNAUTHORIZED, self.to_string()),
+            Self::UserAlreadyExists => (StatusCode::CONFLICT, self.to_string()),
+            Self::ValidationError(_) => (StatusCode::BAD_REQUEST, self.to_string()),
+            {% if has_oauth %}
+            Self::OAuthProviderNotConfigured => (StatusCode::BAD_REQUEST, self.to_string()),
+            Self::OAuthError => (StatusCode::INTERNAL_SERVER_ERROR, self.to_string()),
+            {% endif %}
+            _ => (StatusCode::INTERNAL_SERVER_ERROR, "Internal server error".to_string()),
+        };
+        
+        let body = Json(json!({
+            "error": error_message,
+        }));
+        
+        (status, body).into_response()
+    }
+}
+
+use serde_json::json;

@@ -1,0 +1,137 @@
+# {{ name }}
+
+{{ description }}
+
+## Overview
+
+This is an API server built with [Axum](https://github.com/tokio-rs/axum), a modern web framework for Rust that focuses on ergonomics and performance.
+
+## Features
+
+- Fast and efficient HTTP server using Axum
+- JSON request/response handling
+- CORS support
+- Request tracing and logging
+- Health check endpoint
+{% if database %}
+- PostgreSQL database integration with SQLx
+- Database migrations support
+{% endif %}
+{% if auth %}
+- JWT-based authentication
+- User registration and login endpoints
+{% endif %}
+
+## Getting Started
+
+### Prerequisites
+
+- Rust {{ rust_version }} or later
+- Cargo
+{% if database %}
+- PostgreSQL database
+{% endif %}
+
+### Installation
+
+1. Clone the repository:
+```bash
+git clone <repository-url>
+cd {{ name }}
+```
+
+2. Set up environment variables:
+```bash
+cp .env.example .env
+```
+
+3. Edit `.env` file with your configuration:
+```env
+{% if database %}
+DATABASE_URL=postgresql://user:password@localhost/{{ name | replace(from="-", to="_") }}
+{% endif %}
+{% if auth %}
+JWT_SECRET=your-secret-key-here
+{% endif %}
+```
+
+{% if database %}
+4. Run database migrations:
+```bash
+sqlx migrate run
+```
+{% endif %}
+
+### Running the Server
+
+Development mode:
+```bash
+cargo run
+```
+
+Production build:
+```bash
+cargo build --release
+./target/release/{{ name }}
+```
+
+The server will start on `http://{{ host }}:{{ port }}` by default.
+
+## API Endpoints
+
+### Health Check
+- `GET /health` - Returns server health status
+
+### Example Endpoints
+- `POST /api/v1/example` - Example endpoint that echoes your message
+
+{% if auth %}
+### Authentication
+- `POST /api/v1/auth/register` - Register a new user
+- `POST /api/v1/auth/login` - Login and receive JWT token
+{% endif %}
+
+## Development
+
+### Running Tests
+```bash
+cargo test
+```
+
+### Code Formatting
+```bash
+cargo fmt
+```
+
+### Linting
+```bash
+cargo clippy
+```
+
+## Project Structure
+
+```
+{{ name }}/
+├── src/
+│   ├── main.rs         # Application entry point
+│   ├── routes/         # Route handlers
+│   ├── models/         # Data models
+│   ├── middleware/     # Custom middleware
+│   └── utils/          # Utility functions
+├── migrations/         # Database migrations
+├── tests/              # Integration tests
+├── Cargo.toml          # Project dependencies
+└── README.md           # This file
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the {{ license }} License.

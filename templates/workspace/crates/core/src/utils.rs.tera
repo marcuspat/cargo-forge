@@ -1,0 +1,223 @@
+//! Utility functions and helpers
+
+use crate::error::{CoreError, Result};
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+
+/// Validation utilities
+pub mod validation {
+    use super::*;
+    use std::collections::HashSet;
+
+    /// Validate an email address (basic validation)
+    pub fn validate_email(email: &str) -> Result<()> {
+        if email.is_empty() {
+            return Err(CoreError::validation("Email cannot be empty"));
+        }
+
+        if !email.contains('@') || !email.contains('.') {
+            return Err(CoreError::validation("Invalid email format"));
+        }
+
+        if email.len() > 254 {
+            return Err(CoreError::validation("Email is too long"));
+        }
+
+        Ok(())
+    }
+
+    /// Validate a username
+    pub fn validate_username(username: &str) -> Result<()> {
+        if username.is_empty() {
+            return Err(CoreError::validation("Username cannot be empty"));
+        }
+
+        if username.len() < 3 {
+            return Err(CoreError::validation("Username must be at least 3 characters"));
+        }
+
+        if username.len() > 50 {
+            return Err(CoreError::validation("Username is too long"));
+        }
+
+        if !username
+            .chars()
+            .all(|c| c.is_alphanumeric() || c == '_' || c == '-')
+        {
+            return Err(CoreError::validation(
+                "Username can only contain letters, numbers, underscores, and hyphens",
+            ));
+        }
+
+        Ok(())
+    }
+
+    /// Validate required fields
+    pub fn validate_required_fields(fields: &[(&str, &str)]) -> Result<()> {
+        let mut errors = Vec::new();
+
+        for (field_name, value) in fields {
+            if value.trim().is_empty() {
+                errors.push(format!("{} is required", field_name));
+            }
+        }
+
+        if !errors.is_empty() {
+            return Err(CoreError::validation(errors.join(", ")));
+        }
+
+        Ok(())
+    }
+
+    /// Validate that a value is in a set of allowed values
+    pub fn validate_in_set<T: PartialEq + std::fmt::Debug>(
+        value: &T,
+        allowed_values: &[T],
+        field_name: &str,
+    ) -> Result<()> {
+        if !allowed_values.contains(value) {
+            return Err(CoreError::validation(format!(
+                "{} must be one of: {:?}",
+                field_name, allowed_values
+            )));
+        }
+        Ok(())
+    }
+}
+
+/// String utilities
+pub mod strings {
+    /// Convert a string to kebab-case
+    pub fn to_kebab_case(input: &str) -> String {
+        input
+            .chars()
+            .enumerate()
+            .map(|(i, c)| {
+                if c.is_uppercase() && i > 0 {
+                    format!("-{}", c.to_lowercase())
+                } else {
+                    c.to_lowercase().to_string()
+                }
+            })
+            .collect()
+    }
+
+    /// Convert a string to snake_case
+    pub fn to_snake_case(input: &str) -> String {
+        input
+            .chars()
+            .enumerate()
+            .map(|(i, c)| {
+                if c.is_uppercase() && i > 0 {
+                    format!("_{}", c.to_lowercase())
+                } else {
+                    c.to_lowercase().to_string()
+                }
+            })
+            .collect()
+    }
+
+    /// Truncate a string to a maximum length
+    pub fn truncate(input: &str, max_length: usize) -> String {
+        if input.len() <= max_length {
+            input.to_string()
+        } else {
+            format!("{}...", &input[..max_length.saturating_sub(3)])
+        }
+    }
+}
+
+/// Time utilities
+pub mod time {
+    use chrono::{DateTime, Duration, Utc};
+
+    /// Check if a timestamp is within the last N seconds
+    pub fn is_recent(timestamp: DateTime<Utc>, seconds: i64) -> bool {
+        let now = Utc::now();
+        let threshold = now - Duration::seconds(seconds);
+        timestamp >= threshold
+    }
+
+    /// Format a duration in human-readable format
+    pub fn format_duration(duration: Duration) -> String {
+        let total_seconds = duration.num_seconds();
+        
+        if total_seconds < 60 {
+            format!("{}s", total_seconds)
+        } else if total_seconds < 3600 {
+            format!("{}m {}s", total_seconds / 60, total_seconds % 60)
+        } else {
+            let hours = total_seconds / 3600;
+            let minutes = (total_seconds % 3600) / 60;
+            let seconds = total_seconds % 60;
+            format!("{}h {}m {}s", hours, minutes, seconds)
+        }
+    }
+}
+
+/// Configuration utilities
+pub mod config {
+    use super::*;
+
+    /// Helper to load configuration from environment variables
+    pub fn load_from_env() -> HashMap<String, String> {
+        std::env::vars().collect()
+    }
+
+    /// Get an environment variable with a default value
+    pub fn get_env_or_default(key: &str, default: &str) -> String {
+        std::env::var(key).unwrap_or_else(|_| default.to_string())
+    }
+
+    /// Parse an environment variable as a specific type
+    pub fn parse_env<T>(key: &str) -> Result<T>
+    where
+        T: std::str::FromStr,
+        T::Err: std::fmt::Display,
+    {
+        let value = std::env::var(key)
+            .map_err(|_| CoreError::configuration(format!("Missing environment variable: {}", key)))?;
+        
+        value.parse().map_err(|e| {
+            CoreError::configuration(format!("Failed to parse {}: {}", key, e))
+        })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_validate_email() {
+        assert!(validation::validate_email("test@example.com").is_ok());
+        assert!(validation::validate_email("").is_err());
+        assert!(validation::validate_email("invalid").is_err());
+    }
+
+    #[test]
+    fn test_validate_username() {
+        assert!(validation::validate_username("valid_user").is_ok());
+        assert!(validation::validate_username("").is_err());
+        assert!(validation::validate_username("ab").is_err());
+        assert!(validation::validate_username("invalid@user").is_err());
+    }
+
+    #[test]
+    fn test_to_kebab_case() {
+        assert_eq!(strings::to_kebab_case("TestString"), "test-string");
+        assert_eq!(strings::to_kebab_case("alreadylowercase"), "alreadylowercase");
+    }
+
+    #[test]
+    fn test_to_snake_case() {
+        assert_eq!(strings::to_snake_case("TestString"), "test_string");
+        assert_eq!(strings::to_snake_case("alreadylowercase"), "alreadylowercase");
+    }
+
+    #[test]
+    fn test_truncate() {
+        assert_eq!(strings::truncate("short", 10), "short");
+        assert_eq!(strings::truncate("this is a very long string", 10), "this is...");
+    }
+}

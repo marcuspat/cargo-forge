@@ -1,0 +1,65 @@
+[default.probe]
+# USB vendor ID
+# usb_vid = "1366"
+# USB product ID  
+# usb_pid = "0105"
+# Serial number
+# serial = "066EFF555051897267233656"
+
+[default.flashing]
+# Whether or not the target should be flashed.
+enabled = true
+
+# Whether or not the target should be halted after reset.
+# This is useful for debugging.
+halt_afterwards = false
+
+# Whether or not bytes erased but not rewritten with data from the ELF
+# should be restored with their contents before erasing.
+restore_unwritten_bytes = false
+
+# The path where an SVD file is stored.
+# svd = "{{ chip | default(value="STM32F401.svd") }}"
+
+[default.general]
+# The chip name of the chip to be debugged.
+chip = "{{ chip | default(value="STM32F401RETx") }}"
+
+# A list of chip descriptions to be loaded during runtime.
+chip_descriptions = []
+
+# The default log level to be used. Possible values are one of:
+#   "OFF", "ERROR", "WARN", "INFO", "DEBUG", "TRACE"
+log_level = "WARN"
+
+# Use this flag to assert the nreset & ntrst pins during attaching the probe to the chip.
+connect_under_reset = false
+
+[default.rtt]
+# Whether or not an RTTI session should be opened after flashing.
+enabled = true
+
+# A list of channel associations to be displayed. If left empty, all channels are displayed.
+# Format: { up = 0, down = 0, name = "name" }
+channels = [
+    # { up = 0, down = 0, name = "Terminal" },
+]
+
+# The duration in ms for which the logger should retry to attach to RTT.
+timeout = 3000
+
+# Whether timestamps in the logger should be enabled
+show_timestamps = true
+
+# Whether to save rtt history buffer on exit.
+log_enabled = false
+
+# Where to save rtt history buffer relative to manifest path.
+log_path = "./logs"
+
+[default.gdb]
+# Whether or not a GDB server should be opened after flashing.
+enabled = false
+
+# The connection string in host:port format wher the GDB server will open a socket.
+gdb_connection_string = "localhost:1337"

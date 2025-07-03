@@ -1,0 +1,186 @@
+//! # {{ name }}
+//!
+//! {{ description }}
+//!
+//! ## Example
+//!
+//! ```rust
+//! use {{ name | replace(from="-", to="_") }}::hello;
+//!
+//! let message = hello("World");
+//! assert_eq!(message, "Hello, World!");
+//! ```
+
+#![cfg_attr(docsrs, feature(doc_cfg))]
+#![warn(missing_docs)]
+
+{% if serde %}
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+{% endif %}
+
+use thiserror::Error;
+
+/// Error types for this library
+#[derive(Debug, Error)]
+pub enum {{ name | replace(from="-", to="_") | to_pascal_case }}Error {
+    /// An example error variant
+    #[error("Example error: {0}")]
+    Example(String),
+    
+    /// Invalid input error
+    #[error("Invalid input: {0}")]
+    InvalidInput(String),
+}
+
+/// Result type alias for this library
+pub type Result<T> = std::result::Result<T, {{ name | replace(from="-", to="_") | to_pascal_case }}Error>;
+
+/// Example structure
+{% if serde %}
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+{% endif %}
+#[derive(Debug, Clone, PartialEq)]
+pub struct ExampleStruct {
+    /// Name field
+    pub name: String,
+    /// Value field
+    pub value: i32,
+}
+
+impl ExampleStruct {
+    /// Create a new ExampleStruct
+    ///
+    /// # Arguments
+    ///
+    /// * `name` - The name for this instance
+    /// * `value` - The value for this instance
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use {{ name | replace(from="-", to="_") }}::ExampleStruct;
+    ///
+    /// let example = ExampleStruct::new("test", 42);
+    /// assert_eq!(example.name, "test");
+    /// assert_eq!(example.value, 42);
+    /// ```
+    pub fn new(name: impl Into<String>, value: i32) -> Self {
+        Self {
+            name: name.into(),
+            value,
+        }
+    }
+    
+    /// Validate the struct
+    pub fn validate(&self) -> Result<()> {
+        if self.name.is_empty() {
+            return Err({{ name | replace(from="-", to="_") | to_pascal_case }}Error::InvalidInput(
+                "Name cannot be empty".to_string()
+            ));
+        }
+        if self.value < 0 {
+            return Err({{ name | replace(from="-", to="_") | to_pascal_case }}Error::InvalidInput(
+                "Value must be non-negative".to_string()
+            ));
+        }
+        Ok(())
+    }
+}
+
+/// Example function that greets someone
+///
+/// # Arguments
+///
+/// * `name` - The name to greet
+///
+/// # Example
+///
+/// ```rust
+/// use {{ name | replace(from="-", to="_") }}::hello;
+///
+/// let message = hello("Alice");
+/// assert_eq!(message, "Hello, Alice!");
+/// ```
+pub fn hello(name: &str) -> String {
+    format!("Hello, {}!", name)
+}
+
+{% if async %}
+#[cfg(feature = "async")]
+use async_trait::async_trait;
+
+/// Example async trait
+#[cfg(feature = "async")]
+#[cfg_attr(docsrs, doc(cfg(feature = "async")))]
+#[async_trait]
+pub trait ExampleAsyncTrait {
+    /// Async method example
+    async fn process(&self, data: &str) -> Result<String>;
+}
+
+/// Example async implementation
+#[cfg(feature = "async")]
+#[cfg_attr(docsrs, doc(cfg(feature = "async")))]
+pub struct AsyncProcessor;
+
+#[cfg(feature = "async")]
+#[async_trait]
+impl ExampleAsyncTrait for AsyncProcessor {
+    async fn process(&self, data: &str) -> Result<String> {
+        // Simulate async processing
+        tokio::time::sleep(tokio::time::Duration::from_millis(10)).await;
+        Ok(format!("Processed: {}", data))
+    }
+}
+{% endif %}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_hello() {
+        assert_eq!(hello("World"), "Hello, World!");
+        assert_eq!(hello(""), "Hello, !");
+    }
+
+    #[test]
+    fn test_example_struct() {
+        let example = ExampleStruct::new("test", 42);
+        assert_eq!(example.name, "test");
+        assert_eq!(example.value, 42);
+        
+        assert!(example.validate().is_ok());
+    }
+
+    #[test]
+    fn test_validation() {
+        let invalid_name = ExampleStruct::new("", 42);
+        assert!(invalid_name.validate().is_err());
+        
+        let invalid_value = ExampleStruct::new("test", -1);
+        assert!(invalid_value.validate().is_err());
+    }
+
+    {% if serde %}
+    #[cfg(feature = "serde")]
+    #[test]
+    fn test_serde() {
+        let example = ExampleStruct::new("test", 42);
+        let json = serde_json::to_string(&example).unwrap();
+        let parsed: ExampleStruct = serde_json::from_str(&json).unwrap();
+        assert_eq!(example, parsed);
+    }
+    {% endif %}
+
+    {% if async %}
+    #[cfg(feature = "async")]
+    #[tokio::test]
+    async fn test_async_processor() {
+        let processor = AsyncProcessor;
+        let result = processor.process("test data").await.unwrap();
+        assert_eq!(result, "Processed: test data");
+    }
+    {% endif %}
+}

@@ -1,0 +1,53 @@
+[package]
+name = "{{ name }}"
+version = "0.1.0"
+edition = "2021"
+authors = ["{{ author }}"]
+description = "{{ description }}"
+license = "{{ license }}"
+repository = "{{ repository }}"
+keywords = ["{{ keywords | join(sep='", "') }}"]
+categories = ["{{ categories | join(sep='", "') }}"]
+readme = "README.md"
+
+[dependencies]
+{% if serde %}
+serde = { version = "1.0", features = ["derive"], optional = true }
+serde_json = { version = "1.0", optional = true }
+{% endif %}
+{% if async %}
+tokio = { version = "1", features = ["sync"], optional = true }
+async-trait = { version = "0.1", optional = true }
+{% endif %}
+thiserror = "1.0"
+
+[dev-dependencies]
+{% if serde %}
+serde_test = "1.0"
+{% endif %}
+{% if async %}
+tokio = { version = "1", features = ["full", "test-util"] }
+{% endif %}
+criterion = { version = "0.5", features = ["html_reports"] }
+proptest = "1.4"
+
+[features]
+default = [{% if serde %}"serde"{% endif %}]
+{% if serde %}
+serde = ["dep:serde", "dep:serde_json"]
+{% endif %}
+{% if async %}
+async = ["dep:tokio", "dep:async-trait"]
+{% endif %}
+
+[[bench]]
+name = "benchmarks"
+harness = false
+
+[profile.release]
+lto = true
+codegen-units = 1
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]

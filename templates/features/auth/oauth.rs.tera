@@ -1,0 +1,262 @@
+use oauth2::{
+    AuthorizationCode, AuthUrl, ClientId, ClientSecret, CsrfToken, RedirectUrl, 
+    RevocationUrl, Scope, TokenResponse, TokenUrl,
+    basic::BasicClient,
+    reqwest::async_http_client,
+};
+use serde::{Deserialize, Serialize};
+use std::env;
+use std::collections::HashMap;
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OAuthConfig {
+    pub client_id: String,
+    pub client_secret: String,
+    pub auth_url: String,
+    pub token_url: String,
+    pub redirect_url: String,
+    pub scopes: Vec<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct OAuthUser {
+    pub id: String,
+    pub email: String,
+    pub name: String,
+    pub picture: Option<String>,
+    pub provider: String,
+}
+
+pub struct OAuthClient {
+    client: BasicClient,
+    provider: String,
+}
+
+impl OAuthClient {
+    pub fn new(config: OAuthConfig, provider: String) -> Result<Self, url::ParseError> {
+        let client = BasicClient::new(
+            ClientId::new(config.client_id),
+            Some(ClientSecret::new(config.client_secret)),
+            AuthUrl::new(config.auth_url)?,
+            Some(TokenUrl::new(config.token_url)?),
+        )
+        .set_redirect_uri(RedirectUrl::new(config.redirect_url)?);
+        
+        Ok(Self { client, provider })
+    }
+    
+    pub fn get_authorization_url(&self, scopes: Vec<String>) -> (url::Url, CsrfToken) {
+        let mut auth_request = self.client.authorize_url(CsrfToken::new_random);
+        
+        for scope in scopes {
+            auth_request = auth_request.add_scope(Scope::new(scope));
+        }
+        
+        auth_request.url()
+    }
+    
+    pub async fn exchange_code(&self, code: String) -> Result<oauth2::StandardTokenResponse<oauth2::EmptyExtraTokenFields, oauth2::basic::BasicTokenType>, Box<dyn std::error::Error>> {
+        let token = self.client
+            .exchange_code(AuthorizationCode::new(code))
+            .request_async(async_http_client)
+            .await?;
+        
+        Ok(token)
+    }
+    
+    pub async fn get_user_info(&self, access_token: &str) -> Result<OAuthUser, Box<dyn std::error::Error>> {
+        match self.provider.as_str() {
+            "google" => self.get_google_user_info(access_token).await,
+            "github" => self.get_github_user_info(access_token).await,
+            _ => Err("Unsupported OAuth provider".into()),
+        }
+    }
+    
+    async fn get_google_user_info(&self, access_token: &str) -> Result<OAuthUser, Box<dyn std::error::Error>> {
+        #[derive(Deserialize)]
+        struct GoogleUser {
+            id: String,
+            email: String,
+            name: String,
+            picture: Option<String>,
+        }
+        
+        let client = reqwest::Client::new();
+        let response = client
+            .get("https://www.googleapis.com/oauth2/v2/userinfo")
+            .bearer_auth(access_token)
+            .send()
+            .await?;
+        
+        let google_user: GoogleUser = response.json().await?;
+        
+        Ok(OAuthUser {
+            id: google_user.id,
+            email: google_user.email,
+            name: google_user.name,
+            picture: google_user.picture,
+            provider: "google".to_string(),
+        })
+    }
+    
+    async fn get_github_user_info(&self, access_token: &str) -> Result<OAuthUser, Box<dyn std::error::Error>> {
+        #[derive(Deserialize)]
+        struct GithubUser {
+            id: i64,
+            email: Option<String>,
+            name: Option<String>,
+            avatar_url: Option<String>,
+            login: String,
+        }
+        
+        let client = reqwest::Client::new();
+        let response = client
+            .get("https://api.github.com/user")
+            .header("User-Agent", "{{ name }}")
+            .bearer_auth(access_token)
+            .send()
+            .await?;
+        
+        let github_user: GithubUser = response.json().await?;
+        
+        // If email is not public, fetch it separately
+        let email = if let Some(email) = github_user.email {
+            email
+        } else {
+            // Fetch primary email
+            let email_response = client
+                .get("https://api.github.com/user/emails")
+                .header("User-Agent", "{{ name }}")
+                .bearer_auth(access_token)
+                .send()
+                .await?;
+            
+            #[derive(Deserialize)]
+            struct GithubEmail {
+                email: String,
+                primary: bool,
+                verified: bool,
+            }
+            
+            let emails: Vec<GithubEmail> = email_response.json().await?;
+            emails.into_iter()
+                .find(|e| e.primary && e.verified)
+                .map(|e| e.email)
+                .unwrap_or_else(|| format!("{}@users.noreply.github.com", github_user.login))
+        };
+        
+        Ok(OAuthUser {
+            id: github_user.id.to_string(),
+            email,
+            name: github_user.name.unwrap_or(github_user.login.clone()),
+            picture: github_user.avatar_url,
+            provider: "github".to_string(),
+        })
+    }
+}
+
+pub struct OAuthProviders {
+    providers: HashMap<String, OAuthConfig>,
+}
+
+impl OAuthProviders {
+    pub fn from_env() -> Self {
+        let mut providers = HashMap::new();
+        
+        // Google OAuth
+        if let (Ok(client_id), Ok(client_secret)) = (
+            env::var("GOOGLE_CLIENT_ID"),
+            env::var("GOOGLE_CLIENT_SECRET"),
+        ) {
+            providers.insert(
+                "google".to_string(),
+                OAuthConfig {
+                    client_id,
+                    client_secret,
+                    auth_url: "https://accounts.google.com/o/oauth2/v2/auth".to_string(),
+                    token_url: "https://oauth2.googleapis.com/token".to_string(),
+                    redirect_url: env::var("GOOGLE_REDIRECT_URL")
+                        .unwrap_or_else(|_| "http://localhost:3000/auth/callback/google".to_string()),
+                    scopes: vec!["openid".to_string(), "email".to_string(), "profile".to_string()],
+                },
+            );
+        }
+        
+        // GitHub OAuth
+        if let (Ok(client_id), Ok(client_secret)) = (
+            env::var("GITHUB_CLIENT_ID"),
+            env::var("GITHUB_CLIENT_SECRET"),
+        ) {
+            providers.insert(
+                "github".to_string(),
+                OAuthConfig {
+                    client_id,
+                    client_secret,
+                    auth_url: "https://github.com/login/oauth/authorize".to_string(),
+                    token_url: "https://github.com/login/oauth/access_token".to_string(),
+                    redirect_url: env::var("GITHUB_REDIRECT_URL")
+                        .unwrap_or_else(|_| "http://localhost:3000/auth/callback/github".to_string()),
+                    scopes: vec!["user:email".to_string()],
+                },
+            );
+        }
+        
+        Self { providers }
+    }
+    
+    pub fn get(&self, provider: &str) -> Option<&OAuthConfig> {
+        self.providers.get(provider)
+    }
+    
+    pub fn create_client(&self, provider: &str) -> Result<OAuthClient, Box<dyn std::error::Error>> {
+        let config = self.get(provider)
+            .ok_or("OAuth provider not configured")?
+            .clone();
+        
+        Ok(OAuthClient::new(config, provider.to_string())?)
+    }
+    
+    pub fn list_providers(&self) -> Vec<String> {
+        self.providers.keys().cloned().collect()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    
+    #[test]
+    fn test_oauth_providers_from_env() {
+        // Set test environment variables
+        env::set_var("GOOGLE_CLIENT_ID", "test_google_client");
+        env::set_var("GOOGLE_CLIENT_SECRET", "test_google_secret");
+        
+        let providers = OAuthProviders::from_env();
+        
+        assert!(providers.get("google").is_some());
+        
+        let google_config = providers.get("google").unwrap();
+        assert_eq!(google_config.client_id, "test_google_client");
+        assert_eq!(google_config.auth_url, "https://accounts.google.com/o/oauth2/v2/auth");
+    }
+    
+    #[test]
+    fn test_oauth_client_creation() {
+        let config = OAuthConfig {
+            client_id: "test_client".to_string(),
+            client_secret: "test_secret".to_string(),
+            auth_url: "https://example.com/auth".to_string(),
+            token_url: "https://example.com/token".to_string(),
+            redirect_url: "http://localhost:3000/callback".to_string(),
+            scopes: vec!["email".to_string()],
+        };
+        
+        let client = OAuthClient::new(config, "test".to_string()).unwrap();
+        
+        let (auth_url, csrf_token) = client.get_authorization_url(vec!["email".to_string()]);
+        
+        assert!(auth_url.as_str().contains("https://example.com/auth"));
+        assert!(auth_url.as_str().contains("client_id=test_client"));
+        assert!(!csrf_token.secret().is_empty());
+    }
+}

@@ -1,0 +1,48 @@
+[package]
+name = "{{ name }}"
+version = "0.1.0"
+edition = "2021"
+authors = ["{{ author }}"]
+description = "{{ description }}"
+license = "{{ license }}"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4"
+console_error_panic_hook = "0.1"
+js-sys = "0.3"
+{% if framework == "yew" %}
+yew = { version = "0.21", features = ["csr"] }
+{% elif framework == "leptos" %}
+leptos = { version = "0.5", features = ["csr", "nightly"] }
+{% endif %}
+{% if web_sys %}
+web-sys = { version = "0.3", features = [
+    "console",
+    "Document",
+    "Element",
+    "HtmlElement",
+    "Window",
+    {% if canvas %}"HtmlCanvasElement",
+    "CanvasRenderingContext2d",{% endif %}
+    {% if fetch %}"Request",
+    "RequestInit",
+    "RequestMode",
+    "Response",{% endif %}
+] }
+{% endif %}
+getrandom = { version = "0.2", features = ["js"] }
+
+[dev-dependencies]
+wasm-bindgen-test = "0.3"
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+
+[package.metadata.wasm-pack]
+"wasm-pack-plugin" = "0.3"

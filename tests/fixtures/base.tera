@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{% block title %}{{ project_name }} - cargo-forge{% endblock %}</title>
+</head>
+<body>
+    <header>
+        <h1>{{ project_name }}</h1>
+        {% block header %}
+        <p>Generated with cargo-forge</p>
+        {% endblock %}
+    </header>
+    
+    <main>
+        {% block content %}
+        <p>Welcome to {{ project_name }}!</p>
+        {% endblock %}
+    </main>
+    
+    <footer>
+        {% block footer %}
+        <p>&copy; 2024 {{ project_name }}</p>
+        {% endblock %}
+    </footer>
+</body>
+</html>

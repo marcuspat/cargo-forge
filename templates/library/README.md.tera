@@ -1,0 +1,190 @@
+# {{ name }}
+
+[![Crates.io](https://img.shields.io/crates/v/{{ name }}.svg)](https://crates.io/crates/{{ name }})
+[![Documentation](https://docs.rs/{{ name }}/badge.svg)](https://docs.rs/{{ name }})
+[![License](https://img.shields.io/crates/l/{{ name }}.svg)](LICENSE)
+
+{{ description }}
+
+## Features
+
+- Zero-copy operations where possible
+- Comprehensive error handling
+- Well-documented API
+- Extensive test coverage
+{% if serde %}
+- Optional serde support for serialization
+{% endif %}
+{% if async %}
+- Optional async support with Tokio
+{% endif %}
+
+## Installation
+
+Add this to your `Cargo.toml`:
+
+```toml
+[dependencies]
+{{ name }} = "0.1.0"
+```
+
+### Feature Flags
+
+{% if serde or async %}
+This crate offers the following optional features:
+
+{% if serde %}
+- `serde`: Enable serialization/deserialization support
+{% endif %}
+{% if async %}
+- `async`: Enable async functionality with Tokio
+{% endif %}
+
+To enable features:
+
+```toml
+[dependencies]
+{{ name }} = { version = "0.1.0", features = [{% if serde %}"serde"{% if async %}, {% endif %}{% endif %}{% if async %}"async"{% endif %}] }
+```
+{% else %}
+This crate has no optional features.
+{% endif %}
+
+## Usage
+
+### Basic Example
+
+```rust
+use {{ name | replace(from="-", to="_") }}::{hello, ExampleStruct};
+
+fn main() {
+    // Simple function usage
+    let message = hello("World");
+    println!("{}", message); // "Hello, World!"
+    
+    // Struct usage
+    let example = ExampleStruct::new("test", 42);
+    match example.validate() {
+        Ok(_) => println!("Valid!"),
+        Err(e) => eprintln!("Error: {}", e),
+    }
+}
+```
+
+{% if serde %}
+### Serialization Example
+
+```rust
+#[cfg(feature = "serde")]
+use {{ name | replace(from="-", to="_") }}::ExampleStruct;
+
+fn main() {
+    let example = ExampleStruct::new("data", 100);
+    
+    // Serialize to JSON
+    let json = serde_json::to_string(&example).unwrap();
+    println!("JSON: {}", json);
+    
+    // Deserialize from JSON
+    let parsed: ExampleStruct = serde_json::from_str(&json).unwrap();
+    assert_eq!(example, parsed);
+}
+```
+{% endif %}
+
+{% if async %}
+### Async Example
+
+```rust
+#[cfg(feature = "async")]
+use {{ name | replace(from="-", to="_") }}::{AsyncProcessor, ExampleAsyncTrait};
+
+#[tokio::main]
+async fn main() {
+    let processor = AsyncProcessor;
+    
+    match processor.process("input data").await {
+        Ok(result) => println!("Result: {}", result),
+        Err(e) => eprintln!("Error: {}", e),
+    }
+}
+```
+{% endif %}
+
+## API Documentation
+
+For detailed API documentation, please visit [docs.rs/{{ name }}](https://docs.rs/{{ name }}).
+
+## Performance
+
+This crate is designed with performance in mind:
+
+- Minimal allocations
+- Efficient algorithms
+- Zero-cost abstractions where possible
+
+Run benchmarks with:
+
+```bash
+cargo bench
+```
+
+## Development
+
+### Building
+
+```bash
+# Standard build
+cargo build
+
+# Build with all features
+cargo build --all-features
+
+# Release build
+cargo build --release
+```
+
+### Testing
+
+```bash
+# Run all tests
+cargo test
+
+# Run tests with all features
+cargo test --all-features
+
+# Run specific test
+cargo test test_hello
+```
+
+### Documentation
+
+```bash
+# Build documentation
+cargo doc --no-deps --open
+
+# Build documentation with all features
+cargo doc --all-features --no-deps --open
+```
+
+### Benchmarking
+
+```bash
+cargo bench
+```
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+Please make sure to update tests as appropriate and follow the existing code style.
+
+## License
+
+This project is licensed under the {{ license }} License - see the [LICENSE](LICENSE) file for details.

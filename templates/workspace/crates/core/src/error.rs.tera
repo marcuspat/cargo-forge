@@ -1,0 +1,91 @@
+//! Error handling for the core library
+
+use thiserror::Error;
+
+/// Core error type for the application
+#[derive(Error, Debug)]
+pub enum CoreError {
+    #[error("Validation error: {message}")]
+    Validation { message: String },
+    
+    #[error("Not found: {resource}")]
+    NotFound { resource: String },
+    
+    #[error("Already exists: {resource}")]
+    AlreadyExists { resource: String },
+    
+    #[error("Permission denied: {action}")]
+    PermissionDenied { action: String },
+    
+    #[error("Configuration error: {message}")]
+    Configuration { message: String },
+    
+    #[error("External service error: {service}")]
+    ExternalService { service: String },
+    
+    #[error("Serialization error: {0}")]
+    Serialization(#[from] serde_json::Error),
+    
+    #[error("UUID parsing error: {0}")]
+    UuidParse(#[from] uuid::Error),
+    
+    #[error("Date/time parsing error: {0}")]
+    DateTimeParse(#[from] chrono::ParseError),
+    
+    #[error("Internal error: {message}")]
+    Internal { message: String },
+}
+
+/// Result type alias for core operations
+pub type Result<T> = std::result::Result<T, CoreError>;
+
+impl CoreError {
+    /// Create a validation error
+    pub fn validation<S: Into<String>>(message: S) -> Self {
+        Self::Validation {
+            message: message.into(),
+        }
+    }
+    
+    /// Create a not found error
+    pub fn not_found<S: Into<String>>(resource: S) -> Self {
+        Self::NotFound {
+            resource: resource.into(),
+        }
+    }
+    
+    /// Create an already exists error
+    pub fn already_exists<S: Into<String>>(resource: S) -> Self {
+        Self::AlreadyExists {
+            resource: resource.into(),
+        }
+    }
+    
+    /// Create a permission denied error
+    pub fn permission_denied<S: Into<String>>(action: S) -> Self {
+        Self::PermissionDenied {
+            action: action.into(),
+        }
+    }
+    
+    /// Create a configuration error
+    pub fn configuration<S: Into<String>>(message: S) -> Self {
+        Self::Configuration {
+            message: message.into(),
+        }
+    }
+    
+    /// Create an external service error
+    pub fn external_service<S: Into<String>>(service: S) -> Self {
+        Self::ExternalService {
+            service: service.into(),
+        }
+    }
+    
+    /// Create an internal error
+    pub fn internal<S: Into<String>>(message: S) -> Self {
+        Self::Internal {
+            message: message.into(),
+        }
+    }
+}

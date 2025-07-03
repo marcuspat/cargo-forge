@@ -1,0 +1,26 @@
+[package]
+name = "{{ project_name | replace(from="-", to="_") }}_core"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+uuid = { workspace = true }
+chrono = { workspace = true }
+{% for feature in features %}
+{% if feature == "database" %}
+sqlx = { workspace = true }
+{% endif %}
+{% endfor %}
+
+[dev-dependencies]
+{% for feature in features %}
+{% if feature == "testing" %}
+proptest = { workspace = true }
+{% endif %}
+{% endfor %}

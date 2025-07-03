@@ -1,0 +1,40 @@
+[package]
+name = "{{ name }}"
+version = "0.1.0"
+edition = "2021"
+authors = ["{{ author }}"]
+description = "{{ description }}"
+license = "{{ license }}"
+
+[dependencies]
+clap = { version = "4.4", features = ["derive", "cargo", "env"] }
+clap_complete = "4.4"
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+{% if config %}
+toml = "0.8"
+directories = "5.0"
+{% endif %}
+{% if interactive %}
+inquire = "0.7"
+indicatif = "0.17"
+{% endif %}
+colored = "2.1"
+anyhow = "1.0"
+thiserror = "1.0"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+{% if http %}
+reqwest = { version = "0.11", features = ["json", "rustls-tls"] }
+{% endif %}
+
+[[bin]]
+name = "{{ name }}"
+path = "src/main.rs"
+
+[profile.release]
+lto = true
+codegen-units = 1
+strip = true
+opt-level = "z"

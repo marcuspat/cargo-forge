@@ -1,0 +1,35 @@
+[package]
+name = "{{ project_name | replace(from="-", to="_") }}_cli"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "{{ project_name }}"
+path = "src/main.rs"
+
+[dependencies]
+# Workspace dependencies
+{{ project_name | replace(from="-", to="_") }}_core = { workspace = true }
+{{ project_name | replace(from="-", to="_") }}_api = { workspace = true }
+tokio = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+anyhow = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+
+# CLI dependencies
+{% for feature in features %}
+{% if feature == "clap" %}
+clap = { workspace = true }
+{% endif %}
+{% endfor %}
+
+[dev-dependencies]
+{% for feature in features %}
+{% if feature == "testing" %}
+proptest = { workspace = true }
+{% endif %}
+{% endfor %}

@@ -1,0 +1,341 @@
+//! Benchmark suite using Criterion
+//!
+//! Run these benchmarks with: cargo bench
+//! View results in target/criterion/reports/index.html
+
+use criterion::{black_box, criterion_group, criterion_main, Criterion, BenchmarkId, Throughput};
+use std::collections::{HashMap, BTreeMap};
+
+/// Benchmark different sorting algorithms
+fn bench_sorting(c: &mut Criterion) {
+    let sizes = [10, 100, 1000, 10000];
+    
+    let mut group = c.benchmark_group("sorting");
+    
+    for size in sizes.iter() {
+        let data: Vec<i32> = (0..*size).rev().collect(); // Reverse sorted data (worst case)
+        
+        group.throughput(Throughput::Elements(*size as u64));
+        
+        // Benchmark standard library sort
+        group.bench_with_input(
+            BenchmarkId::new("std_sort", size),
+            size,
+            |b, &_size| {
+                b.iter(|| {
+                    let mut data_copy = data.clone();
+                    data_copy.sort();
+                    black_box(data_copy);
+                });
+            },
+        );
+        
+        // Benchmark unstable sort
+        group.bench_with_input(
+            BenchmarkId::new("std_sort_unstable", size),
+            size,
+            |b, &_size| {
+                b.iter(|| {
+                    let mut data_copy = data.clone();
+                    data_copy.sort_unstable();
+                    black_box(data_copy);
+                });
+            },
+        );
+    }
+    
+    group.finish();
+}
+
+/// Benchmark map data structures
+fn bench_maps(c: &mut Criterion) {
+    let sizes = [100, 1000, 10000];
+    
+    let mut group = c.benchmark_group("map_operations");
+    
+    for size in sizes.iter() {
+        group.throughput(Throughput::Elements(*size as u64));
+        
+        // HashMap insertion
+        group.bench_with_input(
+            BenchmarkId::new("hashmap_insert", size),
+            size,
+            |b, &size| {
+                b.iter(|| {
+                    let mut map = HashMap::new();
+                    for i in 0..size {
+                        map.insert(i, i * 2);
+                    }
+                    black_box(map);
+                });
+            },
+        );
+        
+        // BTreeMap insertion
+        group.bench_with_input(
+            BenchmarkId::new("btreemap_insert", size),
+            size,
+            |b, &size| {
+                b.iter(|| {
+                    let mut map = BTreeMap::new();
+                    for i in 0..size {
+                        map.insert(i, i * 2);
+                    }
+                    black_box(map);
+                });
+            },
+        );
+        
+        // HashMap lookup
+        let hashmap: HashMap<i32, i32> = (0..*size).map(|i| (i, i * 2)).collect();
+        group.bench_with_input(
+            BenchmarkId::new("hashmap_lookup", size),
+            size,
+            |b, &size| {
+                b.iter(|| {
+                    for i in 0..size {
+                        black_box(hashmap.get(&i));
+                    }
+                });
+            },
+        );
+        
+        // BTreeMap lookup
+        let btreemap: BTreeMap<i32, i32> = (0..*size).map(|i| (i, i * 2)).collect();
+        group.bench_with_input(
+            BenchmarkId::new("btreemap_lookup", size),
+            size,
+            |b, &size| {
+                b.iter(|| {
+                    for i in 0..size {
+                        black_box(btreemap.get(&i));
+                    }
+                });
+            },
+        );
+    }
+    
+    group.finish();
+}
+
+/// Benchmark string operations
+fn bench_strings(c: &mut Criterion) {
+    let inputs = ["short", "medium length string", "a very long string that contains many characters and should test string operation performance"];
+    
+    let mut group = c.benchmark_group("string_operations");
+    
+    for input in inputs.iter() {
+        group.throughput(Throughput::Bytes(input.len() as u64));
+        
+        // String concatenation with +
+        group.bench_with_input(
+            BenchmarkId::new("string_concat_plus", input.len()),
+            input,
+            |b, &input| {
+                b.iter(|| {
+                    let mut result = String::new();
+                    for _ in 0..100 {
+                        result = result + input;
+                    }
+                    black_box(result);
+                });
+            },
+        );
+        
+        // String concatenation with push_str
+        group.bench_with_input(
+            BenchmarkId::new("string_concat_push_str", input.len()),
+            input,
+            |b, &input| {
+                b.iter(|| {
+                    let mut result = String::new();
+                    for _ in 0..100 {
+                        result.push_str(input);
+                    }
+                    black_box(result);
+                });
+            },
+        );
+        
+        // String concatenation with format!
+        group.bench_with_input(
+            BenchmarkId::new("string_concat_format", input.len()),
+            input,
+            |b, &input| {
+                b.iter(|| {
+                    let mut result = String::new();
+                    for _ in 0..100 {
+                        result = format!("{}{}", result, input);
+                    }
+                    black_box(result);
+                });
+            },
+        );
+    }
+    
+    group.finish();
+}
+
+/// Benchmark memory allocation patterns
+fn bench_allocations(c: &mut Criterion) {
+    let mut group = c.benchmark_group("allocations");
+    
+    // Vector pre-allocation vs. growth
+    group.bench_function("vec_no_prealloc", |b| {
+        b.iter(|| {
+            let mut vec = Vec::new();
+            for i in 0..1000 {
+                vec.push(i);
+            }
+            black_box(vec);
+        });
+    });
+    
+    group.bench_function("vec_with_capacity", |b| {
+        b.iter(|| {
+            let mut vec = Vec::with_capacity(1000);
+            for i in 0..1000 {
+                vec.push(i);
+            }
+            black_box(vec);
+        });
+    });
+    
+    // Box allocation vs. stack allocation
+    group.bench_function("stack_array", |b| {
+        b.iter(|| {
+            let arr = [0i32; 1000];
+            black_box(arr);
+        });
+    });
+    
+    group.bench_function("heap_vector", |b| {
+        b.iter(|| {
+            let vec = vec![0i32; 1000];
+            black_box(vec);
+        });
+    });
+    
+    group.finish();
+}
+
+/// Benchmark iterators vs. loops
+fn bench_iteration(c: &mut Criterion) {
+    let data: Vec<i32> = (0..10000).collect();
+    
+    let mut group = c.benchmark_group("iteration_patterns");
+    
+    // Sum using for loop
+    group.bench_function("for_loop_sum", |b| {
+        b.iter(|| {
+            let mut sum = 0;
+            for &item in &data {
+                sum += item;
+            }
+            black_box(sum);
+        });
+    });
+    
+    // Sum using iterator
+    group.bench_function("iterator_sum", |b| {
+        b.iter(|| {
+            let sum: i32 = data.iter().sum();
+            black_box(sum);
+        });
+    });
+    
+    // Filter and sum using for loop
+    group.bench_function("for_loop_filter_sum", |b| {
+        b.iter(|| {
+            let mut sum = 0;
+            for &item in &data {
+                if item % 2 == 0 {
+                    sum += item;
+                }
+            }
+            black_box(sum);
+        });
+    });
+    
+    // Filter and sum using iterator
+    group.bench_function("iterator_filter_sum", |b| {
+        b.iter(|| {
+            let sum: i32 = data.iter().filter(|&&x| x % 2 == 0).sum();
+            black_box(sum);
+        });
+    });
+    
+    group.finish();
+}
+
+/// Benchmark different hashing approaches
+fn bench_hashing(c: &mut Criterion) {
+    use std::collections::hash_map::DefaultHasher;
+    use std::hash::{Hash, Hasher};
+    
+    let strings = vec![
+        "short".to_string(),
+        "medium_length_string".to_string(),
+        "a_very_long_string_that_should_test_hashing_performance_thoroughly".to_string(),
+    ];
+    
+    let mut group = c.benchmark_group("hashing");
+    
+    for (i, string) in strings.iter().enumerate() {
+        group.throughput(Throughput::Bytes(string.len() as u64));
+        
+        group.bench_with_input(
+            BenchmarkId::new("default_hasher", i),
+            string,
+            |b, string| {
+                b.iter(|| {
+                    let mut hasher = DefaultHasher::new();
+                    string.hash(&mut hasher);
+                    black_box(hasher.finish());
+                });
+            },
+        );
+    }
+    
+    group.finish();
+}
+
+/// Custom benchmark that measures both time and memory usage
+fn bench_custom_metrics(c: &mut Criterion) {
+    let mut group = c.benchmark_group("custom_metrics");
+    
+    // Example: measuring both computation time and allocations
+    group.bench_function("complex_computation", |b| {
+        b.iter(|| {
+            // Simulate some complex computation
+            let mut result = Vec::new();
+            for i in 0..1000 {
+                let computed = (i * i + i * 2 + 1) % 1000;
+                if computed % 7 == 0 {
+                    result.push(computed);
+                }
+            }
+            
+            // Sort the results
+            result.sort_unstable();
+            
+            // Return the result to prevent optimization
+            black_box(result);
+        });
+    });
+    
+    group.finish();
+}
+
+criterion_group!(
+    benches,
+    bench_sorting,
+    bench_maps,
+    bench_strings,
+    bench_allocations,
+    bench_iteration,
+    bench_hashing,
+    bench_custom_metrics
+);
+
+criterion_main!(benches);

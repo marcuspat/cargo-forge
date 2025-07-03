@@ -1,0 +1,172 @@
+use axum::{
+    extract::State,
+    http::StatusCode,
+    response::Json,
+    routing::{get, post},
+    Router,
+};
+use serde::{Deserialize, Serialize};
+use std::sync::Arc;
+use tower_http::{cors::CorsLayer, trace::TraceLayer};
+use tracing::info;
+use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+
+#[derive(Clone)]
+struct AppState {
+    // Add your shared application state here
+    {% if database %}
+    db_pool: sqlx::PgPool,
+    {% endif %}
+}
+
+#[derive(Serialize)]
+struct HealthResponse {
+    status: String,
+    message: String,
+}
+
+#[derive(Serialize, Deserialize)]
+struct ApiResponse<T> {
+    success: bool,
+    data: Option<T>,
+    error: Option<String>,
+}
+
+#[tokio::main]
+async fn main() {
+    // Initialize tracing
+    tracing_subscriber::registry()
+        .with(
+            tracing_subscriber::EnvFilter::try_from_default_env()
+                .unwrap_or_else(|_| "{{ name | replace(from="-", to="_") }}=debug,tower_http=debug".into()),
+        )
+        .with(tracing_subscriber::fmt::layer())
+        .init();
+
+    {% if database %}
+    // Initialize database connection
+    let database_url = std::env::var("DATABASE_URL")
+        .expect("DATABASE_URL must be set");
+    let db_pool = sqlx::postgres::PgPool::connect(&database_url)
+        .await
+        .expect("Failed to connect to database");
+
+    // Run migrations
+    sqlx::migrate!("./migrations")
+        .run(&db_pool)
+        .await
+        .expect("Failed to run migrations");
+    {% endif %}
+
+    let state = Arc::new(AppState {
+        {% if database %}
+        db_pool,
+        {% endif %}
+    });
+
+    // Build our application with routes
+    let app = Router::new()
+        .route("/", get(root))
+        .route("/health", get(health_check))
+        .route("/api/v1/example", post(example_endpoint))
+        {% if auth %}
+        .route("/api/v1/auth/login", post(login))
+        .route("/api/v1/auth/register", post(register))
+        {% endif %}
+        .layer(CorsLayer::permissive())
+        .layer(TraceLayer::new_for_http())
+        .with_state(state);
+
+    // Run our application
+    let listener = tokio::net::TcpListener::bind("{{ host }}:{{ port }}")
+        .await
+        .unwrap();
+    
+    info!("Server running on http://{{ host }}:{{ port }}");
+    
+    axum::serve(listener, app)
+        .await
+        .unwrap();
+}
+
+async fn root() -> &'static str {
+    "{{ name }} API Server"
+}
+
+async fn health_check() -> Json<HealthResponse> {
+    Json(HealthResponse {
+        status: "healthy".to_string(),
+        message: "{{ name }} is running".to_string(),
+    })
+}
+
+#[derive(Deserialize)]
+struct ExampleRequest {
+    message: String,
+}
+
+#[derive(Serialize)]
+struct ExampleResponse {
+    echo: String,
+}
+
+async fn example_endpoint(
+    State(_state): State<Arc<AppState>>,
+    Json(payload): Json<ExampleRequest>,
+) -> Result<Json<ApiResponse<ExampleResponse>>, StatusCode> {
+    Ok(Json(ApiResponse {
+        success: true,
+        data: Some(ExampleResponse {
+            echo: format!("You said: {}", payload.message),
+        }),
+        error: None,
+    }))
+}
+
+{% if auth %}
+#[derive(Deserialize)]
+struct LoginRequest {
+    email: String,
+    password: String,
+}
+
+#[derive(Serialize)]
+struct AuthResponse {
+    token: String,
+}
+
+async fn login(
+    State(_state): State<Arc<AppState>>,
+    Json(_payload): Json<LoginRequest>,
+) -> Result<Json<ApiResponse<AuthResponse>>, StatusCode> {
+    // TODO: Implement authentication logic
+    Ok(Json(ApiResponse {
+        success: true,
+        data: Some(AuthResponse {
+            token: "dummy_token".to_string(),
+        }),
+        error: None,
+    }))
+}
+
+#[derive(Deserialize)]
+struct RegisterRequest {
+    email: String,
+    password: String,
+    name: String,
+}
+
+async fn register(
+    State(_state): State<Arc<AppState>>,
+    Json(_payload): Json<RegisterRequest>,
+) -> Result<Json<ApiResponse<AuthResponse>>, StatusCode> {
+    // TODO: Implement registration logic
+    Ok(Json(ApiResponse {
+        success: true,
+        data: Some(AuthResponse {
+            token: "dummy_token".to_string(),
+        }),
+        error: None,
+    }))
+}
+{% endif %}

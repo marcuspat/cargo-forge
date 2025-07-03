@@ -1,0 +1,63 @@
+//! Application state management
+
+use {{ project_name | replace(from="-", to="_") }}_core::Config;
+use std::sync::Arc;
+
+/// Shared application state
+#[derive(Debug, Clone)]
+pub struct AppState {
+    pub config: Arc<Config>,
+    {% if "database" in features %}
+    pub db: Arc<sqlx::PgPool>,
+    {% endif %}
+}
+
+impl AppState {
+    /// Create new application state
+    pub fn new() -> Self {
+        Self {
+            config: Arc::new(Config::default()),
+            {% if "database" in features %}
+            // Note: In a real application, you would initialize the database pool here
+            // db: Arc::new(create_database_pool().await.expect("Failed to create database pool")),
+            {% endif %}
+        }
+    }
+
+    /// Create application state with custom config
+    pub fn with_config(config: Config) -> Self {
+        Self {
+            config: Arc::new(config),
+            {% if "database" in features %}
+            // db: Arc::new(create_database_pool().await.expect("Failed to create database pool")),
+            {% endif %}
+        }
+    }
+
+    {% if "database" in features %}
+    /// Create application state with database connection
+    pub fn with_database(config: Config, db: sqlx::PgPool) -> Self {
+        Self {
+            config: Arc::new(config),
+            db: Arc::new(db),
+        }
+    }
+    {% endif %}
+}
+
+impl Default for AppState {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+{% if "database" in features %}
+/// Create database connection pool
+/// Note: This is a placeholder - implement based on your database requirements
+async fn create_database_pool() -> Result<sqlx::PgPool, sqlx::Error> {
+    let database_url = std::env::var("DATABASE_URL")
+        .unwrap_or_else(|_| "postgresql://localhost/{{ project_name | replace(from="-", to="_") }}".to_string());
+    
+    sqlx::PgPool::connect(&database_url).await
+}
+{% endif %}

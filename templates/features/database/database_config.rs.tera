@@ -1,0 +1,54 @@
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct DatabaseConfig {
+    pub url: String,
+    pub max_connections: u32,
+    pub min_connections: u32,
+    pub connect_timeout: u64,
+    pub idle_timeout: u64,
+    pub max_lifetime: u64,
+}
+
+impl Default for DatabaseConfig {
+    fn default() -> Self {
+        Self {
+            url: format!("{% if database_type == "postgres" %}postgresql://localhost/{{ name }}_dev{% elif database_type == "mysql" %}mysql://root@localhost/{{ name }}_dev{% elif database_type == "sqlite" %}sqlite://{{ name }}.db{% else %}postgresql://localhost/{{ name }}_dev{% endif %}"),
+            max_connections: 10,
+            min_connections: 1,
+            connect_timeout: 30,
+            idle_timeout: 600,
+            max_lifetime: 1800,
+        }
+    }
+}
+
+impl DatabaseConfig {
+    pub fn from_env() -> Result<Self, config::ConfigError> {
+        let mut config = config::Config::default();
+        
+        // Start with default values
+        config.set_default("database.max_connections", 10)?;
+        config.set_default("database.min_connections", 1)?;
+        config.set_default("database.connect_timeout", 30)?;
+        config.set_default("database.idle_timeout", 600)?;
+        config.set_default("database.max_lifetime", 1800)?;
+        
+        // Override with environment variables
+        if let Ok(url) = std::env::var("DATABASE_URL") {
+            config.set("database.url", url)?;
+        }
+        
+        // Try to deserialize
+        config.try_into()
+    }
+    
+    pub fn pool_options(&self) -> sqlx::pool::PoolOptions<{% if database_type == "postgres" %}sqlx::Postgres{% elif database_type == "mysql" %}sqlx::MySql{% elif database_type == "sqlite" %}sqlx::Sqlite{% else %}sqlx::Postgres{% endif %}> {
+        sqlx::pool::PoolOptions::new()
+            .max_connections(self.max_connections)
+            .min_connections(self.min_connections)
+            .connect_timeout(std::time::Duration::from_secs(self.connect_timeout))
+            .idle_timeout(std::time::Duration::from_secs(self.idle_timeout))
+            .max_lifetime(std::time::Duration::from_secs(self.max_lifetime))
+    }
+}

@@ -1,0 +1,201 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  # Create GitHub release
+  create-release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+      version: ${{ steps.get_version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Get version from tag
+        id: get_version
+        run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+      
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release v${{ steps.get_version.outputs.version }}
+          body: |
+            ## 🚀 Cargo Forge v${{ steps.get_version.outputs.version }}
+            
+            ### Installation
+            
+            ```bash
+            cargo install cargo-forge
+            ```
+            
+            ### What's Changed
+            
+            See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for details.
+            
+            ### Binary Downloads
+            
+            Pre-compiled binaries are available below for:
+            - Linux (x86_64, aarch64)
+            - macOS (x86_64, aarch64)
+            - Windows (x86_64)
+          draft: false
+          prerelease: false
+
+  # Build and upload binaries for multiple platforms
+  build-binaries:
+    name: Build Binary
+    needs: create-release
+    strategy:
+      matrix:
+        include:
+          # Linux
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+            name: cargo-forge-x86_64-linux
+          - target: aarch64-unknown-linux-gnu
+            os: ubuntu-latest
+            name: cargo-forge-aarch64-linux
+            
+          # macOS
+          - target: x86_64-apple-darwin
+            os: macos-latest
+            name: cargo-forge-x86_64-macos
+          - target: aarch64-apple-darwin
+            os: macos-latest
+            name: cargo-forge-aarch64-macos
+            
+          # Windows
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+            name: cargo-forge-x86_64-windows.exe
+
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      
+      # Install cross-compilation tools for Linux ARM64
+      - name: Install cross-compilation tools
+        if: matrix.target == 'aarch64-unknown-linux-gnu'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu
+          echo "CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc" >> $GITHUB_ENV
+      
+      - name: Build release binary
+        run: cargo build --release --locked --target ${{ matrix.target }}
+      
+      - name: Package binary (Unix)
+        if: matrix.os != 'windows-latest'
+        run: |
+          cd target/${{ matrix.target }}/release
+          tar czf ../../../${{ matrix.name }}.tar.gz cargo-forge
+          cd -
+      
+      - name: Package binary (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          cd target/${{ matrix.target }}/release
+          7z a ../../../${{ matrix.name }}.zip cargo-forge.exe
+          cd -
+      
+      - name: Upload Unix Binary
+        if: matrix.os != 'windows-latest'
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ./${{ matrix.name }}.tar.gz
+          asset_name: ${{ matrix.name }}.tar.gz
+          asset_content_type: application/gzip
+      
+      - name: Upload Windows Binary
+        if: matrix.os == 'windows-latest'
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ./${{ matrix.name }}.zip
+          asset_name: ${{ matrix.name }}.zip
+          asset_content_type: application/zip
+
+  # Publish to crates.io
+  publish-crate:
+    name: Publish to crates.io
+    needs: create-release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+      
+      - name: Verify crate
+        run: cargo publish --dry-run
+      
+      - name: Publish to crates.io
+        run: cargo publish
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+      
+      - name: Wait for crates.io to update
+        run: sleep 30
+      
+      - name: Verify installation works
+        run: |
+          cargo install cargo-forge --version ${{ needs.create-release.outputs.version }}
+          cargo-forge --version
+
+  # Generate and upload shell completions
+  generate-completions:
+    name: Generate Shell Completions
+    needs: create-release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+      
+      - name: Build cargo-forge
+        run: cargo build --release
+      
+      - name: Generate completions
+        run: |
+          mkdir -p completions
+          ./target/release/cargo-forge completions bash > completions/cargo-forge.bash
+          ./target/release/cargo-forge completions zsh > completions/_cargo-forge
+          ./target/release/cargo-forge completions fish > completions/cargo-forge.fish
+      
+      - name: Create completions archive
+        run: tar czf shell-completions.tar.gz completions/
+      
+      - name: Upload completions
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ./shell-completions.tar.gz
+          asset_name: shell-completions.tar.gz
+          asset_content_type: application/gzip

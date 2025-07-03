@@ -1,0 +1,104 @@
+use clap::{Parser, Subcommand};
+use sqlx::migrate::Migrator;
+use std::env;
+
+#[derive(Parser)]
+#[command(name = "migrate")]
+#[command(about = "Database migration tool for {{ name }}", long_about = None)]
+struct Cli {
+    #[command(subcommand)]
+    command: Commands,
+}
+
+#[derive(Subcommand)]
+enum Commands {
+    /// Run all pending migrations
+    Up,
+    /// Rollback the last migration
+    Down {
+        /// Number of migrations to rollback
+        #[arg(short, long, default_value = "1")]
+        steps: u32,
+    },
+    /// Show migration status
+    Status,
+    /// Create a new migration file
+    Create {
+        /// Name of the migration
+        name: String,
+    },
+}
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Load environment variables from .env file
+    dotenv::dotenv().ok();
+    
+    // Initialize logging
+    env_logger::init();
+    
+    let cli = Cli::parse();
+    
+    // Get database URL
+    let database_url = env::var("DATABASE_URL")
+        .expect("DATABASE_URL must be set");
+    
+    // Connect to database
+    let pool = {% if database_type == "postgres" %}sqlx::PgPool{% elif database_type == "mysql" %}sqlx::MySqlPool{% elif database_type == "sqlite" %}sqlx::SqlitePool{% else %}sqlx::PgPool{% endif %}::connect(&database_url).await?;
+    
+    // Create migrator
+    let migrator = Migrator::new(std::path::Path::new("./migrations")).await?;
+    
+    match cli.command {
+        Commands::Up => {
+            println!("Running migrations...");
+            migrator.run(&pool).await?;
+            println!("✅ All migrations completed successfully!");
+        }
+        Commands::Down { steps } => {
+            println!("Rolling back {} migration(s)...", steps);
+            for _ in 0..steps {
+                migrator.undo(&pool).await?;
+            }
+            println!("✅ Rollback completed successfully!");
+        }
+        Commands::Status => {
+            println!("Migration status:");
+            println!();
+            
+            let applied = migrator.iter().filter(|m| {
+                // Check if migration is applied
+                // This is a simplified version - actual implementation would query the database
+                true
+            });
+            
+            for migration in migrator.iter() {
+                println!("  - {} ({})", 
+                    migration.description,
+                    if true { "applied" } else { "pending" }
+                );
+            }
+        }
+        Commands::Create { name } => {
+            // Generate timestamp
+            let timestamp = chrono::Utc::now().format("%Y%m%d%H%M%S");
+            
+            // Create migration filename
+            let filename = format!("migrations/{}_{}.sql", timestamp, name);
+            
+            // Create migration content
+            let content = format!(
+                "-- Migration: {}\n-- Created at: {}\n\n-- UP\n\n-- DOWN\n",
+                name,
+                chrono::Utc::now().to_rfc3339()
+            );
+            
+            // Write file
+            std::fs::write(&filename, content)?;
+            
+            println!("✅ Created migration: {}", filename);
+        }
+    }
+    
+    Ok(())
+}

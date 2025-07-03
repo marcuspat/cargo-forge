@@ -1,0 +1,103 @@
+use sqlx::{Pool, {% if database_type == "postgres" %}PgPool{% elif database_type == "mysql" %}MySqlPool{% elif database_type == "sqlite" %}SqlitePool{% else %}PgPool{% endif %}};
+use std::env;
+
+pub type DbPool = {% if database_type == "postgres" %}PgPool{% elif database_type == "mysql" %}MySqlPool{% elif database_type == "sqlite" %}SqlitePool{% else %}PgPool{% endif %};
+
+pub struct Database {
+    pub pool: DbPool,
+}
+
+impl Database {
+    pub async fn new() -> Result<Self, sqlx::Error> {
+        let database_url = env::var("DATABASE_URL")
+            .expect("DATABASE_URL must be set");
+        
+        let pool = {% if database_type == "postgres" %}PgPool{% elif database_type == "mysql" %}MySqlPool{% elif database_type == "sqlite" %}SqlitePool{% else %}PgPool{% endif %}::connect(&database_url).await?;
+        
+        Ok(Self { pool })
+    }
+    
+    pub async fn migrate(&self) -> Result<(), sqlx::migrate::MigrateError> {
+        sqlx::migrate!("./migrations")
+            .run(&self.pool)
+            .await?;
+        
+        Ok(())
+    }
+}
+
+{% if has_auth %}
+/// User model for authentication
+#[derive(Debug, sqlx::FromRow)]
+pub struct User {
+    pub id: {% if database_type == "postgres" %}i32{% elif database_type == "mysql" %}u32{% else %}i32{% endif %},
+    pub email: String,
+    pub password_hash: String,
+    pub created_at: chrono::DateTime<chrono::Utc>,
+    pub updated_at: chrono::DateTime<chrono::Utc>,
+}
+
+impl User {
+    pub async fn find_by_email(pool: &DbPool, email: &str) -> Result<Option<Self>, sqlx::Error> {
+        sqlx::query_as!(
+            User,
+            "SELECT * FROM users WHERE email = {% if database_type == "postgres" %}$1{% elif database_type == "mysql" %}?{% else %}?1{% endif %}",
+            email
+        )
+        .fetch_optional(pool)
+        .await
+    }
+    
+    pub async fn create(
+        pool: &DbPool,
+        email: String,
+        password_hash: String,
+    ) -> Result<Self, sqlx::Error> {
+        {% if database_type == "postgres" %}
+        sqlx::query_as!(
+            User,
+            "INSERT INTO users (email, password_hash) VALUES ($1, $2) RETURNING *",
+            email,
+            password_hash
+        )
+        .fetch_one(pool)
+        .await
+        {% else %}
+        let result = sqlx::query!(
+            "INSERT INTO users (email, password_hash) VALUES (?, ?)",
+            email,
+            password_hash
+        )
+        .execute(pool)
+        .await?;
+        
+        let id = result.last_insert_id() as {% if database_type == "mysql" %}u32{% else %}i32{% endif %};
+        
+        sqlx::query_as!(
+            User,
+            "SELECT * FROM users WHERE id = ?",
+            id
+        )
+        .fetch_one(pool)
+        .await
+        {% endif %}
+    }
+}
+{% endif %}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    
+    #[tokio::test]
+    async fn test_database_connection() {
+        // This test requires DATABASE_URL to be set
+        if env::var("DATABASE_URL").is_err() {
+            println!("Skipping database test - DATABASE_URL not set");
+            return;
+        }
+        
+        let db = Database::new().await;
+        assert!(db.is_ok());
+    }
+}

@@ -1,0 +1,36 @@
+[package]
+name = "{{ project_name }}"
+version = "0.1.0"
+edition = "2021"
+{% if author %}authors = ["{{ author }}"]{% endif %}
+{% if description %}description = "{{ description }}"{% endif %}
+{% if license %}license = "{{ license }}"{% endif %}
+
+[dependencies]
+bevy = "0.12"
+{% for feature in features %}
+{% if feature == "audio" %}bevy_kira_audio = "0.18"{% endif %}
+{% if feature == "networking" %}bevy_renet = "0.0.13"{% endif %}
+{% if feature == "physics" %}bevy_rapier3d = "0.23"{% endif %}
+{% if feature == "ui" %}bevy_egui = "0.24"{% endif %}
+{% endfor %}
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen = "0.2"
+web-sys = "0.3"
+console_error_panic_hook = "0.1"
+console_log = "0.2"
+
+# Enable only a small amount of optimization in debug mode
+[profile.dev]
+opt-level = 1
+
+# Enable high optimizations for dependencies (incl. Bevy), but not for our code:
+[profile.dev.package."*"]
+opt-level = 3
+
+# Optimize for size in release mode
+[profile.release]
+lto = true
+codegen-units = 1
+opt-level = "s"

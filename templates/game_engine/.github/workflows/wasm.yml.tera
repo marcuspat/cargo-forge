@@ -1,0 +1,120 @@
+name: Build and Deploy WASM
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-wasm:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        targets: wasm32-unknown-unknown
+    
+    - name: Install wasm-bindgen-cli
+      run: cargo install wasm-bindgen-cli
+    
+    - name: Install basic-http-server
+      run: cargo install basic-http-server
+    
+    - name: Cache cargo registry
+      uses: actions/cache@v3
+      with:
+        path: ~/.cargo/registry
+        key: {{ "${{ runner.os }}" }}-cargo-registry-{{ "${{ hashFiles('**/Cargo.lock') }}" }}
+    
+    - name: Cache cargo index
+      uses: actions/cache@v3
+      with:
+        path: ~/.cargo/git
+        key: {{ "${{ runner.os }}" }}-cargo-index-{{ "${{ hashFiles('**/Cargo.lock') }}" }}
+    
+    - name: Cache cargo build
+      uses: actions/cache@v3
+      with:
+        path: target
+        key: {{ "${{ runner.os }}" }}-cargo-build-target-{{ "${{ hashFiles('**/Cargo.lock') }}" }}
+    
+    - name: Build for WASM
+      run: cargo build --release --target wasm32-unknown-unknown
+    
+    - name: Generate WASM bindings
+      run: |
+        wasm-bindgen --out-dir wasm --web target/wasm32-unknown-unknown/release/{{ project_name | replace(from="-", to="_") }}.wasm
+    
+    - name: Create index.html
+      run: |
+        cat > wasm/index.html << 'EOF'
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <title>{{ project_name }}</title>
+            <style>
+                body {
+                    margin: 0;
+                    padding: 0;
+                    background: #000;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    min-height: 100vh;
+                    font-family: Arial, sans-serif;
+                }
+                canvas {
+                    border: 1px solid #333;
+                }
+                #loading {
+                    color: white;
+                    font-size: 24px;
+                }
+            </style>
+        </head>
+        <body>
+            <div id="loading">Loading...</div>
+            <canvas id="bevy" style="display: none;"></canvas>
+            
+            <script type="module">
+                import init from './{{ project_name | replace(from="-", to="_") }}.js';
+                
+                async function run() {
+                    const loading = document.getElementById('loading');
+                    const canvas = document.getElementById('bevy');
+                    
+                    try {
+                        await init();
+                        loading.style.display = 'none';
+                        canvas.style.display = 'block';
+                    } catch (error) {
+                        loading.textContent = `Error: ${error}`;
+                    }
+                }
+                
+                run();
+            </script>
+        </body>
+        </html>
+        EOF
+    
+    - name: Upload WASM artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: wasm-build
+        path: wasm/
+    
+    - name: Deploy to GitHub Pages
+      if: github.ref == 'refs/heads/main'
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: {{ "${{ secrets.GITHUB_TOKEN }}" }}
+        publish_dir: ./wasm

@@ -1,0 +1,88 @@
+[workspace]
+members = [
+    "crates/core",
+    "crates/api",
+    "crates/cli",
+]
+default-members = ["crates/cli"]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+{% if author %}authors = ["{{ author }}"]{% endif %}
+{% if license %}license = "{{ license }}"{% endif %}
+repository = "https://github.com/{{ author | default(value="username") }}/{{ project_name }}"
+keywords = ["rust", "workspace"]
+categories = ["development-tools"]
+
+[workspace.dependencies]
+# Shared dependencies across workspace members
+tokio = { version = "1.0", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+anyhow = "1.0"
+thiserror = "1.0"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+uuid = { version = "1.0", features = ["v4"] }
+chrono = { version = "0.4", features = ["serde"] }
+
+# Local workspace crates
+{{ project_name | replace(from="-", to="_") }}_core = { path = "crates/core" }
+{{ project_name | replace(from="-", to="_") }}_api = { path = "crates/api" }
+{{ project_name | replace(from="-", to="_") }}_cli = { path = "crates/cli" }
+
+{% for feature in features %}
+{% if feature == "database" %}
+sqlx = { version = "0.7", features = ["runtime-tokio-rustls", "postgres", "chrono", "uuid"] }
+{% endif %}
+{% if feature == "web" %}
+axum = "0.7"
+tower = "0.4"
+tower-http = { version = "0.5", features = ["trace", "cors"] }
+{% endif %}
+{% if feature == "clap" %}
+clap = { version = "4.0", features = ["derive"] }
+{% endif %}
+{% if feature == "testing" %}
+proptest = "1.4"
+criterion = "0.5"
+{% endif %}
+{% endfor %}
+
+[profile.dev]
+opt-level = 0
+debug = true
+split-debuginfo = "unpacked"
+debug-assertions = true
+overflow-checks = true
+lto = false
+panic = "unwind"
+incremental = true
+codegen-units = 256
+rpath = false
+
+[profile.release]
+opt-level = 3
+debug = false
+split-debuginfo = "off"
+debug-assertions = false
+overflow-checks = false
+lto = "thin"
+panic = "unwind"
+incremental = false
+codegen-units = 1
+rpath = false
+
+[profile.test]
+opt-level = 0
+debug = true
+split-debuginfo = "unpacked"
+debug-assertions = true
+overflow-checks = true
+lto = false
+panic = "unwind"
+incremental = true
+codegen-units = 256
+rpath = false

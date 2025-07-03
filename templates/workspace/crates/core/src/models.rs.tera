@@ -1,0 +1,161 @@
+//! Shared data models for the application
+
+use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
+use uuid::Uuid;
+
+/// A generic entity with common fields
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct Entity {
+    pub id: Uuid,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+impl Entity {
+    /// Create a new entity with generated ID and current timestamp
+    pub fn new() -> Self {
+        let now = Utc::now();
+        Self {
+            id: Uuid::new_v4(),
+            created_at: now,
+            updated_at: now,
+        }
+    }
+
+    /// Update the updated_at timestamp
+    pub fn touch(&mut self) {
+        self.updated_at = Utc::now();
+    }
+}
+
+impl Default for Entity {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+/// User model
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct User {
+    #[serde(flatten)]
+    pub entity: Entity,
+    pub username: String,
+    pub email: String,
+    pub display_name: Option<String>,
+    pub is_active: bool,
+}
+
+impl User {
+    /// Create a new user
+    pub fn new(username: String, email: String) -> Self {
+        Self {
+            entity: Entity::new(),
+            username,
+            email,
+            display_name: None,
+            is_active: true,
+        }
+    }
+
+    /// Set display name
+    pub fn with_display_name(mut self, display_name: String) -> Self {
+        self.display_name = Some(display_name);
+        self
+    }
+
+    /// Deactivate the user
+    pub fn deactivate(&mut self) {
+        self.is_active = false;
+        self.entity.touch();
+    }
+}
+
+/// Pagination parameters
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Pagination {
+    pub page: u32,
+    pub per_page: u32,
+    pub total: u64,
+    pub total_pages: u32,
+}
+
+impl Pagination {
+    /// Create pagination info
+    pub fn new(page: u32, per_page: u32, total: u64) -> Self {
+        let total_pages = ((total as f64) / (per_page as f64)).ceil() as u32;
+        Self {
+            page,
+            per_page,
+            total,
+            total_pages,
+        }
+    }
+
+    /// Get offset for database queries
+    pub fn offset(&self) -> u64 {
+        ((self.page - 1) * self.per_page) as u64
+    }
+
+    /// Get limit for database queries
+    pub fn limit(&self) -> u64 {
+        self.per_page as u64
+    }
+}
+
+/// Paginated response
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PaginatedResponse<T> {
+    pub data: Vec<T>,
+    pub pagination: Pagination,
+}
+
+impl<T> PaginatedResponse<T> {
+    /// Create a new paginated response
+    pub fn new(data: Vec<T>, pagination: Pagination) -> Self {
+        Self { data, pagination }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_entity_creation() {
+        let entity = Entity::new();
+        assert_eq!(entity.created_at, entity.updated_at);
+    }
+
+    #[test]
+    fn test_entity_touch() {
+        let mut entity = Entity::new();
+        let original_updated = entity.updated_at;
+        
+        // Sleep to ensure timestamp difference
+        std::thread::sleep(std::time::Duration::from_millis(1));
+        entity.touch();
+        
+        assert!(entity.updated_at > original_updated);
+    }
+
+    #[test]
+    fn test_user_creation() {
+        let user = User::new("john_doe".to_string(), "john@example.com".to_string());
+        assert_eq!(user.username, "john_doe");
+        assert_eq!(user.email, "john@example.com");
+        assert!(user.is_active);
+        assert!(user.display_name.is_none());
+    }
+
+    #[test]
+    fn test_pagination() {
+        let pagination = Pagination::new(2, 10, 25);
+        assert_eq!(pagination.page, 2);
+        assert_eq!(pagination.per_page, 10);
+        assert_eq!(pagination.total, 25);
+        assert_eq!(pagination.total_pages, 3);
+        assert_eq!(pagination.offset(), 10);
+        assert_eq!(pagination.limit(), 10);
+    }
+}

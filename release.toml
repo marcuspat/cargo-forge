@@ -1,0 +1,41 @@
+# Cargo-release configuration
+# https://github.com/crate-ci/cargo-release
+
+# Don't do anything by default, require --execute flag
+[workspace]
+allow-branch = ["main", "master"]
+consolidate-commits = true
+consolidate-pushes = true
+shared-version = true
+pr-name = "Release v{{version}}"
+
+# Pre-release replacements
+[[pre-release-replacements]]
+file = "README.md"
+search = "cargo-forge = \"[0-9]+\\.[0-9]+\\.[0-9]+\""
+replace = "cargo-forge = \"{{version}}\""
+
+[[pre-release-replacements]]
+file = "README.md"
+search = "Current version: [0-9]+\\.[0-9]+\\.[0-9]+"
+replace = "Current version: {{version}}"
+
+# Commit message format
+pre-release-commit-message = "chore: release v{{version}}"
+post-release-commit-message = "chore: bump development version to {{next_version}}"
+
+# Tag configuration
+tag-prefix = "v"
+tag-message = "Release version {{version}}"
+
+# Push configuration
+push = true
+push-remote = "origin"
+
+# Publishing configuration
+publish = true
+verify = true
+
+# Hooks
+pre-release-hook = ["cargo", "test", "--all-features"]
+post-release-hook = ["echo", "🎉 Released {{crate_name}} v{{version}}"]

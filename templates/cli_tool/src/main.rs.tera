@@ -1,0 +1,269 @@
+use anyhow::Result;
+use clap::{Parser, Subcommand};
+use colored::Colorize;
+{% if config %}
+use directories::ProjectDirs;
+use std::path::PathBuf;
+{% endif %}
+use tracing::{debug, error, info};
+use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+
+#[derive(Parser)]
+#[command(name = "{{ name }}")]
+#[command(author = "{{ author }}")]
+#[command(version = "0.1.0")]
+#[command(about = "{{ description }}", long_about = None)]
+#[command(arg_required_else_help = true)]
+struct Cli {
+    /// Increase logging verbosity
+    #[arg(short, long, action = clap::ArgAction::Count)]
+    verbose: u8,
+
+    /// Suppress all output
+    #[arg(short, long)]
+    quiet: bool,
+
+    {% if config %}
+    /// Config file path
+    #[arg(short, long, value_name = "FILE")]
+    config: Option<PathBuf>,
+    {% endif %}
+
+    #[command(subcommand)]
+    command: Option<Commands>,
+}
+
+#[derive(Subcommand)]
+enum Commands {
+    /// Example command that prints a message
+    Hello {
+        /// Name to greet
+        #[arg(short, long, default_value = "World")]
+        name: String,
+    },
+    
+    {% if config %}
+    /// Manage configuration
+    Config {
+        #[command(subcommand)]
+        action: ConfigAction,
+    },
+    {% endif %}
+    
+    /// Initialize a new project
+    Init {
+        /// Project name
+        name: String,
+        
+        /// Project path
+        #[arg(short, long)]
+        path: Option<PathBuf>,
+    },
+    
+    {% if interactive %}
+    /// Interactive mode
+    Interactive,
+    {% endif %}
+}
+
+{% if config %}
+#[derive(Subcommand)]
+enum ConfigAction {
+    /// Show current configuration
+    Show,
+    /// Set a configuration value
+    Set {
+        /// Configuration key
+        key: String,
+        /// Configuration value
+        value: String,
+    },
+    /// Get a configuration value
+    Get {
+        /// Configuration key
+        key: String,
+    },
+}
+{% endif %}
+
+#[tokio::main]
+async fn main() -> Result<()> {
+    let cli = Cli::parse();
+
+    // Initialize logging
+    if !cli.quiet {
+        let log_level = match cli.verbose {
+            0 => "{{ name | replace(from="-", to="_") }}=info",
+            1 => "{{ name | replace(from="-", to="_") }}=debug",
+            2 => "debug",
+            _ => "trace",
+        };
+
+        tracing_subscriber::registry()
+            .with(
+                tracing_subscriber::EnvFilter::try_from_default_env()
+                    .unwrap_or_else(|_| log_level.into()),
+            )
+            .with(tracing_subscriber::fmt::layer())
+            .init();
+    }
+
+    match cli.command {
+        Some(Commands::Hello { name }) => {
+            cmd_hello(&name)?;
+        }
+        {% if config %}
+        Some(Commands::Config { action }) => {
+            cmd_config(action).await?;
+        }
+        {% endif %}
+        Some(Commands::Init { name, path }) => {
+            cmd_init(&name, path).await?;
+        }
+        {% if interactive %}
+        Some(Commands::Interactive) => {
+            cmd_interactive().await?;
+        }
+        {% endif %}
+        None => {
+            println!("{}", "No command specified. Use --help for usage information.".yellow());
+        }
+    }
+
+    Ok(())
+}
+
+fn cmd_hello(name: &str) -> Result<()> {
+    println!("{} {}!", "Hello".green().bold(), name.cyan());
+    info!("Greeted {}", name);
+    Ok(())
+}
+
+{% if config %}
+async fn cmd_config(action: ConfigAction) -> Result<()> {
+    let config_path = get_config_path()?;
+    
+    match action {
+        ConfigAction::Show => {
+            println!("{}", "Current configuration:".bold());
+            // TODO: Implement config display
+            println!("Config path: {}", config_path.display());
+        }
+        ConfigAction::Set { key, value } => {
+            println!("{} {} = {}", "Setting".green(), key.cyan(), value);
+            // TODO: Implement config setting
+        }
+        ConfigAction::Get { key } => {
+            println!("{} {}", "Getting".green(), key.cyan());
+            // TODO: Implement config getting
+        }
+    }
+    
+    Ok(())
+}
+
+fn get_config_path() -> Result<PathBuf> {
+    let proj_dirs = ProjectDirs::from("{{ author_domain }}", "{{ author }}", "{{ name }}")
+        .ok_or_else(|| anyhow::anyhow!("Unable to determine config directory"))?;
+    
+    let config_dir = proj_dirs.config_dir();
+    std::fs::create_dir_all(config_dir)?;
+    
+    Ok(config_dir.join("config.toml"))
+}
+{% endif %}
+
+async fn cmd_init(name: &str, path: Option<PathBuf>) -> Result<()> {
+    let project_path = path.unwrap_or_else(|| PathBuf::from(name));
+    
+    println!("{} {} {}", 
+        "Initializing".green().bold(),
+        name.cyan(),
+        format!("in {}", project_path.display()).dimmed()
+    );
+    
+    {% if interactive %}
+    use indicatif::{ProgressBar, ProgressStyle};
+    
+    let pb = ProgressBar::new(100);
+    pb.set_style(
+        ProgressStyle::default_bar()
+            .template("{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {pos}/{len} {msg}")?
+            .progress_chars("#>-")
+    );
+    
+    // Simulate project initialization steps
+    pb.set_message("Creating project structure...");
+    tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
+    pb.set_position(33);
+    
+    pb.set_message("Generating files...");
+    tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
+    pb.set_position(66);
+    
+    pb.set_message("Finalizing...");
+    tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
+    pb.set_position(100);
+    
+    pb.finish_with_message("Done!");
+    {% endif %}
+    
+    // TODO: Implement actual project initialization
+    std::fs::create_dir_all(&project_path)?;
+    
+    println!("{} Project initialized successfully!", "✓".green().bold());
+    
+    Ok(())
+}
+
+{% if interactive %}
+async fn cmd_interactive() -> Result<()> {
+    use inquire::{Select, Text};
+    
+    println!("{}", "Welcome to {{ name }} interactive mode!".bold().cyan());
+    println!();
+    
+    loop {
+        let choices = vec![
+            "Create new project",
+            "Configure settings",
+            "Run hello command",
+            "Exit",
+        ];
+        
+        let selection = Select::new("What would you like to do?", choices)
+            .prompt()?;
+        
+        match selection {
+            "Create new project" => {
+                let name = Text::new("Project name:")
+                    .prompt()?;
+                cmd_init(&name, None).await?;
+            }
+            "Configure settings" => {
+                {% if config %}
+                println!("Opening configuration menu...");
+                // TODO: Implement interactive config
+                {% else %}
+                println!("Configuration not enabled in this build.");
+                {% endif %}
+            }
+            "Run hello command" => {
+                let name = Text::new("Enter name to greet:")
+                    .with_default("World")
+                    .prompt()?;
+                cmd_hello(&name)?;
+            }
+            "Exit" => {
+                println!("{}", "Goodbye!".green());
+                break;
+            }
+            _ => unreachable!(),
+        }
+        
+        println!();
+    }
+    
+    Ok(())
+}
+{% endif %}

@@ -1,0 +1,260 @@
+use axum::{
+    async_trait,
+    extract::{FromRequestParts, TypedHeader, State},
+    headers::{authorization::Bearer, Authorization},
+    http::{request::Parts, StatusCode},
+    response::{IntoResponse, Response},
+    Json,
+};
+use serde_json::json;
+{% if has_database %}
+use sqlx::PgPool;
+{% endif %}
+use std::sync::Arc;
+
+use crate::auth::jwt::{JwtManager, Claims};
+
+/// Authenticated user extracted from request
+#[derive(Debug, Clone)]
+pub struct AuthenticatedUser {
+    pub user_id: String,
+    pub email: String,
+    pub roles: Vec<String>,
+    {% if has_feature(feature="multi-tenant", features=features) %}
+    pub tenant_id: Option<String>,
+    {% endif %}
+}
+
+impl AuthenticatedUser {
+    pub fn has_role(&self, role: &str) -> bool {
+        self.roles.contains(&role.to_string())
+    }
+    
+    pub fn is_admin(&self) -> bool {
+        self.has_role("admin")
+    }
+}
+
+#[async_trait]
+impl<S> FromRequestParts<S> for AuthenticatedUser
+where
+    S: Send + Sync,
+{
+    type Rejection = AuthError;
+    
+    async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
+        // Extract the Authorization header
+        let TypedHeader(Authorization(bearer)) = TypedHeader::<Authorization<Bearer>>::from_request_parts(parts, _state)
+            .await
+            .map_err(|_| AuthError::MissingToken)?;
+        
+        // Verify the JWT token
+        let jwt_manager = JwtManager::new();
+        let claims = jwt_manager.verify_token(bearer.token())
+            .map_err(|_| AuthError::InvalidToken)?;
+        
+        Ok(AuthenticatedUser {
+            user_id: claims.sub,
+            email: claims.email,
+            roles: claims.roles,
+            {% if has_feature(feature="multi-tenant", features=features) %}
+            tenant_id: claims.tenant_id,
+            {% endif %}
+        })
+    }
+}
+
+/// Optional authenticated user - doesn't fail if no auth provided
+pub struct OptionalAuth(pub Option<AuthenticatedUser>);
+
+#[async_trait]
+impl<S> FromRequestParts<S> for OptionalAuth
+where
+    S: Send + Sync,
+{
+    type Rejection = std::convert::Infallible;
+    
+    async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
+        match AuthenticatedUser::from_request_parts(parts, state).await {
+            Ok(user) => Ok(OptionalAuth(Some(user))),
+            Err(_) => Ok(OptionalAuth(None)),
+        }
+    }
+}
+
+/// Require specific role
+pub struct RequireRole {
+    pub user: AuthenticatedUser,
+    pub role: String,
+}
+
+impl RequireRole {
+    pub fn admin() -> AdminUser {
+        AdminUser
+    }
+}
+
+/// Admin user extractor
+pub struct AdminUser(pub AuthenticatedUser);
+
+#[async_trait]
+impl<S> FromRequestParts<S> for AdminUser
+where
+    S: Send + Sync,
+{
+    type Rejection = AuthError;
+    
+    async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
+        let user = AuthenticatedUser::from_request_parts(parts, state).await?;
+        
+        if !user.is_admin() {
+            return Err(AuthError::InsufficientPermissions);
+        }
+        
+        Ok(AdminUser(user))
+    }
+}
+
+{% if has_database %}
+/// API Key authentication
+pub struct ApiKeyAuth {
+    pub key_id: String,
+    pub user_id: String,
+    pub permissions: Vec<String>,
+}
+
+#[async_trait]
+impl<S> FromRequestParts<S> for ApiKeyAuth
+where
+    S: Send + Sync + AsRef<PgPool>,
+{
+    type Rejection = AuthError;
+    
+    async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
+        // Try to extract API key from header
+        let api_key = parts
+            .headers
+            .get("X-API-Key")
+            .and_then(|value| value.to_str().ok())
+            .ok_or(AuthError::MissingToken)?;
+        
+        // Verify API key in database
+        let pool = state.as_ref();
+        
+        let key_info = sqlx::query!(
+            r#"
+            SELECT id, user_id, permissions
+            FROM api_keys
+            WHERE key_hash = crypt($1, key_hash)
+            AND (expires_at IS NULL OR expires_at > NOW())
+            AND revoked_at IS NULL
+            "#,
+            api_key
+        )
+        .fetch_optional(pool)
+        .await
+        .map_err(|_| AuthError::InvalidToken)?
+        .ok_or(AuthError::InvalidToken)?;
+        
+        // Update last used timestamp
+        let _ = sqlx::query!(
+            "UPDATE api_keys SET last_used_at = NOW() WHERE id = $1",
+            key_info.id
+        )
+        .execute(pool)
+        .await;
+        
+        Ok(ApiKeyAuth {
+            key_id: key_info.id.to_string(),
+            user_id: key_info.user_id.to_string(),
+            permissions: serde_json::from_value(key_info.permissions)
+                .unwrap_or_else(|_| vec![]),
+        })
+    }
+}
+{% endif %}
+
+/// Authentication errors
+#[derive(Debug)]
+pub enum AuthError {
+    MissingToken,
+    InvalidToken,
+    InsufficientPermissions,
+    {% if has_database %}
+    DatabaseError,
+    {% endif %}
+}
+
+impl IntoResponse for AuthError {
+    fn into_response(self) -> Response {
+        let (status, error_message) = match self {
+            AuthError::MissingToken => (StatusCode::UNAUTHORIZED, "Missing authentication token"),
+            AuthError::InvalidToken => (StatusCode::UNAUTHORIZED, "Invalid authentication token"),
+            AuthError::InsufficientPermissions => (StatusCode::FORBIDDEN, "Insufficient permissions"),
+            {% if has_database %}
+            AuthError::DatabaseError => (StatusCode::INTERNAL_SERVER_ERROR, "Database error"),
+            {% endif %}
+        };
+        
+        let body = Json(json!({
+            "error": error_message,
+            "code": format!("{:?}", self).to_uppercase(),
+        }));
+        
+        (status, body).into_response()
+    }
+}
+
+/// Rate limiting per user
+{% if has_feature(feature="rate-limiting", features=features) %}
+use tower_governor::{
+    governor::GovernorConfigBuilder,
+    GovernorLayer,
+};
+
+pub fn rate_limit_layer() -> GovernorLayer {
+    let config = GovernorConfigBuilder::default()
+        .per_second(10)
+        .burst_size(100)
+        .finish()
+        .unwrap();
+    
+    GovernorLayer {
+        config: Arc::new(config),
+    }
+}
+{% endif %}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use axum::http::HeaderMap;
+    
+    #[test]
+    fn test_auth_error_responses() {
+        let error = AuthError::MissingToken;
+        let response = error.into_response();
+        assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+        
+        let error = AuthError::InsufficientPermissions;
+        let response = error.into_response();
+        assert_eq!(response.status(), StatusCode::FORBIDDEN);
+    }
+    
+    #[test]
+    fn test_authenticated_user_roles() {
+        let user = AuthenticatedUser {
+            user_id: "123".to_string(),
+            email: "test@example.com".to_string(),
+            roles: vec!["user".to_string(), "admin".to_string()],
+            {% if has_feature(feature="multi-tenant", features=features) %}
+            tenant_id: None,
+            {% endif %}
+        };
+        
+        assert!(user.has_role("user"));
+        assert!(user.has_role("admin"));
+        assert!(user.is_admin());
+        assert!(!user.has_role("superadmin"));
+    }
+}

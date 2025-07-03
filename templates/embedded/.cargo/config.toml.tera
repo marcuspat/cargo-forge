@@ -1,0 +1,20 @@
+[target.thumbv7em-none-eabihf]
+# Choose a default "cargo run" tool:
+# - probe-rs (preferred, requires probe-rs to be installed)
+# - cargo-embed
+# - OpenOCD and GDB
+runner = "probe-rs run --chip {{ chip | default(value="STM32F401RETx") }}"
+
+[target.thumbv6m-none-eabi]
+runner = "probe-rs run --chip {{ chip | default(value="STM32F103C8") }}"
+
+[target.thumbv7m-none-eabi] 
+runner = "probe-rs run --chip {{ chip | default(value="STM32F103RB") }}"
+
+[build]
+# Default target for this project
+target = "{{ target | default(value="thumbv7em-none-eabihf") }}"
+
+[env]
+# Defmt logging levels: TRACE, DEBUG, INFO, WARN, ERROR, OFF
+DEFMT_LOG = "INFO"

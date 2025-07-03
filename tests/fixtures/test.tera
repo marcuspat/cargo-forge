@@ -1,0 +1,56 @@
+# {{ project_name }}
+
+Author: {{ author }}
+
+{% if description %}
+Description: {{ description }}
+{% endif %}
+
+## Project Details
+
+- Name: {{ name | default(value="unnamed") }}
+- Version: {{ version | default(value="0.1.0") }}
+
+{% if features %}
+## Features
+
+{% for feature in features %}
+- {{ feature }}
+{% endfor %}
+{% endif %}
+
+{% if include_tests %}
+## Testing
+
+This project includes comprehensive tests.
+{% endif %}
+
+{% if include_benches %}
+## Benchmarks
+
+Performance benchmarks are included.
+{% endif %}
+
+{% if project_type == "library" %}
+## Library Usage
+
+This is a library project. Add it to your `Cargo.toml`:
+
+```toml
+[dependencies]
+{{ project_name }} = "{{ version }}"
+```
+{% endif %}
+
+## Dependencies
+
+{% if dependencies %}
+{% for dep in dependencies %}
+- {{ dep.name }} = "{{ dep.version }}"
+{% endfor %}
+{% else %}
+No dependencies specified.
+{% endif %}
+
+---
+Generated with cargo-forge

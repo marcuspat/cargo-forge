@@ -1,0 +1,214 @@
+use anyhow::Result;
+{% if "clap" in features %}
+use clap::{Parser, Subcommand};
+{% endif %}
+use tracing::{info, Level};
+use tracing_subscriber;
+
+use {{ project_name | replace(from="-", to="_") }}_core::{Config, Environment};
+use {{ project_name | replace(from="-", to="_") }}_api::AppState;
+
+{% if "clap" in features %}
+/// {{ project_name }} CLI application
+#[derive(Parser)]
+#[command(name = "{{ project_name }}")]
+#[command(about = "A command-line interface for {{ project_name }}")]
+#[command(version)]
+struct Cli {
+    /// Set the log level
+    #[arg(short, long, default_value = "info")]
+    log_level: String,
+    
+    /// Configuration file path
+    #[arg(short, long)]
+    config: Option<String>,
+    
+    #[command(subcommand)]
+    command: Commands,
+}
+
+#[derive(Subcommand)]
+enum Commands {
+    /// Start the API server
+    Serve {
+        /// Port to bind to
+        #[arg(short, long, default_value = "3000")]
+        port: u16,
+        
+        /// Host to bind to
+        #[arg(long, default_value = "0.0.0.0")]
+        host: String,
+    },
+    /// User management commands
+    User {
+        #[command(subcommand)]
+        command: UserCommands,
+    },
+    /// Show configuration
+    Config,
+    /// Show version information
+    Version,
+}
+
+#[derive(Subcommand)]
+enum UserCommands {
+    /// List all users
+    List {
+        /// Number of users per page
+        #[arg(short, long, default_value = "10")]
+        limit: u32,
+        
+        /// Page number
+        #[arg(short, long, default_value = "1")]
+        page: u32,
+    },
+    /// Create a new user
+    Create {
+        /// Username
+        #[arg(short, long)]
+        username: String,
+        
+        /// Email address
+        #[arg(short, long)]
+        email: String,
+        
+        /// Display name
+        #[arg(short, long)]
+        display_name: Option<String>,
+    },
+    /// Show user details
+    Show {
+        /// User ID or username
+        id: String,
+    },
+}
+{% endif %}
+
+#[tokio::main]
+async fn main() -> Result<()> {
+    {% if "clap" in features %}
+    let cli = Cli::parse();
+    
+    // Initialize logging
+    let log_level = match cli.log_level.to_lowercase().as_str() {
+        "trace" => Level::TRACE,
+        "debug" => Level::DEBUG,
+        "info" => Level::INFO,
+        "warn" => Level::WARN,
+        "error" => Level::ERROR,
+        _ => Level::INFO,
+    };
+    
+    tracing_subscriber::fmt()
+        .with_max_level(log_level)
+        .init();
+    
+    info!("Starting {{ project_name }} CLI");
+    
+    // Load configuration
+    let config = load_config(cli.config.as_deref())?;
+    let state = AppState::with_config(config);
+    
+    // Handle commands
+    match cli.command {
+        Commands::Serve { port, host } => {
+            {% if "web" in features %}
+            info!("Starting API server on {}:{}", host, port);
+            {{ project_name | replace(from="-", to="_") }}_api::serve(state, port).await?;
+            {% else %}
+            println!("API server functionality not available. Enable the 'web' feature.");
+            {% endif %}
+        }
+        Commands::User { command } => {
+            handle_user_command(command, &state).await?;
+        }
+        Commands::Config => {
+            println!("{:#?}", state.config);
+        }
+        Commands::Version => {
+            println!("{} {}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"));
+        }
+    }
+    {% else %}
+    // Initialize logging
+    tracing_subscriber::fmt()
+        .with_max_level(Level::INFO)
+        .init();
+    
+    info!("Starting {{ project_name }} CLI");
+    
+    // Load configuration
+    let config = load_config(None)?;
+    let state = AppState::with_config(config);
+    
+    println!("{{ project_name }} CLI");
+    println!("Version: {}", env!("CARGO_PKG_VERSION"));
+    println!("Enable the 'clap' feature for full CLI functionality.");
+    {% endif %}
+    
+    Ok(())
+}
+
+/// Load configuration from file or environment
+fn load_config(config_path: Option<&str>) -> Result<Config> {
+    // In a real application, you would load from file or environment variables
+    let mut config = Config::default();
+    
+    // Example: Override with environment variables
+    if let Ok(env) = std::env::var("ENVIRONMENT") {
+        config.environment = match env.to_lowercase().as_str() {
+            "development" => Environment::Development,
+            "testing" => Environment::Testing,
+            "staging" => Environment::Staging,
+            "production" => Environment::Production,
+            _ => Environment::Development,
+        };
+    }
+    
+    if let Some(path) = config_path {
+        info!("Loading configuration from: {}", path);
+        // TODO: Implement configuration file loading
+    }
+    
+    Ok(config)
+}
+
+{% if "clap" in features %}
+/// Handle user management commands
+async fn handle_user_command(command: UserCommands, state: &AppState) -> Result<()> {
+    match command {
+        UserCommands::List { limit, page } => {
+            info!("Listing users (page: {}, limit: {})", page, limit);
+            // TODO: Implement user listing
+            println!("User listing not yet implemented");
+        }
+        UserCommands::Create { username, email, display_name } => {
+            info!("Creating user: {}", username);
+            // TODO: Implement user creation
+            println!("User creation not yet implemented");
+            println!("Would create user: {} <{}>", username, email);
+            if let Some(display_name) = display_name {
+                println!("Display name: {}", display_name);
+            }
+        }
+        UserCommands::Show { id } => {
+            info!("Showing user: {}", id);
+            // TODO: Implement user lookup
+            println!("User lookup not yet implemented");
+        }
+    }
+    
+    Ok(())
+}
+{% endif %}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_load_config() {
+        let config = load_config(None).unwrap();
+        assert_eq!(config.app_name, "{{ project_name }}");
+    }
+}

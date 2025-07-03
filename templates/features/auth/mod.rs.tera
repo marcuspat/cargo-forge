@@ -1,0 +1,10 @@
+pub mod jwt;
+pub mod middleware;
+pub mod password;
+pub mod routes;
+{% if has_oauth %}
+pub mod oauth;
+{% endif %}
+
+pub use middleware::{AuthenticatedUser, OptionalAuth, AdminUser, AuthError};
+pub use routes::{auth_routes, AuthState};

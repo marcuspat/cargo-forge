@@ -1,0 +1,320 @@
+//! Integration tests for {{ project_name }}
+//!
+//! These tests exercise the public API of the crate and verify that
+//! different components work correctly together.
+//! 
+//! Run with: cargo test --test integration_tests
+
+use std::sync::Once;
+use std::time::Duration;
+
+// Import the crate being tested
+// Adjust this import based on your project structure
+{% if project_type == "workspace" %}
+use {{ project_name | replace(from="-", to="_") }}_core::*;
+{% if "web" in features %}
+use {{ project_name | replace(from="-", to="_") }}_api::*;
+{% endif %}
+{% else %}
+// For non-workspace projects, import your main crate
+// use {{ project_name | replace(from="-", to="_") }}::*;
+{% endif %}
+
+static INIT: Once = Once::new();
+
+/// Setup function called once per test run
+fn setup() {
+    INIT.call_once(|| {
+        // Initialize logging for tests
+        let _ = env_logger::builder()
+            .filter_level(log::LevelFilter::Debug)
+            .is_test(true)
+            .try_init();
+        
+        println!("Test environment initialized");
+    });
+}
+
+/// Helper function to create test data
+fn create_test_data() -> Vec<i32> {
+    vec![1, 2, 3, 4, 5]
+}
+
+/// Test basic functionality
+#[test]
+fn test_basic_functionality() {
+    setup();
+    
+    let data = create_test_data();
+    assert_eq!(data.len(), 5);
+    assert_eq!(data[0], 1);
+    assert_eq!(data[4], 5);
+}
+
+/// Test error handling
+#[test]
+fn test_error_handling() {
+    setup();
+    
+    // Test various error conditions
+    // This is a placeholder - adjust based on your actual error types
+    {% if project_type == "workspace" %}
+    let error = CoreError::validation("test error");
+    assert!(error.to_string().contains("test error"));
+    {% endif %}
+}
+
+/// Test configuration loading
+#[test]
+fn test_configuration() {
+    setup();
+    
+    {% if project_type == "workspace" %}
+    let config = Config::default();
+    assert_eq!(config.app_name, "{{ project_name }}");
+    assert!(matches!(config.environment, Environment::Development));
+    {% endif %}
+}
+
+/// Test concurrent operations
+#[test]
+fn test_concurrency() {
+    setup();
+    
+    use std::thread;
+    use std::sync::Arc;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    
+    let counter = Arc::new(AtomicUsize::new(0));
+    let mut handles = vec![];
+    
+    // Spawn multiple threads
+    for _ in 0..10 {
+        let counter_clone = Arc::clone(&counter);
+        let handle = thread::spawn(move || {
+            for _ in 0..100 {
+                counter_clone.fetch_add(1, Ordering::SeqCst);
+            }
+        });
+        handles.push(handle);
+    }
+    
+    // Wait for all threads to complete
+    for handle in handles {
+        handle.join().unwrap();
+    }
+    
+    assert_eq!(counter.load(Ordering::SeqCst), 1000);
+}
+
+/// Test timeout scenarios
+#[test]
+fn test_timeout_handling() {
+    setup();
+    
+    use std::time::Instant;
+    
+    let start = Instant::now();
+    
+    // Simulate some operation that should complete quickly
+    std::thread::sleep(Duration::from_millis(10));
+    
+    let elapsed = start.elapsed();
+    assert!(elapsed < Duration::from_millis(100));
+}
+
+/// Test resource cleanup
+#[test]
+fn test_resource_cleanup() {
+    setup();
+    
+    // Test that resources are properly cleaned up
+    let _resource = vec![1, 2, 3, 4, 5];
+    
+    // The resource should be automatically dropped at the end of this scope
+    // In a real test, you might verify file handles are closed, 
+    // network connections are terminated, etc.
+}
+
+/// Test serialization and deserialization
+#[test]
+fn test_serialization() {
+    setup();
+    
+    {% if project_type == "workspace" %}
+    use serde_json;
+    
+    let user = User::new("test_user".to_string(), "test@example.com".to_string());
+    
+    // Serialize to JSON
+    let json = serde_json::to_string(&user).expect("Failed to serialize");
+    assert!(json.contains("test_user"));
+    assert!(json.contains("test@example.com"));
+    
+    // Deserialize from JSON
+    let deserialized: User = serde_json::from_str(&json).expect("Failed to deserialize");
+    assert_eq!(deserialized.username, "test_user");
+    assert_eq!(deserialized.email, "test@example.com");
+    {% endif %}
+}
+
+/// Test input validation
+#[test]
+fn test_input_validation() {
+    setup();
+    
+    {% if project_type == "workspace" %}
+    use {{ project_name | replace(from="-", to="_") }}_core::utils::validation::*;
+    
+    // Test valid inputs
+    assert!(validate_email("test@example.com").is_ok());
+    assert!(validate_username("valid_user").is_ok());
+    
+    // Test invalid inputs
+    assert!(validate_email("").is_err());
+    assert!(validate_email("invalid").is_err());
+    assert!(validate_username("").is_err());
+    assert!(validate_username("ab").is_err());
+    {% endif %}
+}
+
+/// Test database operations (if database feature is enabled)
+#[cfg(feature = "database")]
+#[test]
+fn test_database_operations() {
+    setup();
+    
+    // Note: This would typically require a test database
+    // You might want to use an in-memory database or Docker for tests
+    
+    // Example of what database tests might look like:
+    // let pool = create_test_database_pool().await;
+    // let user = create_test_user(&pool).await;
+    // assert!(user.is_ok());
+    
+    println!("Database tests would go here");
+}
+
+/// Test API endpoints (if web feature is enabled)
+#[cfg(all(feature = "web", test))]
+#[tokio::test]
+async fn test_api_endpoints() {
+    setup();
+    
+    {% if project_type == "workspace" and "web" in features %}
+    use axum::http::{Request, StatusCode};
+    use tower::ServiceExt;
+    
+    let state = AppState::new();
+    let app = create_router(state);
+    
+    // Test health endpoint
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/health")
+                .body(axum::body::Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    
+    assert_eq!(response.status(), StatusCode::OK);
+    {% endif %}
+}
+
+/// Test performance characteristics
+#[test]
+fn test_performance() {
+    setup();
+    
+    use std::time::Instant;
+    
+    let start = Instant::now();
+    
+    // Perform some operation that should be fast
+    let mut sum = 0;
+    for i in 0..10000 {
+        sum += i;
+    }
+    
+    let elapsed = start.elapsed();
+    
+    // Verify the operation completed in reasonable time
+    assert!(elapsed < Duration::from_millis(100));
+    assert_eq!(sum, 49995000);
+}
+
+/// Test memory usage
+#[test]
+fn test_memory_usage() {
+    setup();
+    
+    // Create a large data structure
+    let data: Vec<Vec<i32>> = (0..1000)
+        .map(|i| (0..100).map(|j| i * 100 + j).collect())
+        .collect();
+    
+    assert_eq!(data.len(), 1000);
+    assert_eq!(data[0].len(), 100);
+    
+    // Verify data integrity
+    assert_eq!(data[0][0], 0);
+    assert_eq!(data[999][99], 999 * 100 + 99);
+}
+
+/// Test edge cases and boundary conditions
+#[test]
+fn test_edge_cases() {
+    setup();
+    
+    // Test empty collections
+    let empty_vec: Vec<i32> = vec![];
+    assert!(empty_vec.is_empty());
+    
+    // Test maximum values
+    let max_value = i32::MAX;
+    assert!(max_value > 0);
+    
+    // Test minimum values
+    let min_value = i32::MIN;
+    assert!(min_value < 0);
+}
+
+/// Test with different data sizes
+#[test]
+fn test_scalability() {
+    setup();
+    
+    let sizes = [10, 100, 1000, 10000];
+    
+    for size in sizes.iter() {
+        let start = Instant::now();
+        
+        let data: Vec<i32> = (0..*size).collect();
+        let sum: i32 = data.iter().sum();
+        
+        let elapsed = start.elapsed();
+        
+        // Verify correctness
+        let expected_sum = (size - 1) * size / 2;
+        assert_eq!(sum, expected_sum);
+        
+        // Verify performance scales reasonably
+        // This is a very generous bound for demonstration
+        assert!(elapsed < Duration::from_millis(*size as u64));
+    }
+}
+
+/// Cleanup function that runs after tests
+#[cfg(test)]
+mod test_cleanup {
+    use super::*;
+    
+    #[test]
+    fn zzz_cleanup() {
+        // This test runs last due to alphabetical ordering
+        // Use it for any cleanup that needs to happen after all tests
+        println!("All integration tests completed");
+    }
+}

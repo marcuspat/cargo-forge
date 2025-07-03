@@ -1,0 +1,184 @@
+use wasm_bindgen::prelude::*;
+{% if web_sys %}
+use web_sys::console;
+{% endif %}
+
+// When the `wee_alloc` feature is enabled, use `wee_alloc` as the global allocator.
+#[cfg(feature = "wee_alloc")]
+#[global_allocator]
+static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
+
+// Called when the WASM module is instantiated
+#[wasm_bindgen(start)]
+pub fn main() {
+    // Set panic hook for better error messages in console
+    console_error_panic_hook::set_once();
+    
+    {% if web_sys %}
+    console::log_1(&"{{ name }} WASM module loaded!".into());
+    {% endif %}
+    
+    {% if framework == "yew" %}
+    // Initialize Yew app
+    yew::Renderer::<App>::new().render();
+    {% elif framework == "leptos" %}
+    // Initialize Leptos app
+    leptos::mount_to_body(|| view! { <App/> });
+    {% endif %}
+}
+
+/// Example function exported to JavaScript
+#[wasm_bindgen]
+pub fn greet(name: &str) -> String {
+    format!("Hello, {}! Welcome to {{ name }}.", name)
+}
+
+/// Example struct exposed to JavaScript
+#[wasm_bindgen]
+pub struct {{ name | replace(from="-", to="_") | to_pascal_case }}App {
+    message: String,
+}
+
+#[wasm_bindgen]
+impl {{ name | replace(from="-", to="_") | to_pascal_case }}App {
+    /// Constructor
+    #[wasm_bindgen(constructor)]
+    pub fn new() -> Self {
+        Self {
+            message: "{{ name }} is running!".to_string(),
+        }
+    }
+    
+    /// Get the current message
+    #[wasm_bindgen(getter)]
+    pub fn message(&self) -> String {
+        self.message.clone()
+    }
+    
+    /// Set a new message
+    #[wasm_bindgen(setter)]
+    pub fn set_message(&mut self, message: String) {
+        self.message = message;
+    }
+    
+    /// Process some data
+    pub fn process(&self, input: &str) -> Result<String, JsValue> {
+        if input.is_empty() {
+            Err(JsValue::from_str("Input cannot be empty"))
+        } else {
+            Ok(format!("Processed: {}", input))
+        }
+    }
+}
+
+{% if framework == "yew" %}
+use yew::prelude::*;
+
+#[function_component(App)]
+fn app() -> Html {
+    let counter = use_state(|| 0);
+    
+    let onclick = {
+        let counter = counter.clone();
+        Callback::from(move |_| {
+            counter.set(*counter + 1);
+        })
+    };
+    
+    html! {
+        <div>
+            <h1>{ "{{ name }}" }</h1>
+            <p>{ "{{ description }}" }</p>
+            <button {onclick}>{ format!("Count: {}", *counter) }</button>
+        </div>
+    }
+}
+{% elif framework == "leptos" %}
+use leptos::*;
+
+#[component]
+fn App() -> impl IntoView {
+    let (count, set_count) = create_signal(0);
+    
+    view! {
+        <div>
+            <h1>"{{ name }}"</h1>
+            <p>"{{ description }}"</p>
+            <button on:click=move |_| set_count(count() + 1)>
+                "Count: " {count}
+            </button>
+        </div>
+    }
+}
+{% endif %}
+
+{% if canvas %}
+/// Canvas drawing example
+#[wasm_bindgen]
+pub fn draw_on_canvas(canvas_id: &str) -> Result<(), JsValue> {
+    use wasm_bindgen::JsCast;
+    
+    let document = web_sys::window().unwrap().document().unwrap();
+    let canvas = document.get_element_by_id(canvas_id).unwrap();
+    let canvas: web_sys::HtmlCanvasElement = canvas
+        .dyn_into::<web_sys::HtmlCanvasElement>()
+        .map_err(|_| "Failed to cast to canvas element")?;
+    
+    let context = canvas
+        .get_context("2d")?
+        .unwrap()
+        .dyn_into::<web_sys::CanvasRenderingContext2d>()?;
+    
+    // Draw a simple shape
+    context.set_fill_style(&JsValue::from_str("#0066cc"));
+    context.fill_rect(10.0, 10.0, 100.0, 100.0);
+    
+    context.set_stroke_style(&JsValue::from_str("#ff0000"));
+    context.stroke_rect(50.0, 50.0, 100.0, 100.0);
+    
+    Ok(())
+}
+{% endif %}
+
+{% if fetch %}
+/// Fetch data from a URL
+#[wasm_bindgen]
+pub async fn fetch_data(url: String) -> Result<JsValue, JsValue> {
+    use wasm_bindgen_futures::JsFuture;
+    use web_sys::{Request, RequestInit, RequestMode, Response};
+    
+    let mut opts = RequestInit::new();
+    opts.method("GET");
+    opts.mode(RequestMode::Cors);
+    
+    let request = Request::new_with_str_and_init(&url, &opts)?;
+    
+    let window = web_sys::window().unwrap();
+    let resp_value = JsFuture::from(window.fetch_with_request(&request)).await?;
+    
+    let resp: Response = resp_value.dyn_into().unwrap();
+    let json = JsFuture::from(resp.json()?).await?;
+    
+    Ok(json)
+}
+{% endif %}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use wasm_bindgen_test::*;
+    
+    #[wasm_bindgen_test]
+    fn test_greet() {
+        assert_eq!(greet("WASM"), "Hello, WASM! Welcome to {{ name }}.");
+    }
+    
+    #[wasm_bindgen_test]
+    fn test_app() {
+        let app = {{ name | replace(from="-", to="_") | to_pascal_case }}App::new();
+        assert_eq!(app.message(), "{{ name }} is running!");
+        
+        let result = app.process("test").unwrap();
+        assert_eq!(result, "Processed: test");
+    }
+}

@@ -1,0 +1,212 @@
+# {{ name }}
+
+{{ description }}
+
+A WebAssembly application built with Rust and wasm-bindgen.
+
+## Features
+
+- WebAssembly module with JavaScript bindings
+- Interactive web interface
+- Rust code compiled to run in the browser
+{% if framework == "yew" %}
+- Built with Yew framework for reactive UI
+{% elif framework == "leptos" %}
+- Built with Leptos framework for reactive UI
+{% endif %}
+{% if canvas %}
+- Canvas drawing capabilities
+{% endif %}
+{% if fetch %}
+- HTTP fetch functionality
+{% endif %}
+
+## Prerequisites
+
+- [Rust](https://www.rust-lang.org/) {{ rust_version }} or later
+- [wasm-pack](https://rustwasm.github.io/wasm-pack/)
+- [Node.js](https://nodejs.org/) (for development server)
+
+## Getting Started
+
+### Installation
+
+1. Clone the repository:
+```bash
+git clone <repository-url>
+cd {{ name }}
+```
+
+2. Install wasm-pack if you haven't already:
+```bash
+curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+```
+
+### Building
+
+Build the WebAssembly module:
+
+```bash
+wasm-pack build --target web --out-dir pkg
+```
+
+For development builds with debug info:
+
+```bash
+wasm-pack build --dev --target web --out-dir pkg
+```
+
+### Running
+
+1. Serve the files with a local web server. You can use Python:
+```bash
+python3 -m http.server 8000
+```
+
+Or Node.js with http-server:
+```bash
+npx http-server -p 8000
+```
+
+2. Open your browser and navigate to `http://localhost:8000`
+
+## Development
+
+### Project Structure
+
+```
+{{ name }}/
+├── src/
+│   └── lib.rs          # Main Rust source file
+├── pkg/                # Generated WebAssembly files (after build)
+├── index.html          # HTML entry point
+├── Cargo.toml          # Rust dependencies
+└── README.md           # This file
+```
+
+### Testing
+
+Run Rust tests:
+```bash
+cargo test
+```
+
+Run WebAssembly tests:
+```bash
+wasm-pack test --chrome --headless
+```
+
+### Code Organization
+
+The main entry points are:
+
+1. `src/lib.rs` - Contains all Rust code that will be compiled to WebAssembly
+2. `index.html` - The web page that loads and uses the WebAssembly module
+
+### Adding New Functions
+
+To expose a new function to JavaScript:
+
+```rust
+#[wasm_bindgen]
+pub fn my_function(input: &str) -> String {
+    format!("Processed: {}", input)
+}
+```
+
+Then use it in JavaScript:
+
+```javascript
+import { my_function } from './pkg/{{ name }}.js';
+
+const result = my_function("test");
+console.log(result); // "Processed: test"
+```
+
+{% if framework == "yew" %}
+### Working with Yew
+
+Components are defined using the `#[function_component]` macro:
+
+```rust
+#[function_component(MyComponent)]
+fn my_component() -> Html {
+    html! {
+        <div>
+            <h1>{"My Component"}</h1>
+        </div>
+    }
+}
+```
+{% elif framework == "leptos" %}
+### Working with Leptos
+
+Components are defined using the `#[component]` macro:
+
+```rust
+#[component]
+fn MyComponent() -> impl IntoView {
+    view! {
+        <div>
+            <h1>"My Component"</h1>
+        </div>
+    }
+}
+```
+{% endif %}
+
+## Optimization
+
+### Size Optimization
+
+The release build is already configured for minimal size with:
+- `opt-level = "z"` - Optimize for size
+- `lto = true` - Link-time optimization
+- `codegen-units = 1` - Single codegen unit for better optimization
+
+### Performance Tips
+
+1. Minimize data copying between JavaScript and WebAssembly
+2. Use `web-sys` types when possible instead of converting to/from JavaScript
+3. Batch operations to reduce boundary crossings
+
+## Deployment
+
+1. Build for production:
+```bash
+wasm-pack build --target web --out-dir pkg
+```
+
+2. Copy these files to your web server:
+   - `index.html`
+   - `pkg/` directory (contains the WASM module and JavaScript bindings)
+
+3. Ensure your web server serves `.wasm` files with the correct MIME type: `application/wasm`
+
+## Browser Support
+
+This application works in all modern browsers that support WebAssembly:
+- Chrome 57+
+- Firefox 52+
+- Safari 11+
+- Edge 16+
+
+## Troubleshooting
+
+### Common Issues
+
+1. **CORS errors when loading WASM**: Ensure you're serving the files from a web server, not opening `index.html` directly
+2. **Module not found**: Make sure you've run `wasm-pack build` before trying to load the page
+3. **Rust compilation errors**: Check that you have the correct Rust version and the `wasm32-unknown-unknown` target installed
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the {{ license }} License.
