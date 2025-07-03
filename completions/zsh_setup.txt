@@ -1,0 +1,4 @@
+# Add this to your ~/.zshrc:
+if command -v cargo-forge &> /dev/null; then
+    eval "$(cargo-forge completions zsh)"
+fi

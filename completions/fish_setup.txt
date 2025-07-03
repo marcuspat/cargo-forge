@@ -1,0 +1,4 @@
+# Add this to your ~/.config/fish/config.fish:
+if command -v cargo-forge > /dev/null
+    cargo-forge completions fish | source
+end

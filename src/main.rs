@@ -44,7 +44,7 @@ fn main() -> Result<()> {
             project_type, 
             author, 
             description, 
-            license,
+            license: _,
             non_interactive, 
             from_config, 
             dry_run 
@@ -72,8 +72,8 @@ fn main() -> Result<()> {
         }
         Some(Commands::Init { 
             project_type, 
-            author,
-            license,
+            author: _,
+            license: _,
             non_interactive, 
             from_config, 
             dry_run 
