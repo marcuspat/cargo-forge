@@ -51,6 +51,7 @@ impl ProjectContext {
             project_type: self.project_type.to_string(),
             author: self.author.clone().unwrap_or_else(|| "Unknown".to_string()),
             description: self.description.clone(),
+            features: self.features.clone(),
         }
     }
 }
@@ -623,6 +624,10 @@ impl Forge {
         };
 
         let project_name = name.unwrap_or_else(|| "my-project".to_string());
+        
+        // Validate project name before doing anything else
+        self.validate_project_name(&project_name)?;
+        
         let project_type_str = project_type.unwrap_or_else(|| "cli-tool".to_string());
         let project_type = self.parse_project_type(&project_type_str)?;
         
@@ -649,6 +654,10 @@ impl Forge {
         description: Option<String>
     ) -> Result<()> {
         let project_name = name.ok_or_else(|| anyhow!("Project name is required"))?;
+        
+        // Validate project name before doing anything else
+        self.validate_project_name(&project_name)?;
+        
         let project_type_str = project_type.ok_or_else(|| anyhow!("Project type is required"))?;
         let project_type = self.parse_project_type(&project_type_str)?;
         
@@ -680,6 +689,10 @@ impl Forge {
         let config = ForgeConfig::load_from(config_path)?;
         
         let project_name = name.unwrap_or_else(|| "my-project".to_string());
+        
+        // Validate project name before doing anything else
+        self.validate_project_name(&project_name)?;
+        
         let project_type_str = project_type.or_else(|| config.preferred_project_types.first().cloned())
             .unwrap_or_else(|| "cli-tool".to_string());
         let project_type = self.parse_project_type(&project_type_str)?;
@@ -716,6 +729,10 @@ impl Forge {
             };
 
             let project_name = name.unwrap_or_else(|| "my-project".to_string());
+            
+            // Validate project name before doing anything else
+            self.validate_project_name(&project_name)?;
+            
             let project_type_str = project_type.unwrap_or_else(|| "cli-tool".to_string());
             let project_type = self.parse_project_type(&project_type_str)?;
             

@@ -11,6 +11,7 @@ fn create_test_config(name: &str, project_type: &str) -> ProjectConfig {
         project_type: project_type.to_string(),
         author: "Test Author <test@example.com>".to_string(),
         description: Some(format!("Test {} project", project_type)),
+        features: vec![],
     }
 }
 
@@ -152,6 +153,7 @@ fn test_comprehensive_project_matrix() {
             project_type: project_type.to_string(),
             author: authors[i % authors.len()].to_string(),
             description: descriptions[i % descriptions.len()].clone(),
+            features: vec![],
         };
         
         generator.generate(&config, &project_dir)

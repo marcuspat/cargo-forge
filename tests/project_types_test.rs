@@ -14,6 +14,7 @@ fn test_api_server_project_type() {
         project_type: ProjectType::ApiServer.to_string(),
         author: "Test Author".to_string(),
         description: Some("Test API Server".to_string()),
+        features: vec![],
     };
     
     let generator = Generator::new();
@@ -48,6 +49,7 @@ fn test_cli_tool_project_type() {
         project_type: ProjectType::CliTool.to_string(),
         author: "Test Author".to_string(),
         description: Some("Test CLI Tool".to_string()),
+        features: vec![],
     };
     
     let generator = Generator::new();
@@ -80,6 +82,7 @@ fn test_library_project_type() {
         project_type: ProjectType::Library.to_string(),
         author: "Test Author".to_string(),
         description: Some("Test Library".to_string()),
+        features: vec![],
     };
     
     let generator = Generator::new();
@@ -115,6 +118,7 @@ fn test_wasm_app_project_type() {
         project_type: ProjectType::WasmApp.to_string(),
         author: "Test Author".to_string(),
         description: Some("Test WASM App".to_string()),
+        features: vec![],
     };
     
     let generator = Generator::new();
@@ -159,6 +163,7 @@ fn test_project_type_specific_readme() {
             project_type: project_type.to_string(),
             author: "Test Author".to_string(),
             description: Some(format!("Test {}", type_name)),
+            features: vec![],
         };
         
         let generator = Generator::new();
@@ -186,6 +191,7 @@ fn test_project_type_specific_gitignore() {
         project_type: ProjectType::WasmApp.to_string(),
         author: "Test Author".to_string(),
         description: None,
+        features: vec![],
     };
     
     let generator = Generator::new();
@@ -198,12 +204,122 @@ fn test_project_type_specific_gitignore() {
 }
 
 #[test]
+fn test_game_engine_project_type() {
+    // Test game engine project generation
+    let temp_dir = TempDir::new().unwrap();
+    let output_dir = temp_dir.path().join("game-engine-test");
+    
+    let config = ProjectConfig {
+        name: "game-engine-test".to_string(),
+        project_type: ProjectType::GameEngine.to_string(),
+        author: "Test Author".to_string(),
+        description: Some("Test Game Engine".to_string()),
+        features: vec![],
+    };
+    
+    let generator = Generator::new();
+    generator.generate(&config, &output_dir).unwrap();
+    
+    // Check game engine specific files
+    assert!(output_dir.join("src/main.rs").exists(), "Game engine should have main.rs");
+    assert!(output_dir.join("assets").exists(), "Game engine should have assets directory");
+    assert!(output_dir.join("assets/models").exists(), "Game engine should have models directory");
+    assert!(output_dir.join("assets/textures").exists(), "Game engine should have textures directory");
+    assert!(output_dir.join("assets/sounds").exists(), "Game engine should have sounds directory");
+    assert!(output_dir.join("assets/shaders").exists(), "Game engine should have shaders directory");
+    
+    // Check Cargo.toml for game engine dependencies
+    let cargo_content = fs::read_to_string(output_dir.join("Cargo.toml")).unwrap();
+    assert!(cargo_content.contains("bevy"), "Game engine should have bevy dependency");
+    assert!(cargo_content.contains("[profile.dev]"), "Game engine should have dev profile optimization");
+    
+    // Check for WASM target support
+    assert!(cargo_content.contains("wasm-bindgen"), "Game engine should support WASM target");
+}
+
+#[test]
+fn test_embedded_project_type() {
+    // Test embedded project generation
+    let temp_dir = TempDir::new().unwrap();
+    let output_dir = temp_dir.path().join("embedded-test");
+    
+    let config = ProjectConfig {
+        name: "embedded-test".to_string(),
+        project_type: ProjectType::Embedded.to_string(),
+        author: "Test Author".to_string(),
+        description: Some("Test Embedded System".to_string()),
+        features: vec![],
+    };
+    
+    let generator = Generator::new();
+    generator.generate(&config, &output_dir).unwrap();
+    
+    // Check embedded specific files
+    assert!(output_dir.join("src/main.rs").exists(), "Embedded should have main.rs");
+    assert!(output_dir.join("memory.x").exists(), "Embedded should have memory.x linker script");
+    assert!(output_dir.join("Embed.toml").exists(), "Embedded should have Embed.toml config");
+    
+    // Check Cargo.toml for embedded dependencies
+    let cargo_content = fs::read_to_string(output_dir.join("Cargo.toml")).unwrap();
+    assert!(cargo_content.contains("cortex-m"), "Embedded should have cortex-m dependency");
+    assert!(cargo_content.contains("cortex-m-rt"), "Embedded should have cortex-m-rt dependency");
+    assert!(cargo_content.contains("panic-halt"), "Embedded should have panic-halt dependency");
+    
+    // Check for embedded-specific main.rs attributes
+    let main_content = fs::read_to_string(output_dir.join("src/main.rs")).unwrap();
+    assert!(main_content.contains("#![no_std]"), "Embedded main.rs should have no_std");
+    assert!(main_content.contains("#![no_main]"), "Embedded main.rs should have no_main");
+}
+
+#[test]
+fn test_workspace_project_type() {
+    // Test workspace project generation
+    let temp_dir = TempDir::new().unwrap();
+    let output_dir = temp_dir.path().join("workspace-test");
+    
+    let config = ProjectConfig {
+        name: "workspace-test".to_string(),
+        project_type: ProjectType::Workspace.to_string(),
+        author: "Test Author".to_string(),
+        description: Some("Test Workspace".to_string()),
+        features: vec![],
+    };
+    
+    let generator = Generator::new();
+    generator.generate(&config, &output_dir).unwrap();
+    
+    // Check workspace structure
+    assert!(output_dir.join("Cargo.toml").exists(), "Workspace should have root Cargo.toml");
+    assert!(output_dir.join("crates").exists(), "Workspace should have crates directory");
+    assert!(output_dir.join("crates/core").exists(), "Workspace should have core crate");
+    assert!(output_dir.join("crates/api").exists(), "Workspace should have api crate");
+    assert!(output_dir.join("crates/cli").exists(), "Workspace should have cli crate");
+    
+    // Check workspace Cargo.toml
+    let cargo_content = fs::read_to_string(output_dir.join("Cargo.toml")).unwrap();
+    assert!(cargo_content.contains("[workspace]"), "Should have workspace section");
+    assert!(cargo_content.contains("members ="), "Should have members list");
+    assert!(cargo_content.contains("crates/core"), "Should list core crate");
+    assert!(cargo_content.contains("crates/api"), "Should list api crate");
+    assert!(cargo_content.contains("crates/cli"), "Should list cli crate");
+    assert!(cargo_content.contains("[workspace.dependencies]"), "Should have workspace dependencies");
+    
+    // Check individual crate files exist
+    assert!(output_dir.join("crates/core/src/lib.rs").exists(), "Core crate should have lib.rs");
+    assert!(output_dir.join("crates/api/src/lib.rs").exists(), "API crate should have lib.rs");
+    assert!(output_dir.join("crates/cli/src/main.rs").exists(), "CLI crate should have main.rs");
+}
+
+#[test]
 fn test_project_type_enum_display() {
     // Test that ProjectType enum properly implements Display
     assert_eq!(ProjectType::ApiServer.to_string(), "api-server");
     assert_eq!(ProjectType::CliTool.to_string(), "cli-tool");
     assert_eq!(ProjectType::Library.to_string(), "library");
     assert_eq!(ProjectType::WasmApp.to_string(), "wasm-app");
+    assert_eq!(ProjectType::GameEngine.to_string(), "game-engine");
+    assert_eq!(ProjectType::Embedded.to_string(), "embedded");
+    assert_eq!(ProjectType::Workspace.to_string(), "workspace");
 }
 
 #[test]
@@ -213,6 +329,9 @@ fn test_project_type_from_string() {
     assert_eq!(ProjectType::from_str("cli-tool").unwrap(), ProjectType::CliTool);
     assert_eq!(ProjectType::from_str("library").unwrap(), ProjectType::Library);
     assert_eq!(ProjectType::from_str("wasm-app").unwrap(), ProjectType::WasmApp);
+    assert_eq!(ProjectType::from_str("game-engine").unwrap(), ProjectType::GameEngine);
+    assert_eq!(ProjectType::from_str("embedded").unwrap(), ProjectType::Embedded);
+    assert_eq!(ProjectType::from_str("workspace").unwrap(), ProjectType::Workspace);
     
     // Test invalid input
     assert!(ProjectType::from_str("invalid").is_err());

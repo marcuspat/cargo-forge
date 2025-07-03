@@ -16,6 +16,7 @@ pub struct TestConfig {
     pub project_type: String,
     pub author: String,
     pub description: Option<String>,
+    pub features: Vec<String>,
     pub expected_files: Vec<String>,
     pub expected_dependencies: Vec<String>,
     pub required_cargo_sections: Vec<String>,
@@ -34,6 +35,7 @@ impl TestConfig {
             project_type: project_type.to_string(),
             author: "E2E Test <e2e@test.com>".to_string(),
             description: Some(format!("Systematic E2E test for {} project", project_type)),
+            features: Vec::new(),
             expected_files: Vec::new(),
             expected_dependencies: Vec::new(),
             required_cargo_sections: Vec::new(),
@@ -400,6 +402,7 @@ impl E2ETestSuite {
             project_type: config.project_type.clone(),
             author: config.author.clone(),
             description: config.description.clone(),
+            features: vec![],
         };
 
         self.generator.generate(&basic_config, &project_dir)

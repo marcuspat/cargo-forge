@@ -14,6 +14,7 @@ fn test_file_generation_functionality() {
         project_type: "api-server".to_string(),
         author: "Test Author".to_string(),
         description: Some("Test description".to_string()),
+        features: vec![],
     };
     
     let generator = Generator::new();
@@ -34,6 +35,7 @@ fn test_directory_creation() {
         project_type: "library".to_string(),
         author: "Test Author".to_string(),
         description: None,
+        features: vec![],
     };
     
     let generator = Generator::new();
@@ -61,6 +63,7 @@ fn test_proper_permissions() {
         project_type: "cli-tool".to_string(),
         author: "Test Author".to_string(),
         description: Some("A CLI tool".to_string()),
+        features: vec![],
     };
     
     let generator = Generator::new();
@@ -92,6 +95,7 @@ fn test_overwrite_protection() {
         project_type: "library".to_string(),
         author: "Test Author".to_string(),
         description: None,
+        features: vec![],
     };
     
     let generator = Generator::new();
@@ -112,6 +116,7 @@ fn test_template_variable_injection() {
         project_type: "api-server".to_string(),
         author: "John Doe".to_string(),
         description: Some("A test API server".to_string()),
+        features: vec![],
     };
     
     let generator = Generator::new();
@@ -136,6 +141,7 @@ fn test_binary_vs_library_generation() {
         project_type: "library".to_string(),
         author: "Test Author".to_string(),
         description: None,
+        features: vec![],
     };
     
     let generator = Generator::new();
@@ -151,6 +157,7 @@ fn test_binary_vs_library_generation() {
         project_type: "cli-tool".to_string(),
         author: "Test Author".to_string(),
         description: None,
+        features: vec![],
     };
     
     generator.generate(&bin_config, &bin_dir).unwrap();
@@ -170,6 +177,7 @@ fn test_gitignore_generation() {
         project_type: "library".to_string(),
         author: "Test Author".to_string(),
         description: None,
+        features: vec![],
     };
     
     let generator = Generator::new();
@@ -194,6 +202,7 @@ fn test_readme_generation() {
         project_type: "api-server".to_string(),
         author: "Test Author".to_string(),
         description: Some("An awesome API server".to_string()),
+        features: vec![],
     };
     
     let generator = Generator::new();

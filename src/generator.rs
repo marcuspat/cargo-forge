@@ -1,6 +1,10 @@
 use anyhow::{anyhow, Result};
 use std::fs;
 use std::path::Path;
+use crate::features::{ProjectContext as FeatureContext, PluginManager};
+use crate::features::docker::{DockerPlugin, DockerBuildStage};
+use crate::features::ci::CIPlugin;
+use crate::features::database::DatabasePlugin;
 
 #[derive(Debug, Clone)]
 pub struct ProjectConfig {
@@ -8,6 +12,7 @@ pub struct ProjectConfig {
     pub project_type: String,
     pub author: String,
     pub description: Option<String>,
+    pub features: Vec<String>,
 }
 
 pub struct Generator;
@@ -18,16 +23,14 @@ impl Generator {
     }
 
     pub fn generate(&self, config: &ProjectConfig, output_dir: &Path) -> Result<()> {
-        // Check if directory already exists
-        if output_dir.exists() {
-            // Check if it has any files
-            if fs::read_dir(output_dir)?.next().is_some() {
-                return Err(anyhow!("Directory already exists and is not empty"));
-            }
+        // Directory should already be created by the caller
+        // Just verify that it exists and is a directory
+        if !output_dir.exists() {
+            return Err(anyhow!("Output directory does not exist: {}", output_dir.display()));
         }
-
-        // Create project structure
-        fs::create_dir_all(output_dir)?;
+        if !output_dir.is_dir() {
+            return Err(anyhow!("Output path is not a directory: {}", output_dir.display()));
+        }
         
         // Only create src and tests directories for non-workspace projects
         if config.project_type != "workspace" {
@@ -47,11 +50,190 @@ impl Generator {
             _ => return Err(anyhow!("Unknown project type: {}", config.project_type)),
         }
 
-        // Generate common files
+        // Create feature context and apply plugins before generating common files
+        let mut feature_context = FeatureContext::new(&config.name);
+        if !config.features.is_empty() {
+            let mut plugin_manager = PluginManager::new();
+            
+            // Register plugins based on selected features
+            for feature in &config.features {
+                match feature.as_str() {
+                    "docker" => {
+                        let port = match config.project_type.as_str() {
+                            "api-server" => Some(3000),
+                            "wasm-app" => Some(8080),
+                            _ => None,
+                        };
+                        let mut docker_plugin = DockerPlugin::new()
+                            .with_build_stage(DockerBuildStage::MultiStage);
+                        if let Some(p) = port {
+                            docker_plugin = docker_plugin.expose_port(p);
+                        }
+                        plugin_manager.register(Box::new(docker_plugin));
+                    },
+                    "ci" | "github-actions" => {
+                        use crate::features::ci::CIPlatform;
+                        plugin_manager.register(Box::new(CIPlugin::new(CIPlatform::GitHubActions)));
+                    },
+                    "database" => {
+                        use crate::features::database::DatabaseType;
+                        plugin_manager.register(Box::new(DatabasePlugin::new(DatabaseType::PostgreSQL)));
+                    },
+                    "postgres" => {
+                        use crate::features::database::DatabaseType;
+                        plugin_manager.register(Box::new(DatabasePlugin::new(DatabaseType::PostgreSQL)));
+                    },
+                    "sqlite" => {
+                        use crate::features::database::DatabaseType;
+                        plugin_manager.register(Box::new(DatabasePlugin::new(DatabaseType::SQLite)));
+                    },
+                    "mysql" => {
+                        use crate::features::database::DatabaseType;
+                        plugin_manager.register(Box::new(DatabasePlugin::new(DatabaseType::MySQL)));
+                    },
+                    _ => {
+                        // Unknown features are ignored
+                    }
+                }
+            }
+            
+            // Apply all plugins
+            plugin_manager.configure_all(&mut feature_context)
+                .map_err(|e| anyhow!("Plugin configuration failed: {}", e))?;
+            
+        }
+        
+        // Generate common files with feature integration
         self.generate_cargo_toml(config, output_dir)?;
-        self.generate_gitignore(config, output_dir)?;
-        self.generate_readme(config, output_dir)?;
+        self.generate_gitignore_with_features(config, output_dir, &feature_context)?;
+        self.generate_readme_with_features(config, output_dir, &feature_context)?;
+        
+        // Generate feature-specific files
+        if !config.features.is_empty() {
+            self.generate_feature_files(&feature_context, output_dir)?;
+        }
 
+        Ok(())
+    }
+    
+    fn generate_feature_files(&self, feature_context: &FeatureContext, output_dir: &Path) -> Result<()> {
+        // Create directories specified by plugins
+        for dir in &feature_context.directories {
+            fs::create_dir_all(output_dir.join(dir))?;
+        }
+        
+        // Write template files from plugins
+        for (path, content) in &feature_context.template_files {
+            let file_path = output_dir.join(path);
+            if let Some(parent) = file_path.parent() {
+                fs::create_dir_all(parent)?;
+            }
+            fs::write(&file_path, content)?;
+            
+            // Make scripts executable on Unix
+            #[cfg(unix)]
+            if path.starts_with("scripts/") && path.ends_with(".sh") {
+                use std::os::unix::fs::PermissionsExt;
+                let mut perms = fs::metadata(&file_path)?.permissions();
+                perms.set_mode(0o755);
+                fs::set_permissions(&file_path, perms)?;
+            }
+        }
+        
+        Ok(())
+    }
+    
+    fn generate_gitignore_with_features(&self, config: &ProjectConfig, output_dir: &Path, feature_context: &FeatureContext) -> Result<()> {
+        let mut content = String::from("/target\n");
+        
+        // Add Cargo.lock for libraries
+        if config.project_type == "library" {
+            content.push_str("Cargo.lock\n");
+        }
+        
+        // Add project-type specific ignores
+        match config.project_type.as_str() {
+            "wasm-app" => {
+                content.push_str("node_modules\n");
+                content.push_str("dist/\n");
+                content.push_str("pkg/\n");
+            }
+            "game-engine" => {
+                content.push_str("wasm/\n");
+                content.push_str("*.wasm\n");
+                content.push_str(".DS_Store\n");
+            }
+            "embedded" => {
+                content.push_str("*.bin\n");
+                content.push_str("*.hex\n");
+                content.push_str("*.elf\n");
+                content.push_str(".vscode/\n");
+            }
+            "workspace" => {
+                content.push_str("Cargo.lock\n");
+            }
+            _ => {}
+        }
+        
+        // Add feature-specific gitignore entries
+        for entry in &feature_context.gitignore_entries {
+            content.push_str(entry);
+            content.push('\n');
+        }
+        
+        fs::write(output_dir.join(".gitignore"), content)?;
+        Ok(())
+    }
+    
+    fn generate_readme_with_features(&self, config: &ProjectConfig, output_dir: &Path, feature_context: &FeatureContext) -> Result<()> {
+        let mut content = format!("# {}\n\n", config.name);
+        
+        if let Some(desc) = &config.description {
+            content.push_str(desc);
+            content.push_str("\n\n");
+        }
+        
+        // Add project-type specific content
+        match config.project_type.as_str() {
+            "api-server" => {
+                content.push_str("## API Server\n\n");
+                content.push_str("This is a REST API server built with Axum.\n\n");
+                content.push_str("### Endpoints\n\n");
+                content.push_str("- `GET /` - Health check endpoint\n");
+                content.push_str("- More endpoints coming soon...\n\n");
+                content.push_str("### Running\n\n");
+                content.push_str("```bash\ncargo run\n```\n\n");
+                content.push_str("The server will start on `http://localhost:3000`\n");
+            }
+            "cli-tool" => {
+                content.push_str("## CLI Tool\n\n");
+                content.push_str("### Usage\n\n");
+                content.push_str("```bash\ncargo run -- --help\n```\n\n");
+                content.push_str("### Commands\n\n");
+                content.push_str("Available commands and arguments will be shown in help.\n");
+            }
+            "library" => {
+                content.push_str("## Library\n\n");
+                content.push_str("### Usage\n\n");
+                content.push_str("Add this to your `Cargo.toml`:\n\n");
+                content.push_str("```toml\n[dependencies]\n");
+                content.push_str(&format!("{} = \"0.1.0\"\n", config.name));
+                content.push_str("```\n\n");
+                content.push_str("### Example\n\n");
+                content.push_str("```rust\n// Example usage\n```\n\n");
+                content.push_str("### API Documentation\n\n");
+                content.push_str("Run `cargo doc --open` to view the documentation.\n");
+            }
+            _ => {}
+        }
+        
+        // Add feature-specific readme sections
+        for section in &feature_context.readme_sections {
+            content.push_str(section);
+            content.push_str("\n");
+        }
+        
+        fs::write(output_dir.join("README.md"), content)?;
         Ok(())
     }
 
@@ -275,6 +457,22 @@ anyhow = "1.0"
         
         // Generate workspace Cargo.toml for workspace projects
         if config.project_type == "workspace" {
+            // Add package section for workspace root
+            content.push_str("[package]\n");
+            content.push_str(&format!(r#"name = "{}""#, config.name));
+            content.push('\n');
+            content.push_str(r#"version = "0.1.0""#);
+            content.push('\n');
+            content.push_str(&format!(r#"authors = ["{}"]"#, config.author));
+            content.push('\n');
+            content.push_str(r#"edition = "2021""#);
+            content.push('\n');
+            if let Some(desc) = &config.description {
+                content.push_str(&format!(r#"description = "{}""#, desc));
+                content.push('\n');
+            }
+            content.push_str("\n");
+            
             content.push_str("[workspace]\n");
             content.push_str("resolver = \"2\"\n");
             content.push_str("members = [\n");
@@ -390,130 +588,6 @@ anyhow = "1.0"
         Ok(())
     }
 
-    fn generate_gitignore(&self, config: &ProjectConfig, output_dir: &Path) -> Result<()> {
-        let mut content = String::from("/target\n");
-        
-        // Add Cargo.lock for libraries
-        if config.project_type == "library" {
-            content.push_str("Cargo.lock\n");
-        }
-        
-        // Add project-type specific ignores
-        match config.project_type.as_str() {
-            "wasm-app" => {
-                content.push_str("node_modules\n");
-                content.push_str("dist/\n");
-                content.push_str("pkg/\n");
-            }
-            "game-engine" => {
-                content.push_str("wasm/\n");
-                content.push_str("*.wasm\n");
-                content.push_str(".DS_Store\n");
-            }
-            "embedded" => {
-                content.push_str("*.bin\n");
-                content.push_str("*.hex\n");
-                content.push_str("*.elf\n");
-                content.push_str(".vscode/\n");
-            }
-            "workspace" => {
-                content.push_str("Cargo.lock\n");
-            }
-            _ => {}
-        }
-        
-        fs::write(output_dir.join(".gitignore"), content)?;
-        Ok(())
-    }
-
-    fn generate_readme(&self, config: &ProjectConfig, output_dir: &Path) -> Result<()> {
-        let mut content = format!("# {}\n\n", config.name);
-        
-        if let Some(desc) = &config.description {
-            content.push_str(desc);
-            content.push_str("\n\n");
-        }
-        
-        // Add project-type specific content
-        match config.project_type.as_str() {
-            "api-server" => {
-                content.push_str("## API Server\n\n");
-                content.push_str("This is a REST API server built with Axum.\n\n");
-                content.push_str("### Endpoints\n\n");
-                content.push_str("- `GET /` - Health check endpoint\n");
-                content.push_str("- More endpoints coming soon...\n\n");
-                content.push_str("### Running\n\n");
-                content.push_str("```bash\ncargo run\n```\n\n");
-                content.push_str("The server will start on `http://localhost:3000`\n");
-            }
-            "cli-tool" => {
-                content.push_str("## CLI Tool\n\n");
-                content.push_str("### Usage\n\n");
-                content.push_str("```bash\ncargo run -- --help\n```\n\n");
-                content.push_str("### Commands\n\n");
-                content.push_str("Available commands and arguments will be shown in help.\n");
-            }
-            "library" => {
-                content.push_str("## Library\n\n");
-                content.push_str("### Usage\n\n");
-                content.push_str("Add this to your `Cargo.toml`:\n\n");
-                content.push_str("```toml\n[dependencies]\n");
-                content.push_str(&format!("{} = \"0.1.0\"\n", config.name));
-                content.push_str("```\n\n");
-                content.push_str("### Example\n\n");
-                content.push_str("```rust\n// Example usage\n```\n\n");
-                content.push_str("### API Documentation\n\n");
-                content.push_str("Run `cargo doc --open` to view the documentation.\n");
-            }
-            "wasm-app" => {
-                content.push_str("## WASM Application\n\n");
-                content.push_str("### Building\n\n");
-                content.push_str("```bash\n./build.sh\n```\n\n");
-                content.push_str("### Running\n\n");
-                content.push_str("```bash\nnpm install\nnpm start\n```\n\n");
-                content.push_str("Open your browser to `http://localhost:8080`\n\n");
-                content.push_str("### Webpack\n\n");
-                content.push_str("This project uses webpack for bundling.\n");
-            }
-            "game-engine" => {
-                content.push_str("## Game Engine\n\n");
-                content.push_str("A game built with the Bevy engine.\n\n");
-                content.push_str("### Running\n\n");
-                content.push_str("```bash\ncargo run\n```\n\n");
-                content.push_str("### Building for WASM\n\n");
-                content.push_str("```bash\ncargo build --release --target wasm32-unknown-unknown\n");
-                content.push_str("wasm-bindgen --out-dir wasm --web target/wasm32-unknown-unknown/release/*.wasm\n```\n\n");
-                content.push_str("### Controls\n\n");
-                content.push_str("- ESC: Exit game\n");
-            }
-            "embedded" => {
-                content.push_str("## Embedded Project\n\n");
-                content.push_str("A no_std embedded project for ARM Cortex-M microcontrollers.\n\n");
-                content.push_str("### Building\n\n");
-                content.push_str("```bash\ncargo build --release\n```\n\n");
-                content.push_str("### Flashing\n\n");
-                content.push_str("```bash\ncargo run --release\n```\n\n");
-                content.push_str("### Debugging\n\n");
-                content.push_str("This project is configured to use probe-rs for debugging and RTT logging.\n");
-            }
-            "workspace" => {
-                content.push_str("## Workspace Project\n\n");
-                content.push_str("A multi-crate Rust workspace.\n\n");
-                content.push_str("### Structure\n\n");
-                content.push_str("- `crates/core` - Shared business logic\n");
-                content.push_str("- `crates/api` - HTTP API server\n");
-                content.push_str("- `crates/cli` - Command-line interface\n\n");
-                content.push_str("### Building\n\n");
-                content.push_str("```bash\ncargo build\n```\n\n");
-                content.push_str("### Running\n\n");
-                content.push_str("```bash\ncargo run\n```\n");
-            }
-            _ => {}
-        }
-        
-        fs::write(output_dir.join("README.md"), content)?;
-        Ok(())
-    }
 }
 
 impl Default for Generator {

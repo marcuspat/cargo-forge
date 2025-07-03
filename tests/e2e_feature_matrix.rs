@@ -16,6 +16,7 @@ pub struct MatrixTestConfig {
     pub project_type: String,
     pub author: String,
     pub description: Option<String>,
+    pub features: Vec<String>,
     pub test_category: String,
     pub expected_behavior: TestExpectation,
     pub validation_rules: Vec<ValidationRule>,
@@ -71,6 +72,7 @@ impl FeatureMatrixTestSuite {
                 project_type: "library".to_string(),
                 author: "Test <test@example.com>".to_string(),
                 description: Some("Single character project name".to_string()),
+                features: vec![],
                 test_category: "Edge Case - Project Names".to_string(),
                 expected_behavior: TestExpectation::Success,
                 validation_rules: vec![
@@ -84,6 +86,7 @@ impl FeatureMatrixTestSuite {
                 project_type: "library".to_string(),
                 author: "Test <test@example.com>".to_string(),
                 description: Some("Very long project name".to_string()),
+                features: vec![],
                 test_category: "Edge Case - Project Names".to_string(),
                 expected_behavior: TestExpectation::Success,
                 validation_rules: vec![
@@ -96,6 +99,7 @@ impl FeatureMatrixTestSuite {
                 project_type: "library".to_string(),
                 author: "Test <test@example.com>".to_string(),
                 description: Some("Project with underscores".to_string()),
+                features: vec![],
                 test_category: "Edge Case - Project Names".to_string(),
                 expected_behavior: TestExpectation::Success,
                 validation_rules: vec![
@@ -109,6 +113,7 @@ impl FeatureMatrixTestSuite {
                 project_type: "library".to_string(),
                 author: "Test <test@example.com>".to_string(),
                 description: Some("Project with hyphens".to_string()),
+                features: vec![],
                 test_category: "Edge Case - Project Names".to_string(),
                 expected_behavior: TestExpectation::Success,
                 validation_rules: vec![
@@ -126,6 +131,7 @@ impl FeatureMatrixTestSuite {
                 project_type: "library".to_string(),
                 author: "Simple Name".to_string(),
                 description: Some("Simple author name".to_string()),
+                features: vec![],
                 test_category: "Author Variations".to_string(),
                 expected_behavior: TestExpectation::Success,
                 validation_rules: vec![
@@ -138,6 +144,7 @@ impl FeatureMatrixTestSuite {
                 project_type: "library".to_string(),
                 author: "John Doe <john@example.com>".to_string(),
                 description: Some("Author with email".to_string()),
+                features: vec![],
                 test_category: "Author Variations".to_string(),
                 expected_behavior: TestExpectation::Success,
                 validation_rules: vec![
@@ -150,6 +157,7 @@ impl FeatureMatrixTestSuite {
                 project_type: "library".to_string(),
                 author: "José García <josé@example.com>".to_string(),
                 description: Some("Author with unicode characters".to_string()),
+                features: vec![],
                 test_category: "Author Variations".to_string(),
                 expected_behavior: TestExpectation::Success,
                 validation_rules: vec![
@@ -166,6 +174,7 @@ impl FeatureMatrixTestSuite {
                 project_type: "library".to_string(),
                 author: "Test <test@example.com>".to_string(),
                 description: None,
+                features: vec![],
                 test_category: "Description Variations".to_string(),
                 expected_behavior: TestExpectation::Success,
                 validation_rules: vec![
@@ -179,6 +188,7 @@ impl FeatureMatrixTestSuite {
                 project_type: "library".to_string(),
                 author: "Test <test@example.com>".to_string(),
                 description: Some("This is a very long description that tests how the project generator handles descriptions with multiple sentences and various punctuation marks! It should handle this gracefully and properly escape any special characters that might cause issues in the TOML format.".to_string()),
+                features: vec![],
                 test_category: "Description Variations".to_string(),
                 expected_behavior: TestExpectation::Success,
                 validation_rules: vec![
@@ -192,6 +202,7 @@ impl FeatureMatrixTestSuite {
                 project_type: "library".to_string(),
                 author: "Test <test@example.com>".to_string(),
                 description: Some("Description with \"quotes\", 'apostrophes', and other special chars: @#$%^&*()".to_string()),
+                features: vec![],
                 test_category: "Description Variations".to_string(),
                 expected_behavior: TestExpectation::Success,
                 validation_rules: vec![
@@ -209,6 +220,7 @@ impl FeatureMatrixTestSuite {
                 project_type: "cli-tool".to_string(),
                 author: "CLI Test <cli@example.com>".to_string(),
                 description: Some("Minimal CLI tool".to_string()),
+                features: vec![],
                 test_category: "CLI Variations".to_string(),
                 expected_behavior: TestExpectation::Success,
                 validation_rules: vec![
@@ -226,6 +238,7 @@ impl FeatureMatrixTestSuite {
                 project_type: "api-server".to_string(),
                 author: "API Test <api@example.com>".to_string(),
                 description: Some("Minimal API server".to_string()),
+                features: vec![],
                 test_category: "API Variations".to_string(),
                 expected_behavior: TestExpectation::Success,
                 validation_rules: vec![
@@ -246,6 +259,7 @@ impl FeatureMatrixTestSuite {
                 project_type: "wasm-app".to_string(),
                 author: "WASM Test <wasm@example.com>".to_string(),
                 description: Some("Minimal WASM app".to_string()),
+                features: vec![],
                 test_category: "WASM Variations".to_string(),
                 expected_behavior: TestExpectation::Success,
                 validation_rules: vec![
@@ -270,6 +284,7 @@ impl FeatureMatrixTestSuite {
                 project_type: "library".to_string(),
                 author: "README Test <readme@example.com>".to_string(),
                 description: Some("Testing README quality and content".to_string()),
+                features: vec![],
                 test_category: "Content Quality".to_string(),
                 expected_behavior: TestExpectation::Success,
                 validation_rules: vec![
@@ -286,6 +301,7 @@ impl FeatureMatrixTestSuite {
                 project_type: "workspace".to_string(),
                 author: "Cargo Test <cargo@example.com>".to_string(),
                 description: Some("Testing Cargo.toml quality and structure".to_string()),
+                features: vec![],
                 test_category: "Content Quality".to_string(),
                 expected_behavior: TestExpectation::Success,
                 validation_rules: vec![
@@ -307,6 +323,7 @@ impl FeatureMatrixTestSuite {
                 project_type: "game-engine".to_string(),
                 author: "Cross Platform <cross@example.com>".to_string(),
                 description: Some("Testing cross-platform path handling".to_string()),
+                features: vec![],
                 test_category: "Cross-Platform".to_string(),
                 expected_behavior: TestExpectation::Success,
                 validation_rules: vec![
@@ -329,6 +346,7 @@ impl FeatureMatrixTestSuite {
                 project_type: "library".to_string(),
                 author: "Stress Test <stress@example.com>".to_string(),
                 description: Some("First stress test project".to_string()),
+                features: vec![],
                 test_category: "Performance".to_string(),
                 expected_behavior: TestExpectation::Success,
                 validation_rules: vec![
@@ -342,6 +360,7 @@ impl FeatureMatrixTestSuite {
                 project_type: "cli-tool".to_string(),
                 author: "Stress Test <stress@example.com>".to_string(),
                 description: Some("Second stress test project".to_string()),
+                features: vec![],
                 test_category: "Performance".to_string(),
                 expected_behavior: TestExpectation::Success,
                 validation_rules: vec![
@@ -467,6 +486,7 @@ impl FeatureMatrixTestSuite {
             project_type: config.project_type.clone(),
             author: config.author.clone(),
             description: config.description.clone(),
+            features: config.features.clone(),
         };
 
         self.generator.generate(&basic_config, &project_dir)
@@ -576,6 +596,7 @@ fn test_edge_cases() {
         project_type: "library".to_string(),
         author: "Test <test@example.com>".to_string(),
         description: Some("Single char test".to_string()),
+                features: vec![],
         test_category: "Edge Cases".to_string(),
         expected_behavior: TestExpectation::Success,
         validation_rules: vec![
@@ -601,6 +622,7 @@ fn test_matrix_performance() {
             project_type: "library".to_string(),
             author: "Perf Test <perf@example.com>".to_string(),
             description: Some("Performance test 1".to_string()),
+                features: vec![],
             test_category: "Performance".to_string(),
             expected_behavior: TestExpectation::Success,
             validation_rules: vec![ValidationRule::CargoCheckPasses],
@@ -610,6 +632,7 @@ fn test_matrix_performance() {
             project_type: "cli-tool".to_string(),
             author: "Perf Test <perf@example.com>".to_string(),
             description: Some("Performance test 2".to_string()),
+                features: vec![],
             test_category: "Performance".to_string(),
             expected_behavior: TestExpectation::Success,
             validation_rules: vec![ValidationRule::CargoCheckPasses],
@@ -619,6 +642,7 @@ fn test_matrix_performance() {
             project_type: "api-server".to_string(),
             author: "Perf Test <perf@example.com>".to_string(),
             description: Some("Performance test 3".to_string()),
+                features: vec![],
             test_category: "Performance".to_string(),
             expected_behavior: TestExpectation::Success,
             validation_rules: vec![ValidationRule::CargoCheckPasses],
