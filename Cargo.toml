@@ -39,6 +39,7 @@ indicatif = "0.17"
 colored = "2"
 dirs = "5"
 toml = "0.8"
+which = "8.0.0"
 
 [build-dependencies]
 clap = { version = "4", features = ["derive"] }

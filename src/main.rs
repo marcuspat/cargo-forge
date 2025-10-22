@@ -1,9 +1,9 @@
 mod cli;
 
-use clap::{CommandFactory, Parser};
-use clap_complete::{generate, Generator};
 use anyhow::Result;
 use cargo_forge::Forge;
+use clap::{CommandFactory, Parser};
+use clap_complete::{generate, Generator};
 use colored::*;
 use std::io;
 
@@ -39,26 +39,38 @@ fn main() -> Result<()> {
     let cli = Cli::parse();
 
     match cli.command {
-        Some(Commands::New { 
-            name, 
-            project_type, 
-            author, 
-            description, 
+        Some(Commands::New {
+            name,
+            project_type,
+            author,
+            description,
             license: _,
-            non_interactive, 
-            from_config, 
-            dry_run 
+            non_interactive,
+            from_config,
+            dry_run,
         }) => {
             // Display logo unless in non-interactive mode
             if !non_interactive {
                 display_logo();
             }
-            
+
             let forge = Forge::new(".");
-            
+
             if dry_run {
-                println!("{}", "🔍 DRY RUN MODE - No files will be created".bright_yellow().bold());
-                forge.run_dry_run(name, project_type, author, description, non_interactive, from_config)?;
+                println!(
+                    "{}",
+                    "🔍 DRY RUN MODE - No files will be created"
+                        .bright_yellow()
+                        .bold()
+                );
+                forge.run_dry_run(
+                    name,
+                    project_type,
+                    author,
+                    description,
+                    non_interactive,
+                    from_config,
+                )?;
             } else if non_interactive {
                 forge.run_non_interactive(name, project_type, author, description, from_config)?;
             } else if let Some(config_path) = from_config {
@@ -70,22 +82,27 @@ fn main() -> Result<()> {
                 forge.run()?;
             }
         }
-        Some(Commands::Init { 
-            project_type, 
+        Some(Commands::Init {
+            project_type,
             author: _,
             license: _,
-            non_interactive, 
-            from_config, 
-            dry_run 
+            non_interactive,
+            from_config,
+            dry_run,
         }) => {
             if !non_interactive {
                 display_logo();
             }
-            
+
             let forge = Forge::new(".");
-            
+
             if dry_run {
-                println!("{}", "🔍 DRY RUN MODE - No files will be created".bright_yellow().bold());
+                println!(
+                    "{}",
+                    "🔍 DRY RUN MODE - No files will be created"
+                        .bright_yellow()
+                        .bold()
+                );
                 forge.run_init_dry_run(project_type, non_interactive, from_config)?;
             } else if non_interactive {
                 forge.run_init_non_interactive(project_type, from_config)?;
@@ -102,8 +119,11 @@ fn main() -> Result<()> {
         None => {
             display_logo();
             println!("{}", "🔨 Welcome to Cargo-Forge!".bright_cyan().bold());
-            println!("{}", "Starting interactive project creation...\n".bright_white());
-            
+            println!(
+                "{}",
+                "Starting interactive project creation...\n".bright_white()
+            );
+
             let forge = Forge::new(".");
             forge.run()?;
         }

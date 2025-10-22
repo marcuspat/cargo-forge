@@ -1,4 +1,4 @@
-use crate::{ProjectContext, Plugin};
+use crate::{Plugin, ProjectContext};
 use std::error::Error;
 use std::fmt;
 
@@ -31,12 +31,12 @@ impl DatabasePlugin {
             with_migrations: true,
         }
     }
-    
+
     pub fn with_migrations(mut self, enabled: bool) -> Self {
         self.with_migrations = enabled;
         self
     }
-    
+
     fn get_sqlx_features(&self) -> Vec<&'static str> {
         match self.db_type {
             DatabaseType::PostgreSQL => vec!["runtime-tokio-rustls", "postgres"],
@@ -44,7 +44,7 @@ impl DatabasePlugin {
             DatabaseType::MySQL => vec!["runtime-tokio-rustls", "mysql"],
         }
     }
-    
+
     fn get_database_url_example(&self) -> &'static str {
         match self.db_type {
             DatabaseType::PostgreSQL => "postgresql://username:password@localhost/database",
@@ -52,9 +52,10 @@ impl DatabasePlugin {
             DatabaseType::MySQL => "mysql://username:password@localhost/database",
         }
     }
-    
+
     fn generate_database_module(&self) -> String {
-        format!(r#"use sqlx::{{pool, prelude::*}};
+        format!(
+            r#"use sqlx::{{pool, prelude::*}};
 
 #[derive(Clone)]
 pub struct Database {{
@@ -81,7 +82,7 @@ impl Database {{
         &self.pool
     }}
 }}
-"#, 
+"#,
             match self.db_type {
                 DatabaseType::PostgreSQL => "Postgres",
                 DatabaseType::SQLite => "Sqlite",
@@ -94,12 +95,12 @@ impl Database {{
             },
             match self.db_type {
                 DatabaseType::PostgreSQL => "Postgres",
-                DatabaseType::SQLite => "Sqlite", 
+                DatabaseType::SQLite => "Sqlite",
                 DatabaseType::MySQL => "MySql",
             }
         )
     }
-    
+
     fn generate_example_migration(&self) -> String {
         match self.db_type {
             DatabaseType::PostgreSQL => r#"-- Create users table
@@ -122,8 +123,9 @@ $$ language 'plpgsql';
 
 CREATE TRIGGER update_users_updated_at BEFORE UPDATE
     ON users FOR EACH ROW EXECUTE PROCEDURE
-    update_updated_at_column();"#.to_string(),
-    
+    update_updated_at_column();"#
+                .to_string(),
+
             DatabaseType::SQLite => r#"-- Create users table
 CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -138,8 +140,9 @@ CREATE TRIGGER update_users_updated_at
     AFTER UPDATE ON users
 BEGIN
     UPDATE users SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
-END;"#.to_string(),
-    
+END;"#
+                .to_string(),
+
             DatabaseType::MySQL => r#"-- Create users table
 CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -147,7 +150,8 @@ CREATE TABLE IF NOT EXISTS users (
     email VARCHAR(255) NOT NULL UNIQUE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;"#.to_string(),
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;"#
+                .to_string(),
         }
     }
 }
@@ -156,46 +160,46 @@ impl Plugin for DatabasePlugin {
     fn name(&self) -> &str {
         "Database"
     }
-    
+
     fn configure(&self, context: &mut ProjectContext) -> Result<(), Box<dyn Error>> {
-        let features_str = self.get_sqlx_features().iter()
+        let features_str = self
+            .get_sqlx_features()
+            .iter()
             .map(|f| format!(r#""{}""#, f))
             .collect::<Vec<_>>()
             .join(", ");
-        context.add_dependency("sqlx", &format!(r#"{{ version = "0.7", features = [{}] }}"#, features_str));
-        
+        context.add_dependency(
+            "sqlx",
+            &format!(r#"{{ version = "0.7", features = [{}] }}"#, features_str),
+        );
+
         context.add_dependency("tokio", r#"{ version = "1", features = ["full"] }"#);
         context.add_dependency("dotenv", r#""0.15""#);
-        
+
         context.add_to_gitignore(".env");
         context.add_to_gitignore("*.db");
         context.add_to_gitignore("*.db-shm");
         context.add_to_gitignore("*.db-wal");
-        
-        let env_content = format!(
-            "DATABASE_URL={}\n",
-            self.get_database_url_example()
-        );
+
+        let env_content = format!("DATABASE_URL={}\n", self.get_database_url_example());
         context.add_template_file(".env.example", env_content);
-        
+
         context.add_template_file("src/database.rs", self.generate_database_module());
-        
+
         if self.with_migrations {
             context.create_directory("migrations");
-            
+
             let migration_name = "001_create_users_table.sql";
             context.add_template_file(
                 &format!("migrations/{}", migration_name),
-                self.generate_example_migration()
+                self.generate_example_migration(),
             );
-            
-            context.add_template_file(
-                "migrations/.gitkeep",
-                "".to_string()
-            );
+
+            context.add_template_file("migrations/.gitkeep", "".to_string());
         }
-        
-        let example_code = format!(r#"use dotenv::dotenv;
+
+        let example_code = format!(
+            r#"use dotenv::dotenv;
 use std::env;
 
 mod database;
@@ -217,10 +221,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {{
     println!("Connected to {{}} database!", "{}");
     
     Ok(())
-}}"#, self.db_type);
-        
+}}"#,
+            self.db_type
+        );
+
         context.add_example("database_connection", example_code);
-        
+
         Ok(())
     }
 }

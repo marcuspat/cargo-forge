@@ -1,9 +1,9 @@
 pub mod conditional;
 
 use anyhow::Result;
-use tera::{Context, Tera};
 use include_dir::{include_dir, Dir};
 use std::collections::HashSet;
+use tera::{Context, Tera};
 
 // Embed all templates at compile time
 static TEMPLATES_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/templates");
@@ -17,14 +17,14 @@ impl TemplateEngine {
     pub fn new() -> Result<Self> {
         Self::with_features(vec![])
     }
-    
+
     pub fn with_features(features: Vec<String>) -> Result<Self> {
         let mut tera = Tera::default();
-        
+
         // Load all embedded templates
         Self::load_embedded_templates(&mut tera)?;
-        
-        Ok(Self { 
+
+        Ok(Self {
             tera,
             features: features.into_iter().collect(),
         })
@@ -32,15 +32,18 @@ impl TemplateEngine {
 
     pub fn render(&self, template_name: &str, context: &Context) -> Result<String> {
         let mut context = context.clone();
-        
+
         // Add features to context for conditional rendering
-        context.insert("features", &self.features.iter().cloned().collect::<Vec<_>>());
-        
+        context.insert(
+            "features",
+            &self.features.iter().cloned().collect::<Vec<_>>(),
+        );
+
         // Add individual feature flags
         for feature in &self.features {
             context.insert(&format!("has_{}", feature), &true);
         }
-        
+
         let rendered = self.tera.render(template_name, &context)?;
         Ok(rendered)
     }
@@ -68,7 +71,7 @@ impl TemplateEngine {
                         } else {
                             format!("{}/{}", prefix, file_name_str)
                         };
-                        
+
                         // Get file contents as string
                         if let Some(contents) = file.contents_utf8() {
                             tera.add_raw_template(&template_name, contents)?;
@@ -77,7 +80,7 @@ impl TemplateEngine {
                 }
             }
         }
-        
+
         // Recursively process subdirectories
         for subdir in dir.dirs() {
             if let Some(dir_name) = subdir.path().file_name() {
@@ -91,7 +94,7 @@ impl TemplateEngine {
                 }
             }
         }
-        
+
         Ok(())
     }
 
@@ -118,7 +121,7 @@ impl TemplateEngine {
                 }
             }
         }
-        
+
         for subdir in dir.dirs() {
             if let Some(dir_name) = subdir.path().file_name() {
                 if let Some(dir_name_str) = dir_name.to_str() {
@@ -132,39 +135,39 @@ impl TemplateEngine {
             }
         }
     }
-    
+
     /// Get templates for specific features
     pub fn get_feature_templates(&self, features: &[String]) -> Vec<String> {
         let mut templates = Vec::new();
-        
+
         // Get base templates
         templates.extend(self.list_templates());
-        
+
         // Add feature-specific templates
         for feature in features {
             let feature_prefix = format!("features/{}/", feature);
             templates.extend(
                 self.list_templates()
                     .into_iter()
-                    .filter(|t| t.starts_with(&feature_prefix))
+                    .filter(|t| t.starts_with(&feature_prefix)),
             );
         }
-        
+
         templates.sort();
         templates.dedup();
         templates
     }
-    
+
     /// Check if a feature is enabled
     pub fn has_feature(&self, feature: &str) -> bool {
         self.features.contains(feature)
     }
-    
+
     /// Add a feature
     pub fn add_feature(&mut self, feature: String) {
         self.features.insert(feature);
     }
-    
+
     /// Get all enabled features
     pub fn get_features(&self) -> Vec<String> {
         self.features.iter().cloned().collect()

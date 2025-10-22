@@ -1,6 +1,6 @@
+use serde::Serialize;
 use std::fmt;
 use std::str::FromStr;
-use serde::Serialize;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 pub enum ProjectType {
@@ -54,6 +54,13 @@ impl ProjectType {
             ProjectType::GameEngine => vec!["bevy"],
             ProjectType::Embedded => vec!["cortex-m", "cortex-m-rt", "panic-halt"],
             ProjectType::Workspace => vec!["tokio", "serde", "anyhow"],
+        }
+    }
+
+    pub fn requires_external_generator(&self, target: Option<&str>) -> bool {
+        match self {
+            ProjectType::Embedded => target == Some("esp32"),
+            _ => false,
         }
     }
 }

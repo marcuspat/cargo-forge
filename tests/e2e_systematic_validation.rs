@@ -1,9 +1,9 @@
 use cargo_forge::{Generator, ProjectConfig};
+use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use tempfile::TempDir;
-use std::collections::HashMap;
 
 /// Comprehensive end-to-end testing framework for project generation validation
 /// This module provides systematic testing of all project types, feature combinations,
@@ -63,7 +63,11 @@ impl TestConfig {
         self
     }
 
-    pub fn with_gitignore_requirements(mut self, must_have: Vec<&str>, must_not_have: Vec<&str>) -> Self {
+    pub fn with_gitignore_requirements(
+        mut self,
+        must_have: Vec<&str>,
+        must_not_have: Vec<&str>,
+    ) -> Self {
         self.gitignore_must_have = must_have.into_iter().map(|s| s.to_string()).collect();
         self.gitignore_must_not_have = must_not_have.into_iter().map(|s| s.to_string()).collect();
         self
@@ -121,7 +125,7 @@ impl E2ETestSuite {
             TestConfig::new("e2e-cli-tool", "cli-tool")
                 .with_expected_files(vec![
                     "src/main.rs",
-                    "src/cli.rs", 
+                    "src/cli.rs",
                     "src/commands.rs",
                     "Cargo.toml",
                     "README.md",
@@ -131,7 +135,6 @@ impl E2ETestSuite {
                 .with_required_cargo_sections(vec!["[package]", "[[bin]]", "[dependencies]"])
                 .with_gitignore_requirements(vec!["/target"], vec!["Cargo.lock"])
                 .with_cargo_support(true, true, true),
-
             // Library configuration
             TestConfig::new("e2e-library", "library")
                 .with_expected_files(vec![
@@ -145,7 +148,6 @@ impl E2ETestSuite {
                 .with_required_cargo_sections(vec!["[package]", "[lib]"])
                 .with_gitignore_requirements(vec!["/target", "Cargo.lock"], vec![])
                 .with_cargo_support(true, true, true),
-
             // API Server configuration
             TestConfig::new("e2e-api-server", "api-server")
                 .with_expected_files(vec![
@@ -163,7 +165,6 @@ impl E2ETestSuite {
                 .with_required_cargo_sections(vec!["[package]", "[dependencies]"])
                 .with_gitignore_requirements(vec!["/target"], vec![])
                 .with_cargo_support(true, true, true),
-
             // WASM App configuration
             TestConfig::new("e2e-wasm-app", "wasm-app")
                 .with_expected_files(vec![
@@ -179,9 +180,11 @@ impl E2ETestSuite {
                 ])
                 .with_expected_dependencies(vec!["wasm-bindgen", "web-sys", "js-sys"])
                 .with_required_cargo_sections(vec!["[package]", "[lib]", "[dependencies]"])
-                .with_gitignore_requirements(vec!["/target", "node_modules", "dist/", "pkg/"], vec![])
+                .with_gitignore_requirements(
+                    vec!["/target", "node_modules", "dist/", "pkg/"],
+                    vec![],
+                )
                 .with_cargo_support(true, false, false), // WASM needs special build setup
-
             // Game Engine configuration
             TestConfig::new("e2e-game-engine", "game-engine")
                 .with_expected_files(vec![
@@ -198,9 +201,11 @@ impl E2ETestSuite {
                 ])
                 .with_expected_dependencies(vec!["bevy"])
                 .with_required_cargo_sections(vec!["[package]", "[dependencies]", "[profile.dev]"])
-                .with_gitignore_requirements(vec!["/target", "wasm/", "*.wasm", ".DS_Store"], vec![])
+                .with_gitignore_requirements(
+                    vec!["/target", "wasm/", "*.wasm", ".DS_Store"],
+                    vec![],
+                )
                 .with_cargo_support(true, true, true),
-
             // Embedded configuration
             TestConfig::new("e2e-embedded", "embedded")
                 .with_expected_files(vec![
@@ -213,10 +218,17 @@ impl E2ETestSuite {
                     ".gitignore",
                 ])
                 .with_expected_dependencies(vec!["cortex-m", "cortex-m-rt", "panic-halt"])
-                .with_required_cargo_sections(vec!["[package]", "[dependencies]", "[profile.dev]", "[profile.release]"])
-                .with_gitignore_requirements(vec!["/target", "*.bin", "*.hex", "*.elf", ".vscode/"], vec![])
+                .with_required_cargo_sections(vec![
+                    "[package]",
+                    "[dependencies]",
+                    "[profile.dev]",
+                    "[profile.release]",
+                ])
+                .with_gitignore_requirements(
+                    vec!["/target", "*.bin", "*.hex", "*.elf", ".vscode/"],
+                    vec![],
+                )
                 .with_cargo_support(false, false, false), // Embedded needs special targets
-
             // Workspace configuration
             TestConfig::new("e2e-workspace", "workspace")
                 .with_expected_files(vec![
@@ -235,14 +247,22 @@ impl E2ETestSuite {
                     ".gitignore",
                 ])
                 .with_expected_dependencies(vec!["tokio", "serde", "anyhow"])
-                .with_required_cargo_sections(vec!["[workspace]", "[workspace.package]", "[workspace.dependencies]"])
+                .with_required_cargo_sections(vec![
+                    "[workspace]",
+                    "[workspace.package]",
+                    "[workspace.dependencies]",
+                ])
                 .with_gitignore_requirements(vec!["/target", "Cargo.lock"], vec![])
                 .with_cargo_support(true, true, true),
         ]
     }
 
     /// Validate project structure according to test configuration
-    fn validate_project_structure(&self, config: &TestConfig, project_dir: &Path) -> Result<(), String> {
+    fn validate_project_structure(
+        &self,
+        config: &TestConfig,
+        project_dir: &Path,
+    ) -> Result<(), String> {
         for file in &config.expected_files {
             let file_path = project_dir.join(file);
             if file.ends_with('/') {
@@ -360,7 +380,11 @@ impl E2ETestSuite {
     }
 
     /// Validate cargo operations
-    fn validate_cargo_operations(&self, config: &TestConfig, project_dir: &Path) -> Result<(), String> {
+    fn validate_cargo_operations(
+        &self,
+        config: &TestConfig,
+        project_dir: &Path,
+    ) -> Result<(), String> {
         if config.supports_cargo_check {
             self.run_cargo_command(project_dir, "check")
                 .map_err(|e| format!("Cargo check failed: {}", e))?;
@@ -380,7 +404,11 @@ impl E2ETestSuite {
     }
 
     /// Validate platform-specific requirements
-    fn validate_platform_requirements(&self, config: &TestConfig, project_dir: &Path) -> Result<(), String> {
+    fn validate_platform_requirements(
+        &self,
+        config: &TestConfig,
+        project_dir: &Path,
+    ) -> Result<(), String> {
         let platform = Self::get_platform();
         if let Some(requirements) = config.platform_specific_requirements.get(&platform) {
             for requirement in requirements {
@@ -395,7 +423,7 @@ impl E2ETestSuite {
     /// Run comprehensive validation for a single project
     fn validate_single_project(&mut self, config: &TestConfig) -> Result<(), String> {
         let project_dir = self.temp_dir.path().join(&config.name);
-        
+
         // Generate project
         let basic_config = ProjectConfig {
             name: config.name.clone(),
@@ -405,7 +433,8 @@ impl E2ETestSuite {
             features: vec![],
         };
 
-        self.generator.generate(&basic_config, &project_dir)
+        self.generator
+            .generate(&basic_config, &project_dir)
             .map_err(|e| format!("Failed to generate project: {}", e))?;
 
         // Validate structure
@@ -432,7 +461,7 @@ impl E2ETestSuite {
     /// Run validation for all project types
     pub fn run_all_validations(&mut self) -> HashMap<String, bool> {
         let configs = Self::get_all_project_test_configs();
-        
+
         for config in configs {
             let result = self.validate_single_project(&config);
             match result {
@@ -446,7 +475,7 @@ impl E2ETestSuite {
                 }
             }
         }
-        
+
         self.test_results.clone()
     }
 
@@ -454,25 +483,31 @@ impl E2ETestSuite {
     pub fn generate_test_report(&self) -> String {
         let mut report = String::new();
         report.push_str("=== E2E Systematic Validation Report ===\n\n");
-        
+
         let total_tests = self.test_results.len();
         let passed_tests = self.test_results.values().filter(|&&result| result).count();
         let failed_tests = total_tests - passed_tests;
-        
+
         report.push_str(&format!("Total Tests: {}\n", total_tests));
         report.push_str(&format!("Passed: {}\n", passed_tests));
         report.push_str(&format!("Failed: {}\n", failed_tests));
-        report.push_str(&format!("Success Rate: {:.2}%\n\n", (passed_tests as f64 / total_tests as f64) * 100.0));
-        
+        report.push_str(&format!(
+            "Success Rate: {:.2}%\n\n",
+            (passed_tests as f64 / total_tests as f64) * 100.0
+        ));
+
         report.push_str("Test Results:\n");
         for (test_name, result) in &self.test_results {
             let status = if *result { "PASS" } else { "FAIL" };
             report.push_str(&format!("  {} - {}\n", test_name, status));
         }
-        
+
         report.push_str(&format!("\nPlatform: {}\n", Self::get_platform()));
-        report.push_str(&format!("Timestamp: {}\n", chrono::Utc::now().format("%Y-%m-%d %H:%M:%S UTC")));
-        
+        report.push_str(&format!(
+            "Timestamp: {}\n",
+            chrono::Utc::now().format("%Y-%m-%d %H:%M:%S UTC")
+        ));
+
         report
     }
 }
@@ -482,17 +517,18 @@ impl E2ETestSuite {
 fn test_systematic_e2e_validation() {
     let mut test_suite = E2ETestSuite::new();
     let results = test_suite.run_all_validations();
-    
+
     // Generate and print report
     let report = test_suite.generate_test_report();
     println!("{}", report);
-    
+
     // Ensure all tests passed
-    let failed_tests: Vec<&String> = results.iter()
+    let failed_tests: Vec<&String> = results
+        .iter()
         .filter(|(_, &result)| !result)
         .map(|(name, _)| name)
         .collect();
-    
+
     if !failed_tests.is_empty() {
         panic!("The following tests failed: {:?}", failed_tests);
     }
@@ -502,7 +538,7 @@ fn test_systematic_e2e_validation() {
 #[test]
 fn test_individual_project_validations() {
     let configs = E2ETestSuite::get_all_project_test_configs();
-    
+
     for config in configs {
         let mut test_suite = E2ETestSuite::new();
         match test_suite.validate_single_project(&config) {
@@ -517,20 +553,26 @@ fn test_individual_project_validations() {
 fn test_cross_platform_compatibility() {
     let mut test_suite = E2ETestSuite::new();
     let platform = E2ETestSuite::get_platform();
-    
+
     println!("Running cross-platform compatibility test on: {}", platform);
-    
+
     // Test a subset of project types for cross-platform compatibility
     let cross_platform_configs = vec![
         TestConfig::new("cross-platform-cli", "cli-tool"),
         TestConfig::new("cross-platform-lib", "library"),
         TestConfig::new("cross-platform-api", "api-server"),
     ];
-    
+
     for config in cross_platform_configs {
         match test_suite.validate_single_project(&config) {
-            Ok(()) => println!("✅ Cross-platform test for {} passed on {}", config.name, platform),
-            Err(e) => panic!("❌ Cross-platform test for {} failed on {}: {}", config.name, platform, e),
+            Ok(()) => println!(
+                "✅ Cross-platform test for {} passed on {}",
+                config.name, platform
+            ),
+            Err(e) => panic!(
+                "❌ Cross-platform test for {} failed on {}: {}",
+                config.name, platform, e
+            ),
         }
     }
 }
@@ -540,22 +582,27 @@ fn test_cross_platform_compatibility() {
 fn test_project_generation_performance() {
     let start_time = std::time::Instant::now();
     let mut test_suite = E2ETestSuite::new();
-    
+
     // Generate multiple projects quickly
     let performance_configs = vec![
         TestConfig::new("perf-test-1", "library"),
         TestConfig::new("perf-test-2", "cli-tool"),
         TestConfig::new("perf-test-3", "api-server"),
     ];
-    
+
     for config in performance_configs {
-        test_suite.validate_single_project(&config)
+        test_suite
+            .validate_single_project(&config)
             .expect(&format!("Performance test failed for {}", config.name));
     }
-    
+
     let elapsed = start_time.elapsed();
     println!("Performance test completed in {:?}", elapsed);
-    
+
     // Ensure reasonable performance (should complete in under 3 minutes for 3 projects)
-    assert!(elapsed.as_secs() < 180, "Project generation performance test took too long: {:?}", elapsed);
+    assert!(
+        elapsed.as_secs() < 180,
+        "Project generation performance test took too long: {:?}",
+        elapsed
+    );
 }

@@ -1,4 +1,4 @@
-use crate::{ProjectContext, Plugin};
+use crate::{Plugin, ProjectContext};
 use std::error::Error;
 
 #[derive(Debug, Clone, Copy)]
@@ -22,22 +22,22 @@ impl DockerPlugin {
             expose_port: None,
         }
     }
-    
+
     pub fn with_build_stage(mut self, stage: DockerBuildStage) -> Self {
         self.build_stage = stage;
         self
     }
-    
+
     pub fn with_compose(mut self, enabled: bool) -> Self {
         self.with_compose = enabled;
         self
     }
-    
+
     pub fn expose_port(mut self, port: u16) -> Self {
         self.expose_port = Some(port);
         self
     }
-    
+
     fn generate_dockerfile(&self, project_name: &str) -> String {
         match self.build_stage {
             DockerBuildStage::Simple => self.generate_simple_dockerfile(project_name),
@@ -45,9 +45,10 @@ impl DockerPlugin {
             DockerBuildStage::MultiStageWithCache => self.generate_cached_dockerfile(project_name),
         }
     }
-    
+
     fn generate_simple_dockerfile(&self, project_name: &str) -> String {
-        let mut dockerfile = format!(r#"FROM rust:1.75-slim
+        let mut dockerfile = format!(
+            r#"FROM rust:1.75-slim
 
 WORKDIR /app
 
@@ -56,7 +57,8 @@ COPY src ./src
 
 RUN cargo build --release
 
-"#);
+"#
+        );
 
         if let Some(port) = self.expose_port {
             dockerfile.push_str(&format!("EXPOSE {}\n\n", port));
@@ -65,9 +67,10 @@ RUN cargo build --release
         dockerfile.push_str(&format!(r#"CMD ["./target/release/{}"]"#, project_name));
         dockerfile
     }
-    
+
     fn generate_multistage_dockerfile(&self, project_name: &str) -> String {
-        let mut dockerfile = format!(r#"# Build stage
+        let mut dockerfile = format!(
+            r#"# Build stage
 FROM rust:1.75 AS builder
 
 WORKDIR /app
@@ -99,7 +102,9 @@ WORKDIR /app
 # Copy the binary from builder
 COPY --from=builder /app/target/release/{} /app/{}
 
-"#, project_name, project_name);
+"#,
+            project_name, project_name
+        );
 
         if let Some(port) = self.expose_port {
             dockerfile.push_str(&format!("EXPOSE {}\n\n", port));
@@ -108,9 +113,10 @@ COPY --from=builder /app/target/release/{} /app/{}
         dockerfile.push_str(&format!(r#"CMD ["./{}"]"#, project_name));
         dockerfile
     }
-    
+
     fn generate_cached_dockerfile(&self, project_name: &str) -> String {
-        let mut dockerfile = format!(r#"# syntax=docker/dockerfile:1.4
+        let mut dockerfile = format!(
+            r#"# syntax=docker/dockerfile:1.4
 
 # Build stage with cargo-chef for dependency caching
 FROM rust:1.75 AS chef
@@ -140,7 +146,9 @@ WORKDIR /app
 
 COPY --from=builder /app/target/release/{} /app/{}
 
-"#, project_name, project_name);
+"#,
+            project_name, project_name
+        );
 
         if let Some(port) = self.expose_port {
             dockerfile.push_str(&format!("EXPOSE {}\n\n", port));
@@ -149,7 +157,7 @@ COPY --from=builder /app/target/release/{} /app/{}
         dockerfile.push_str(&format!(r#"ENTRYPOINT ["./{}"]"#, project_name));
         dockerfile
     }
-    
+
     fn generate_dockerignore(&self) -> String {
         r#"# Rust build artifacts
 target/
@@ -191,11 +199,13 @@ benches/
 # Docker files (avoid recursion)
 Dockerfile*
 docker-compose*
-.dockerignore"#.to_string()
+.dockerignore"#
+            .to_string()
     }
-    
+
     fn generate_docker_compose(&self, project_name: &str) -> String {
-        let mut compose = format!(r#"version: '3.8'
+        let mut compose = format!(
+            r#"version: '3.8'
 
 services:
   app:
@@ -203,15 +213,21 @@ services:
       context: .
       dockerfile: Dockerfile
     image: {}:latest
-    container_name: {}"#, project_name, project_name);
-        
+    container_name: {}"#,
+            project_name, project_name
+        );
+
         if let Some(port) = self.expose_port {
-            compose.push_str(&format!(r#"
+            compose.push_str(&format!(
+                r#"
     ports:
-      - "{}:{}""#, port, port));
+      - "{}:{}""#,
+                port, port
+            ));
         }
-        
-        compose.push_str(r#"
+
+        compose.push_str(
+            r#"
     environment:
       - RUST_LOG=info
     restart: unless-stopped
@@ -230,8 +246,9 @@ services:
   #     - "5432:5432"
 
 # volumes:
-#   postgres_data:"#);
-        
+#   postgres_data:"#,
+        );
+
         compose
     }
 }
@@ -246,41 +263,46 @@ impl Plugin for DockerPlugin {
     fn name(&self) -> &str {
         "Docker"
     }
-    
+
     fn configure(&self, context: &mut ProjectContext) -> Result<(), Box<dyn Error>> {
         let project_name = context.name.clone();
-        
+
         context.add_template_file("Dockerfile", self.generate_dockerfile(&project_name));
         context.add_template_file(".dockerignore", self.generate_dockerignore());
-        
+
         if self.with_compose {
-            context.add_template_file("docker-compose.yml", self.generate_docker_compose(&project_name));
+            context.add_template_file(
+                "docker-compose.yml",
+                self.generate_docker_compose(&project_name),
+            );
         }
-        
-        let build_script = format!(r#"#!/bin/bash
+
+        let build_script = format!(
+            r#"#!/bin/bash
 # Build Docker image
 docker build -t {} .
 
 # Run the container
-docker run --rm {}"#, 
-            &project_name, 
-            &project_name
+docker run --rm {}"#,
+            &project_name, &project_name
         );
-        
+
         context.add_template_file("scripts/docker-build.sh", build_script);
-        
+
         if self.with_compose {
             let compose_script = r#"#!/bin/bash
 # Start services with docker-compose
 docker-compose up -d
 
 # View logs
-docker-compose logs -f"#.to_string();
-            
+docker-compose logs -f"#
+                .to_string();
+
             context.add_template_file("scripts/docker-compose-start.sh", compose_script);
         }
-        
-        let readme_section = format!(r#"
+
+        let readme_section = format!(
+            r#"
 ## Docker Support
 
 This project includes Docker support for easy deployment.
@@ -296,7 +318,9 @@ docker build -t {} .
 ```bash
 docker run --rm {}
 ```
-"#, &project_name, &project_name);
+"#,
+            &project_name, &project_name
+        );
 
         if self.with_compose {
             let compose_section = r#"
@@ -320,7 +344,7 @@ docker-compose down
         } else {
             context.add_to_readme(&readme_section);
         }
-        
+
         Ok(())
     }
 }

@@ -6,7 +6,7 @@ fn main() {
     // Create completions directory
     let project_root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let completions_dir = project_root.join("completions");
-    
+
     if !completions_dir.exists() {
         fs::create_dir_all(&completions_dir).expect("Failed to create completions directory");
     }
