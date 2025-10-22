@@ -431,6 +431,8 @@ impl E2ETestSuite {
             author: config.author.clone(),
             description: config.description.clone(),
             features: vec![],
+            target: None,
+            esp32_chip: None,
         };
 
         self.generator

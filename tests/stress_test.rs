@@ -55,6 +55,8 @@ mod stress_tests {
                                 i, thread_id
                             )),
                             features: vec![],
+                            target: None,
+                            esp32_chip: None,
                         };
 
                         let output_dir =
@@ -121,6 +123,8 @@ mod stress_tests {
             author: "Test Author".to_string(),
             description: Some("Project with extreme number of files".to_string()),
             features: vec![],
+            target: None,
+            esp32_chip: None
         };
 
         let output_dir = temp_dir.path().join("extreme-files");
@@ -170,6 +174,8 @@ mod stress_tests {
             author: "Test Author".to_string(),
             description: Some("Deeply nested project".to_string()),
             features: vec![],
+            target: None,
+            esp32_chip: None,
         };
 
         let start = Instant::now();
@@ -201,6 +207,8 @@ mod stress_tests {
                 author: "Test Author".to_string(),
                 description: Some("Test".to_string()),
                 features: vec![],
+                target: None,
+                esp32_chip: None,
             };
 
             let output_dir = temp_dir.path().join("panic-test");
@@ -223,6 +231,8 @@ mod stress_tests {
             author: "Test Author".to_string(),
             description: Some("Recovery test".to_string()),
             features: vec![],
+            target: None,
+            esp32_chip: None
         };
 
         let output_dir = temp_dir.path().join("recovery-test");

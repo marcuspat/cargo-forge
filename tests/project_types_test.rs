@@ -15,6 +15,8 @@ fn test_api_server_project_type() {
         author: "Test Author".to_string(),
         description: Some("Test API Server".to_string()),
         features: vec![],
+        target: None,
+        esp32_chip: None
     };
 
     let generator = Generator::new();
@@ -80,6 +82,8 @@ fn test_cli_tool_project_type() {
         author: "Test Author".to_string(),
         description: Some("Test CLI Tool".to_string()),
         features: vec![],
+        target: None,
+        esp32_chip: None
     };
 
     let generator = Generator::new();
@@ -137,6 +141,8 @@ fn test_library_project_type() {
         author: "Test Author".to_string(),
         description: Some("Test Library".to_string()),
         features: vec![],
+        target: None,
+        esp32_chip: None
     };
 
     let generator = Generator::new();
@@ -194,6 +200,8 @@ fn test_wasm_app_project_type() {
         author: "Test Author".to_string(),
         description: Some("Test WASM App".to_string()),
         features: vec![],
+        target: None,
+        esp32_chip: None
     };
 
     let generator = Generator::new();
@@ -290,6 +298,8 @@ fn test_project_type_specific_readme() {
             author: "Test Author".to_string(),
             description: Some(format!("Test {}", type_name)),
             features: vec![],
+            target: None,
+            esp32_chip: None
         };
 
         let generator = Generator::new();
@@ -322,6 +332,8 @@ fn test_project_type_specific_gitignore() {
         author: "Test Author".to_string(),
         description: None,
         features: vec![],
+        target: None,
+        esp32_chip: None
     };
 
     let generator = Generator::new();
@@ -354,6 +366,8 @@ fn test_game_engine_project_type() {
         author: "Test Author".to_string(),
         description: Some("Test Game Engine".to_string()),
         features: vec![],
+        target: None,
+        esp32_chip: None
     };
 
     let generator = Generator::new();
@@ -415,6 +429,8 @@ fn test_embedded_project_type() {
         author: "Test Author".to_string(),
         description: Some("Test Embedded System".to_string()),
         features: vec![],
+        target: None,
+        esp32_chip: None
     };
 
     let generator = Generator::new();
@@ -473,6 +489,8 @@ fn test_workspace_project_type() {
         author: "Test Author".to_string(),
         description: Some("Test Workspace".to_string()),
         features: vec![],
+        target: None,
+        esp32_chip: None
     };
 
     let generator = Generator::new();

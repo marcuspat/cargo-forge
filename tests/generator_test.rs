@@ -15,6 +15,8 @@ fn test_file_generation_functionality() {
         author: "Test Author".to_string(),
         description: Some("Test description".to_string()),
         features: vec![],
+        target: None,
+        esp32_chip: None
     };
 
     let generator = Generator::new();
@@ -36,6 +38,8 @@ fn test_directory_creation() {
         author: "Test Author".to_string(),
         description: None,
         features: vec![],
+        target: None,
+        esp32_chip: None
     };
 
     let generator = Generator::new();
@@ -79,6 +83,8 @@ fn test_proper_permissions() {
         author: "Test Author".to_string(),
         description: Some("A CLI tool".to_string()),
         features: vec![],
+        target: None,
+        esp32_chip: None
     };
 
     let generator = Generator::new();
@@ -117,6 +123,8 @@ fn test_overwrite_protection() {
         author: "Test Author".to_string(),
         description: None,
         features: vec![],
+        target: None,
+        esp32_chip: None
     };
 
     let generator = Generator::new();
@@ -141,6 +149,8 @@ fn test_template_variable_injection() {
         author: "John Doe".to_string(),
         description: Some("A test API server".to_string()),
         features: vec![],
+        target: None,
+        esp32_chip: None
     };
 
     let generator = Generator::new();
@@ -175,6 +185,8 @@ fn test_binary_vs_library_generation() {
         author: "Test Author".to_string(),
         description: None,
         features: vec![],
+        target: None,
+        esp32_chip: None
     };
 
     let generator = Generator::new();
@@ -197,6 +209,8 @@ fn test_binary_vs_library_generation() {
         author: "Test Author".to_string(),
         description: None,
         features: vec![],
+        target: None,
+        esp32_chip: None
     };
 
     generator.generate(&bin_config, &bin_dir).unwrap();
@@ -223,6 +237,8 @@ fn test_gitignore_generation() {
         author: "Test Author".to_string(),
         description: None,
         features: vec![],
+        target: None,
+        esp32_chip: None
     };
 
     let generator = Generator::new();
@@ -254,6 +270,8 @@ fn test_readme_generation() {
         author: "Test Author".to_string(),
         description: Some("An awesome API server".to_string()),
         features: vec![],
+        target: None,
+        esp32_chip: None
     };
 
     let generator = Generator::new();

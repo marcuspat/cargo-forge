@@ -12,6 +12,8 @@ fn create_test_config(name: &str, project_type: &str) -> ProjectConfig {
         author: "Test Author <test@example.com>".to_string(),
         description: Some(format!("Test {} project", project_type)),
         features: vec![],
+        target: None,
+        esp32_chip: None
     }
 }
 
@@ -154,6 +156,8 @@ fn test_comprehensive_project_matrix() {
             author: authors[i % authors.len()].to_string(),
             description: descriptions[i % descriptions.len()].clone(),
             features: vec![],
+            target: None,
+            esp32_chip: None
         };
 
         generator
