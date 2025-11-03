@@ -57,6 +57,8 @@ mod generator_error_tests {
                 project_type: ProjectType::Library.to_string(),
                 author: "Test Author".to_string(),
                 description: Some("Test".to_string()),
+                esp32_chip: None,
+                target: None,
                 features: vec![],
             };
 
@@ -88,6 +90,8 @@ mod generator_error_tests {
                 project_type: ProjectType::Library.to_string(),
                 author: "Test Author".to_string(),
                 description: Some("Test".to_string()),
+                esp32_chip: None,
+                target: None,
                 features: vec![],
             };
 
@@ -113,6 +117,8 @@ mod generator_error_tests {
             project_type: ProjectType::Library.to_string(),
             author: "Test Author".to_string(),
             description: Some("Test".to_string()),
+            esp32_chip: None,
+            target: None,
             features: vec![],
         };
 
@@ -135,6 +141,8 @@ mod generator_error_tests {
             project_type: ProjectType::Library.to_string(),
             author: "Test Author".to_string(),
             description: Some("Test".to_string()),
+            esp32_chip: None,
+            target: None,
             features: vec![],
         };
 
@@ -163,6 +171,8 @@ mod generator_error_tests {
             project_type: ProjectType::Library.to_string(),
             author: "Test Author".to_string(),
             description: Some("Test".to_string()),
+            esp32_chip: None,
+            target: None,
             features: vec![],
         };
 
@@ -186,6 +196,8 @@ mod generator_error_tests {
             project_type: "invalid-type".to_string(),
             author: "Test Author".to_string(),
             description: Some("Test".to_string()),
+            esp32_chip: None,
+            target: None,
             features: vec![],
         };
 
@@ -210,6 +222,8 @@ mod generator_error_tests {
             project_type: ProjectType::Library.to_string(),
             author: "Test Author".to_string(),
             description: Some("Test".to_string()),
+            esp32_chip: None,
+            target: None,
             features: vec![],
         };
 
@@ -240,6 +254,8 @@ mod generator_error_tests {
                 project_type: ProjectType::Library.to_string(),
                 author: "Test Author".to_string(),
                 description: Some("Test".to_string()),
+                esp32_chip: None,
+                target: None,
                 features: vec![],
             };
 
@@ -267,6 +283,8 @@ mod generator_error_tests {
             project_type: ProjectType::Library.to_string(),
             author: "Test Author".to_string(),
             description: None,
+            esp32_chip: None,
+            target: None,
             features: vec![],
         };
 
@@ -289,6 +307,8 @@ mod generator_error_tests {
             project_type: ProjectType::Library.to_string(),
             author: "".to_string(),
             description: Some("Test".to_string()),
+            esp32_chip: None,
+            target: None,
             features: vec![],
         };
 
@@ -313,6 +333,8 @@ mod generator_error_tests {
             project_type: ProjectType::Library.to_string(),
             author: "Test Author".to_string(),
             description: Some("Test".to_string()),
+            esp32_chip: None,
+            target: None,
             features: vec![],
         };
 
@@ -398,6 +420,8 @@ mod extreme_edge_cases {
                 project_type: ProjectType::Library.to_string(),
                 author: "Test Author".to_string(),
                 description: Some("Test".to_string()),
+                esp32_chip: None,
+                target: None,
                 features: vec![],
             };
 
@@ -426,6 +450,8 @@ mod extreme_edge_cases {
             project_type: ProjectType::Library.to_string(),
             author: long_author,
             description: Some("Test".to_string()),
+            esp32_chip: None,
+            target: None,
             features: vec![],
         };
 
@@ -453,6 +479,8 @@ mod extreme_edge_cases {
             project_type: ProjectType::Library.to_string(),
             author: "Test Author".to_string(),
             description: Some(long_description.clone()),
+            esp32_chip: None,
+            target: None,
             features: vec![],
         };
 
@@ -486,6 +514,8 @@ mod extreme_edge_cases {
                 project_type: ProjectType::Library.to_string(),
                 author: "Test Author".to_string(),
                 description: Some("Test".to_string()),
+                esp32_chip: None,
+                target: None,
                 features: vec![],
             };
 
@@ -514,6 +544,8 @@ mod extreme_edge_cases {
             project_type: ProjectType::Library.to_string(),
             author: "Test Author".to_string(),
             description: Some("Test".to_string()),
+            esp32_chip: None,
+            target: None,
             features: vec![],
         };
 
@@ -541,6 +573,8 @@ mod extreme_edge_cases {
                 project_type: ProjectType::Library.to_string(),
                 author: "Test Author".to_string(),
                 description: Some("Test".to_string()),
+                esp32_chip: None,
+                target: None,
                 features: vec![],
             };
 
@@ -574,6 +608,8 @@ mod extreme_edge_cases {
                 project_type: project_type.to_string(),
                 author: "Test Author".to_string(),
                 description: Some("Test".to_string()),
+                esp32_chip: None,
+                target: None,
                 features: vec![],
             };
 
@@ -624,6 +660,8 @@ mod concurrency_tests {
                         project_type: ProjectType::Library.to_string(),
                         author: "Test Author".to_string(),
                         description: Some("Test".to_string()),
+                        esp32_chip: None,
+                        target: None,
                         features: vec![],
                     };
 
@@ -658,6 +696,8 @@ mod concurrency_tests {
                 project_type: ProjectType::Library.to_string(),
                 author: "Test Author".to_string(),
                 description: Some(format!("Rapid test project {}", i)),
+                esp32_chip: None,
+                target: None,
                 features: vec![],
             };
 
@@ -814,6 +854,8 @@ mod recovery_tests {
             project_type: ProjectType::Library.to_string(),
             author: "Test Author".to_string(),
             description: Some("Test".to_string()),
+            esp32_chip: None,
+            target: None,
             features: vec![],
         };
 
@@ -844,6 +886,8 @@ mod recovery_tests {
                 project_type: ProjectType::Library.to_string(),
                 author: "Test Author".to_string(),
                 description: Some("Test project for disk full scenario".to_string()),
+                esp32_chip: None,
+                target: None,
                 features: vec![],
             };
 
@@ -875,6 +919,8 @@ mod recovery_tests {
             project_type: ProjectType::Library.to_string(),
             author: "Test Author".to_string(),
             description: Some("Test".to_string()),
+            esp32_chip: None,
+            target: None,
             features: vec![],
         };
 
@@ -906,6 +952,8 @@ mod performance_tests {
             project_type: ProjectType::Workspace.to_string(),
             author: "Test Author".to_string(),
             description: Some("Large workspace with many crates".to_string()),
+            esp32_chip: None,
+            target: None,
             features: vec![],
         };
 
@@ -951,6 +999,8 @@ mod performance_tests {
                 project_type,
                 author: "Test Author".to_string(),
                 description: Some(format!("Performance test for {}", name)),
+                esp32_chip: None,
+                target: None,
                 features: vec![],
             };
 
@@ -1009,6 +1059,8 @@ mod performance_tests {
                 project_type: ProjectType::Library.to_string(),
                 author: large_author,
                 description: Some(large_description),
+                esp32_chip: None,
+                target: None,
                 features: vec![],
             };
 

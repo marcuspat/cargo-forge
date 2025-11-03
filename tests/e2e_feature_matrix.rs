@@ -527,6 +527,8 @@ impl FeatureMatrixTestSuite {
             project_type: config.project_type.clone(),
             author: config.author.clone(),
             description: config.description.clone(),
+            esp32_chip: None,
+            target: None,
             features: config.features.clone(),
         };
 

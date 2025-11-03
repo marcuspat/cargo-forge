@@ -11,6 +11,8 @@ fn create_test_config(name: &str, project_type: &str) -> ProjectConfig {
         project_type: project_type.to_string(),
         author: "Test Author <test@example.com>".to_string(),
         description: Some(format!("Test {} project", project_type)),
+        esp32_chip: None,
+        target: None,
         features: vec![],
     }
 }
@@ -121,6 +123,8 @@ impl ExtendedProjectConfig {
             project_type: self.project_type.clone(),
             author: self.author.clone(),
             description: self.description.clone(),
+            esp32_chip: None,
+            target: None,
             features: self.features.clone(),
         }
     }

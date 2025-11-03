@@ -11,6 +11,8 @@ fn create_test_config(name: &str, project_type: &str) -> ProjectConfig {
         project_type: project_type.to_string(),
         author: "Test Author <test@example.com>".to_string(),
         description: Some(format!("Test {} project", project_type)),
+        esp32_chip: None,
+        target: None,
         features: vec![],
     }
 }
@@ -402,6 +404,8 @@ fn test_template_variable_substitution_all_types() {
             project_type: project_type.to_string(),
             author: "Jane Smith <jane@example.com>".to_string(),
             description: Some(format!("Custom description for {}", project_type)),
+            esp32_chip: None,
+            target: None,
             features: vec![],
         };
 
@@ -513,6 +517,8 @@ fn test_project_name_sanitization() {
         project_type: "library".to_string(),
         author: "Test Author".to_string(),
         description: Some("Project with special name".to_string()),
+        esp32_chip: None,
+        target: None,
         features: vec![],
     };
 
