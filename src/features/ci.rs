@@ -1,4 +1,4 @@
-use crate::{ProjectContext, Plugin};
+use crate::{Plugin, ProjectContext};
 use std::error::Error;
 
 #[derive(Debug, Clone, Copy)]
@@ -24,22 +24,22 @@ impl CIPlugin {
             with_security_audit: true,
         }
     }
-    
+
     pub fn with_coverage(mut self, enabled: bool) -> Self {
         self.with_coverage = enabled;
         self
     }
-    
+
     pub fn with_release(mut self, enabled: bool) -> Self {
         self.with_release = enabled;
         self
     }
-    
+
     pub fn with_security_audit(mut self, enabled: bool) -> Self {
         self.with_security_audit = enabled;
         self
     }
-    
+
     fn generate_github_actions_ci(&self) -> String {
         let mut workflow = r#"name: CI
 
@@ -98,10 +98,12 @@ jobs:
       run: cargo build --verbose
       
     - name: Run tests
-      run: cargo test --verbose"#.to_string();
-      
+      run: cargo test --verbose"#
+            .to_string();
+
         if self.with_coverage {
-            workflow.push_str(r#"
+            workflow.push_str(
+                r#"
 
   coverage:
     name: Code Coverage
@@ -122,11 +124,13 @@ jobs:
       uses: codecov/codecov-action@v3
       with:
         file: ./cobertura.xml
-        fail_ci_if_error: true"#);
+        fail_ci_if_error: true"#,
+            );
         }
-        
+
         if self.with_security_audit {
-            workflow.push_str(r#"
+            workflow.push_str(
+                r#"
 
   security_audit:
     name: Security Audit
@@ -137,11 +141,13 @@ jobs:
     - name: Run security audit
       uses: actions-rs/audit-check@v1
       with:
-        token: ${{ secrets.GITHUB_TOKEN }}"#);
+        token: ${{ secrets.GITHUB_TOKEN }}"#,
+            );
         }
-        
+
         if self.with_release {
-            workflow.push_str(r#"
+            workflow.push_str(
+                r#"
 
   release:
     name: Release
@@ -163,12 +169,13 @@ jobs:
       with:
         files: target/release/${{ github.event.repository.name }}
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}"#);
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}"#,
+            );
         }
-        
+
         workflow
     }
-    
+
     fn generate_gitlab_ci(&self) -> String {
         let mut ci = r#"stages:
   - test
@@ -193,10 +200,12 @@ test:cargo:
     - cargo test --verbose
   only:
     - branches
-    - merge_requests"#.to_string();
-    
+    - merge_requests"#
+            .to_string();
+
         if self.with_coverage {
-            ci.push_str(r#"
+            ci.push_str(
+                r#"
 
 coverage:
   stage: test
@@ -213,11 +222,13 @@ coverage:
         path: cobertura.xml
   only:
     - main
-    - merge_requests"#);
+    - merge_requests"#,
+            );
         }
-        
+
         if self.with_security_audit {
-            ci.push_str(r#"
+            ci.push_str(
+                r#"
 
 security:
   stage: test
@@ -228,10 +239,12 @@ security:
   allow_failure: true
   only:
     - branches
-    - merge_requests"#);
+    - merge_requests"#,
+            );
         }
-        
-        ci.push_str(r#"
+
+        ci.push_str(
+            r#"
 
 build:
   stage: build
@@ -244,10 +257,12 @@ build:
     expire_in: 1 week
   only:
     - main
-    - tags"#);
-    
+    - tags"#,
+        );
+
         if self.with_release {
-            ci.push_str(r#"
+            ci.push_str(
+                r#"
 
 release:
   stage: deploy
@@ -262,9 +277,10 @@ release:
         - name: 'Binary'
           url: '$CI_PROJECT_URL/-/jobs/$CI_JOB_ID/artifacts/file/target/release/$CI_PROJECT_NAME'
   only:
-    - tags"#);
+    - tags"#,
+            );
         }
-        
+
         ci
     }
 }
@@ -273,43 +289,38 @@ impl Plugin for CIPlugin {
     fn name(&self) -> &str {
         "CI/CD"
     }
-    
+
     fn configure(&self, context: &mut ProjectContext) -> Result<(), Box<dyn Error>> {
         match self.platform {
             CIPlatform::GitHubActions => {
                 context.create_directory(".github/workflows");
                 context.add_template_file(
                     ".github/workflows/ci.yml",
-                    self.generate_github_actions_ci()
+                    self.generate_github_actions_ci(),
                 );
             }
             CIPlatform::GitLabCI => {
-                context.add_template_file(
-                    ".gitlab-ci.yml",
-                    self.generate_gitlab_ci()
-                );
+                context.add_template_file(".gitlab-ci.yml", self.generate_gitlab_ci());
             }
             CIPlatform::Both => {
                 context.create_directory(".github/workflows");
                 context.add_template_file(
                     ".github/workflows/ci.yml",
-                    self.generate_github_actions_ci()
+                    self.generate_github_actions_ci(),
                 );
-                context.add_template_file(
-                    ".gitlab-ci.yml",
-                    self.generate_gitlab_ci()
-                );
+                context.add_template_file(".gitlab-ci.yml", self.generate_gitlab_ci());
             }
         }
-        
+
         if self.with_coverage {
             context.add_to_gitignore("cobertura.xml");
             context.add_to_gitignore("tarpaulin-report.html");
             context.add_to_gitignore("coverage/");
         }
-        
+
         let readme_section = match self.platform {
-            CIPlatform::GitHubActions => r#"
+            CIPlatform::GitHubActions => {
+                r#"
 ## CI/CD
 
 This project uses GitHub Actions for continuous integration.
@@ -319,8 +330,10 @@ This project uses GitHub Actions for continuous integration.
 The CI pipeline runs:
 - Tests on multiple OS (Ubuntu, Windows, macOS) and Rust versions
 - Code formatting checks (rustfmt)
-- Linting (clippy)"#,
-            CIPlatform::GitLabCI => r#"
+- Linting (clippy)"#
+            }
+            CIPlatform::GitLabCI => {
+                r#"
 ## CI/CD
 
 This project uses GitLab CI for continuous integration.
@@ -328,8 +341,10 @@ This project uses GitLab CI for continuous integration.
 The CI pipeline runs:
 - Tests
 - Code formatting checks (rustfmt)
-- Linting (clippy)"#,
-            CIPlatform::Both => r#"
+- Linting (clippy)"#
+            }
+            CIPlatform::Both => {
+                r#"
 ## CI/CD
 
 This project supports both GitHub Actions and GitLab CI for continuous integration.
@@ -343,25 +358,26 @@ The pipeline configuration is in `.gitlab-ci.yml`
 Both pipelines run:
 - Tests
 - Code formatting checks (rustfmt)
-- Linting (clippy)"#,
+- Linting (clippy)"#
+            }
         };
-        
+
         let mut full_readme = readme_section.to_string();
-        
+
         if self.with_coverage {
             full_readme.push_str("\n- Code coverage reporting");
         }
-        
+
         if self.with_security_audit {
             full_readme.push_str("\n- Security vulnerability scanning");
         }
-        
+
         if self.with_release {
             full_readme.push_str("\n- Automatic releases on tags");
         }
-        
+
         context.add_to_readme(&full_readme);
-        
+
         Ok(())
     }
 }

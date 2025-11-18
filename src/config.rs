@@ -1,7 +1,7 @@
+use anyhow::{Context, Result};
+use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::{Path, PathBuf};
-use serde::{Deserialize, Serialize};
-use anyhow::{Result, Context};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
@@ -46,17 +46,17 @@ impl Config {
     /// Load config from a specific file path
     pub fn load_from_file<P: AsRef<Path>>(path: P) -> Result<Self> {
         let path = path.as_ref();
-        
+
         if !path.exists() {
             return Ok(Self::new());
         }
 
         let content = fs::read_to_string(path)
             .with_context(|| format!("Failed to read config file: {}", path.display()))?;
-        
+
         let config: Config = toml::from_str(&content)
             .with_context(|| format!("Failed to parse config file: {}", path.display()))?;
-        
+
         Ok(config)
     }
 
@@ -79,19 +79,19 @@ impl Config {
     /// Save config to a specific file path
     pub fn save_to_file<P: AsRef<Path>>(&self, path: P) -> Result<()> {
         let path = path.as_ref();
-        
+
         // Create parent directory if it doesn't exist
         if let Some(parent) = path.parent() {
-            fs::create_dir_all(parent)
-                .with_context(|| format!("Failed to create config directory: {}", parent.display()))?;
+            fs::create_dir_all(parent).with_context(|| {
+                format!("Failed to create config directory: {}", parent.display())
+            })?;
         }
 
-        let content = toml::to_string_pretty(self)
-            .context("Failed to serialize config to TOML")?;
-        
+        let content = toml::to_string_pretty(self).context("Failed to serialize config to TOML")?;
+
         fs::write(path, content)
             .with_context(|| format!("Failed to write config file: {}", path.display()))?;
-        
+
         Ok(())
     }
 

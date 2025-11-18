@@ -1,5 +1,5 @@
-use std::collections::HashMap;
 use anyhow::Result;
+use std::collections::HashMap;
 
 /// Mock structure to represent auth feature template generation
 struct AuthFeatureGenerator {
@@ -18,7 +18,7 @@ impl AuthFeatureGenerator {
             include_password_hashing: true,
         }
     }
-    
+
     fn generate_jwt_module(&self) -> String {
         r#"use jsonwebtoken::{encode, decode, Header, Algorithm, Validation, EncodingKey, DecodingKey};
 use serde::{Deserialize, Serialize};
@@ -101,7 +101,7 @@ mod tests {
     }
 }"#.to_string()
     }
-    
+
     fn generate_oauth_module(&self) -> String {
         r#"use oauth2::{
     AuthorizationCode, AuthUrl, ClientId, ClientSecret, CsrfToken, RedirectUrl, 
@@ -200,9 +200,10 @@ pub mod providers {
             redirect_url: env::var("GITHUB_REDIRECT_URL").unwrap_or_default(),
         }
     }
-}"#.to_string()
+}"#
+        .to_string()
     }
-    
+
     fn generate_password_module(&self) -> String {
         r#"use argon2::{
     password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
@@ -263,7 +264,7 @@ mod tests {
     }
 }"#.to_string()
     }
-    
+
     fn generate_auth_middleware(&self) -> String {
         r#"use axum::{
     async_trait,
@@ -354,7 +355,7 @@ where
     }
 }"#.to_string()
     }
-    
+
     fn generate_auth_routes(&self) -> String {
         r#"use axum::{
     routing::{get, post},
@@ -509,68 +510,60 @@ async fn refresh_token(
 ) -> Result<Json<LoginResponse>, (axum::http::StatusCode, String)> {
     // TODO: Implement refresh token logic
     Err((axum::http::StatusCode::NOT_IMPLEMENTED, "Refresh token not implemented".to_string()))
-}"#.to_string()
+}"#
+        .to_string()
     }
-    
+
     fn generate_file_structure(&self) -> Vec<(String, String)> {
         let mut files = vec![];
-        
+
         // Base auth module
-        files.push((
-            "src/auth/mod.rs".to_string(),
-            self.generate_auth_mod()
-        ));
-        
+        files.push(("src/auth/mod.rs".to_string(), self.generate_auth_mod()));
+
         // JWT support
         if self.auth_types.contains(&"jwt".to_string()) {
-            files.push((
-                "src/auth/jwt.rs".to_string(),
-                self.generate_jwt_module()
-            ));
+            files.push(("src/auth/jwt.rs".to_string(), self.generate_jwt_module()));
         }
-        
+
         // OAuth support
         if self.auth_types.contains(&"oauth".to_string()) {
             files.push((
                 "src/auth/oauth.rs".to_string(),
-                self.generate_oauth_module()
+                self.generate_oauth_module(),
             ));
         }
-        
+
         // Password hashing
         if self.include_password_hashing {
             files.push((
                 "src/auth/password.rs".to_string(),
-                self.generate_password_module()
+                self.generate_password_module(),
             ));
         }
-        
+
         // Middleware
         if self.include_middleware {
             files.push((
                 "src/auth/middleware.rs".to_string(),
-                self.generate_auth_middleware()
+                self.generate_auth_middleware(),
             ));
         }
-        
+
         // Auth routes
         files.push((
             "src/auth/routes.rs".to_string(),
-            self.generate_auth_routes()
+            self.generate_auth_routes(),
         ));
-        
+
         // Environment variables example
-        files.push((
-            ".env.auth.example".to_string(),
-            self.generate_env_example()
-        ));
-        
+        files.push((".env.auth.example".to_string(), self.generate_env_example()));
+
         files
     }
-    
+
     fn generate_auth_mod(&self) -> String {
         let mut modules = vec![];
-        
+
         if self.auth_types.contains(&"jwt".to_string()) {
             modules.push("pub mod jwt;");
         }
@@ -584,20 +577,20 @@ async fn refresh_token(
             modules.push("pub mod middleware;");
         }
         modules.push("pub mod routes;");
-        
+
         modules.join("\n")
     }
-    
+
     fn generate_env_example(&self) -> String {
         let mut env_vars = vec![];
-        
+
         if self.auth_types.contains(&"jwt".to_string()) {
             env_vars.push("# JWT Configuration");
             env_vars.push("JWT_SECRET=your-secret-key-here-min-32-chars");
             env_vars.push("JWT_EXPIRATION=86400");
             env_vars.push("");
         }
-        
+
         if self.auth_types.contains(&"oauth".to_string()) {
             env_vars.push("# OAuth Configuration");
             env_vars.push("# Google OAuth");
@@ -607,34 +600,43 @@ async fn refresh_token(
             env_vars.push("");
             env_vars.push("# GitHub OAuth");
             env_vars.push("GITHUB_CLIENT_ID=your-github-client-id");
-            env_vars.push("GITHUB_CLIENT_SECRET=your-github-client-secret"); 
+            env_vars.push("GITHUB_CLIENT_SECRET=your-github-client-secret");
             env_vars.push("GITHUB_REDIRECT_URL=http://localhost:3000/auth/oauth/github/callback");
         }
-        
+
         env_vars.join("\n")
     }
-    
+
     fn get_required_dependencies(&self) -> HashMap<String, String> {
         let mut deps = HashMap::new();
-        
+
         if self.auth_types.contains(&"jwt".to_string()) {
             deps.insert("jsonwebtoken".to_string(), "\"9\"".to_string());
         }
-        
+
         if self.auth_types.contains(&"oauth".to_string()) {
             deps.insert("oauth2".to_string(), "\"4\"".to_string());
-            deps.insert("reqwest".to_string(), r#"{ version = "0.11", features = ["json"] }"#.to_string());
+            deps.insert(
+                "reqwest".to_string(),
+                r#"{ version = "0.11", features = ["json"] }"#.to_string(),
+            );
         }
-        
+
         if self.include_password_hashing {
             deps.insert("argon2".to_string(), "\"0.5\"".to_string());
         }
-        
+
         // Common auth dependencies
-        deps.insert("serde".to_string(), r#"{ version = "1", features = ["derive"] }"#.to_string());
+        deps.insert(
+            "serde".to_string(),
+            r#"{ version = "1", features = ["derive"] }"#.to_string(),
+        );
         deps.insert("serde_json".to_string(), "\"1\"".to_string());
-        deps.insert("chrono".to_string(), r#"{ version = "0.4", features = ["serde"] }"#.to_string());
-        
+        deps.insert(
+            "chrono".to_string(),
+            r#"{ version = "0.4", features = ["serde"] }"#.to_string(),
+        );
+
         deps
     }
 }
@@ -642,24 +644,24 @@ async fn refresh_token(
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_jwt_module_generation() {
         let generator = AuthFeatureGenerator::new("my_app", vec!["jwt".to_string()]);
         let jwt_module = generator.generate_jwt_module();
-        
+
         assert!(jwt_module.contains("use jsonwebtoken"));
         assert!(jwt_module.contains("pub struct Claims"));
         assert!(jwt_module.contains("pub struct JwtManager"));
         assert!(jwt_module.contains("generate_token"));
         assert!(jwt_module.contains("verify_token"));
     }
-    
+
     #[test]
     fn test_oauth_module_generation() {
         let generator = AuthFeatureGenerator::new("my_app", vec!["oauth".to_string()]);
         let oauth_module = generator.generate_oauth_module();
-        
+
         assert!(oauth_module.contains("use oauth2"));
         assert!(oauth_module.contains("pub struct OAuthConfig"));
         assert!(oauth_module.contains("pub struct OAuthClient"));
@@ -668,34 +670,35 @@ mod tests {
         assert!(oauth_module.contains("google_config"));
         assert!(oauth_module.contains("github_config"));
     }
-    
+
     #[test]
     fn test_password_module_generation() {
         let generator = AuthFeatureGenerator::new("my_app", vec![]);
         let password_module = generator.generate_password_module();
-        
+
         assert!(password_module.contains("use argon2"));
         assert!(password_module.contains("pub struct PasswordManager"));
         assert!(password_module.contains("hash_password"));
         assert!(password_module.contains("verify_password"));
     }
-    
+
     #[test]
     fn test_auth_middleware_generation() {
         let generator = AuthFeatureGenerator::new("my_app", vec!["jwt".to_string()]);
         let middleware = generator.generate_auth_middleware();
-        
+
         assert!(middleware.contains("pub struct AuthenticatedUser"));
         assert!(middleware.contains("FromRequestParts"));
         assert!(middleware.contains("pub enum AuthError"));
         assert!(middleware.contains("pub struct RequireRole"));
     }
-    
+
     #[test]
     fn test_auth_routes_generation() {
-        let generator = AuthFeatureGenerator::new("my_app", vec!["jwt".to_string(), "oauth".to_string()]);
+        let generator =
+            AuthFeatureGenerator::new("my_app", vec!["jwt".to_string(), "oauth".to_string()]);
         let routes = generator.generate_auth_routes();
-        
+
         assert!(routes.contains("/auth/login"));
         assert!(routes.contains("/auth/register"));
         assert!(routes.contains("/auth/oauth/google"));
@@ -703,13 +706,13 @@ mod tests {
         assert!(routes.contains("LoginRequest"));
         assert!(routes.contains("LoginResponse"));
     }
-    
+
     #[test]
     fn test_file_structure_with_jwt_only() {
         let generator = AuthFeatureGenerator::new("my_app", vec!["jwt".to_string()]);
         let files = generator.generate_file_structure();
         let file_paths: Vec<String> = files.iter().map(|(path, _)| path.clone()).collect();
-        
+
         assert!(file_paths.contains(&"src/auth/mod.rs".to_string()));
         assert!(file_paths.contains(&"src/auth/jwt.rs".to_string()));
         assert!(file_paths.contains(&"src/auth/password.rs".to_string()));
@@ -717,65 +720,70 @@ mod tests {
         assert!(file_paths.contains(&"src/auth/routes.rs".to_string()));
         assert!(!file_paths.contains(&"src/auth/oauth.rs".to_string()));
     }
-    
+
     #[test]
     fn test_file_structure_with_oauth_only() {
         let generator = AuthFeatureGenerator::new("my_app", vec!["oauth".to_string()]);
         let files = generator.generate_file_structure();
         let file_paths: Vec<String> = files.iter().map(|(path, _)| path.clone()).collect();
-        
+
         assert!(file_paths.contains(&"src/auth/oauth.rs".to_string()));
         assert!(!file_paths.contains(&"src/auth/jwt.rs".to_string()));
     }
-    
+
     #[test]
     fn test_file_structure_with_all_auth_types() {
-        let generator = AuthFeatureGenerator::new("my_app", vec!["jwt".to_string(), "oauth".to_string(), "basic".to_string()]);
+        let generator = AuthFeatureGenerator::new(
+            "my_app",
+            vec!["jwt".to_string(), "oauth".to_string(), "basic".to_string()],
+        );
         let files = generator.generate_file_structure();
         let file_paths: Vec<String> = files.iter().map(|(path, _)| path.clone()).collect();
-        
+
         assert!(file_paths.contains(&"src/auth/jwt.rs".to_string()));
         assert!(file_paths.contains(&"src/auth/oauth.rs".to_string()));
         assert!(file_paths.contains(&"src/auth/password.rs".to_string()));
         assert!(file_paths.contains(&"src/auth/middleware.rs".to_string()));
     }
-    
+
     #[test]
     fn test_env_example_generation() {
-        let generator = AuthFeatureGenerator::new("my_app", vec!["jwt".to_string(), "oauth".to_string()]);
+        let generator =
+            AuthFeatureGenerator::new("my_app", vec!["jwt".to_string(), "oauth".to_string()]);
         let env_example = generator.generate_env_example();
-        
+
         assert!(env_example.contains("JWT_SECRET"));
         assert!(env_example.contains("GOOGLE_CLIENT_ID"));
         assert!(env_example.contains("GITHUB_CLIENT_ID"));
     }
-    
+
     #[test]
     fn test_required_dependencies_jwt() {
         let generator = AuthFeatureGenerator::new("my_app", vec!["jwt".to_string()]);
         let deps = generator.get_required_dependencies();
-        
+
         assert!(deps.contains_key("jsonwebtoken"));
         assert!(deps.contains_key("chrono"));
         assert!(deps.contains_key("serde"));
         assert!(!deps.contains_key("oauth2"));
     }
-    
+
     #[test]
     fn test_required_dependencies_oauth() {
         let generator = AuthFeatureGenerator::new("my_app", vec!["oauth".to_string()]);
         let deps = generator.get_required_dependencies();
-        
+
         assert!(deps.contains_key("oauth2"));
         assert!(deps.contains_key("reqwest"));
         assert!(!deps.contains_key("jsonwebtoken"));
     }
-    
+
     #[test]
     fn test_required_dependencies_all_features() {
-        let generator = AuthFeatureGenerator::new("my_app", vec!["jwt".to_string(), "oauth".to_string()]);
+        let generator =
+            AuthFeatureGenerator::new("my_app", vec!["jwt".to_string(), "oauth".to_string()]);
         let deps = generator.get_required_dependencies();
-        
+
         assert!(deps.contains_key("jsonwebtoken"));
         assert!(deps.contains_key("oauth2"));
         assert!(deps.contains_key("argon2"));

@@ -1,9 +1,9 @@
 use cargo_forge::{Generator, ProjectConfig};
+use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use tempfile::TempDir;
-use std::collections::HashMap;
 
 /// Feature matrix testing for comprehensive validation of project generation
 /// This module tests various combinations of project configurations, edge cases,
@@ -41,7 +41,7 @@ pub enum ValidationRule {
     CargoTestPasses,
     DirectoryExists(String),
     FileExecutable(String),
-    FileSize(String, u64, u64), // file, min_size, max_size
+    FileSize(String, u64, u64),      // file, min_size, max_size
     LineCount(String, usize, usize), // file, min_lines, max_lines
 }
 
@@ -135,7 +135,10 @@ impl FeatureMatrixTestSuite {
                 test_category: "Author Variations".to_string(),
                 expected_behavior: TestExpectation::Success,
                 validation_rules: vec![
-                    ValidationRule::FileContains("Cargo.toml".to_string(), "authors = [\"Simple Name\"]".to_string()),
+                    ValidationRule::FileContains(
+                        "Cargo.toml".to_string(),
+                        "authors = [\"Simple Name\"]".to_string(),
+                    ),
                     ValidationRule::CargoCheckPasses,
                 ],
             },
@@ -148,7 +151,10 @@ impl FeatureMatrixTestSuite {
                 test_category: "Author Variations".to_string(),
                 expected_behavior: TestExpectation::Success,
                 validation_rules: vec![
-                    ValidationRule::FileContains("Cargo.toml".to_string(), "authors = [\"John Doe <john@example.com>\"]".to_string()),
+                    ValidationRule::FileContains(
+                        "Cargo.toml".to_string(),
+                        "authors = [\"John Doe <john@example.com>\"]".to_string(),
+                    ),
                     ValidationRule::CargoCheckPasses,
                 ],
             },
@@ -161,7 +167,10 @@ impl FeatureMatrixTestSuite {
                 test_category: "Author Variations".to_string(),
                 expected_behavior: TestExpectation::Success,
                 validation_rules: vec![
-                    ValidationRule::FileContains("Cargo.toml".to_string(), "José García".to_string()),
+                    ValidationRule::FileContains(
+                        "Cargo.toml".to_string(),
+                        "José García".to_string(),
+                    ),
                     ValidationRule::CargoCheckPasses,
                 ],
             },
@@ -270,8 +279,14 @@ impl FeatureMatrixTestSuite {
                     ValidationRule::FileExists("webpack.config.js".to_string()),
                     ValidationRule::FileExists("build.sh".to_string()),
                     ValidationRule::FileExecutable("build.sh".to_string()),
-                    ValidationRule::FileContains("Cargo.toml".to_string(), "wasm-bindgen".to_string()),
-                    ValidationRule::FileContains("Cargo.toml".to_string(), "crate-type = [\"cdylib\"]".to_string()),
+                    ValidationRule::FileContains(
+                        "Cargo.toml".to_string(),
+                        "wasm-bindgen".to_string(),
+                    ),
+                    ValidationRule::FileContains(
+                        "Cargo.toml".to_string(),
+                        "crate-type = [\"cdylib\"]".to_string(),
+                    ),
                     ValidationRule::CargoCheckPasses,
                 ],
             },
@@ -291,8 +306,14 @@ impl FeatureMatrixTestSuite {
                     ValidationRule::FileExists("README.md".to_string()),
                     ValidationRule::FileSize("README.md".to_string(), 100, 10000),
                     ValidationRule::LineCount("README.md".to_string(), 10, 100),
-                    ValidationRule::FileContains("README.md".to_string(), "# readme-quality".to_string()),
-                    ValidationRule::FileContains("README.md".to_string(), "Testing README quality".to_string()),
+                    ValidationRule::FileContains(
+                        "README.md".to_string(),
+                        "# readme-quality".to_string(),
+                    ),
+                    ValidationRule::FileContains(
+                        "README.md".to_string(),
+                        "Testing README quality".to_string(),
+                    ),
                     ValidationRule::CargoCheckPasses,
                 ],
             },
@@ -306,10 +327,22 @@ impl FeatureMatrixTestSuite {
                 expected_behavior: TestExpectation::Success,
                 validation_rules: vec![
                     ValidationRule::FileExists("Cargo.toml".to_string()),
-                    ValidationRule::FileContains("Cargo.toml".to_string(), "[workspace]".to_string()),
-                    ValidationRule::FileContains("Cargo.toml".to_string(), "[workspace.package]".to_string()),
-                    ValidationRule::FileContains("Cargo.toml".to_string(), "[workspace.dependencies]".to_string()),
-                    ValidationRule::FileContains("Cargo.toml".to_string(), "members = [".to_string()),
+                    ValidationRule::FileContains(
+                        "Cargo.toml".to_string(),
+                        "[workspace]".to_string(),
+                    ),
+                    ValidationRule::FileContains(
+                        "Cargo.toml".to_string(),
+                        "[workspace.package]".to_string(),
+                    ),
+                    ValidationRule::FileContains(
+                        "Cargo.toml".to_string(),
+                        "[workspace.dependencies]".to_string(),
+                    ),
+                    ValidationRule::FileContains(
+                        "Cargo.toml".to_string(),
+                        "members = [".to_string(),
+                    ),
                     ValidationRule::FileSize("Cargo.toml".to_string(), 100, 5000),
                     ValidationRule::CargoCheckPasses,
                 ],
@@ -317,27 +350,25 @@ impl FeatureMatrixTestSuite {
         ]);
 
         // Cross-platform compatibility tests
-        matrix.extend(vec![
-            MatrixTestConfig {
-                name: "cross-platform-paths".to_string(),
-                project_type: "game-engine".to_string(),
-                author: "Cross Platform <cross@example.com>".to_string(),
-                description: Some("Testing cross-platform path handling".to_string()),
-                features: vec![],
-                test_category: "Cross-Platform".to_string(),
-                expected_behavior: TestExpectation::Success,
-                validation_rules: vec![
-                    ValidationRule::DirectoryExists("assets/models".to_string()),
-                    ValidationRule::DirectoryExists("assets/textures".to_string()),
-                    ValidationRule::DirectoryExists("assets/sounds".to_string()),
-                    ValidationRule::DirectoryExists("assets/shaders".to_string()),
-                    ValidationRule::DirectoryExists(".github/workflows".to_string()),
-                    ValidationRule::FileExists("assets/README.md".to_string()),
-                    ValidationRule::FileExists(".github/workflows/wasm.yml".to_string()),
-                    ValidationRule::CargoCheckPasses,
-                ],
-            },
-        ]);
+        matrix.extend(vec![MatrixTestConfig {
+            name: "cross-platform-paths".to_string(),
+            project_type: "game-engine".to_string(),
+            author: "Cross Platform <cross@example.com>".to_string(),
+            description: Some("Testing cross-platform path handling".to_string()),
+            features: vec![],
+            test_category: "Cross-Platform".to_string(),
+            expected_behavior: TestExpectation::Success,
+            validation_rules: vec![
+                ValidationRule::DirectoryExists("assets/models".to_string()),
+                ValidationRule::DirectoryExists("assets/textures".to_string()),
+                ValidationRule::DirectoryExists("assets/sounds".to_string()),
+                ValidationRule::DirectoryExists("assets/shaders".to_string()),
+                ValidationRule::DirectoryExists(".github/workflows".to_string()),
+                ValidationRule::FileExists("assets/README.md".to_string()),
+                ValidationRule::FileExists(".github/workflows/wasm.yml".to_string()),
+                ValidationRule::CargoCheckPasses,
+            ],
+        }]);
 
         // Performance and stress tests
         matrix.extend(vec![
@@ -375,7 +406,11 @@ impl FeatureMatrixTestSuite {
     }
 
     /// Apply a single validation rule
-    fn apply_validation_rule(&self, rule: &ValidationRule, project_dir: &Path) -> Result<(), String> {
+    fn apply_validation_rule(
+        &self,
+        rule: &ValidationRule,
+        project_dir: &Path,
+    ) -> Result<(), String> {
         match rule {
             ValidationRule::FileExists(file) => {
                 let path = project_dir.join(file);
@@ -460,7 +495,10 @@ impl FeatureMatrixTestSuite {
                     .map_err(|e| format!("Failed to get metadata for {}: {}", file, e))?;
                 let size = metadata.len();
                 if size < *min_size || size > *max_size {
-                    return Err(format!("File {} size {} is not in range {}-{}", file, size, min_size, max_size));
+                    return Err(format!(
+                        "File {} size {} is not in range {}-{}",
+                        file, size, min_size, max_size
+                    ));
                 }
             }
             ValidationRule::LineCount(file, min_lines, max_lines) => {
@@ -469,7 +507,10 @@ impl FeatureMatrixTestSuite {
                     .map_err(|e| format!("Failed to read {}: {}", file, e))?;
                 let line_count = content.lines().count();
                 if line_count < *min_lines || line_count > *max_lines {
-                    return Err(format!("File {} line count {} is not in range {}-{}", file, line_count, min_lines, max_lines));
+                    return Err(format!(
+                        "File {} line count {} is not in range {}-{}",
+                        file, line_count, min_lines, max_lines
+                    ));
                 }
             }
         }
@@ -479,17 +520,20 @@ impl FeatureMatrixTestSuite {
     /// Run a single matrix test
     fn run_matrix_test(&mut self, config: &MatrixTestConfig) -> Result<(), String> {
         let project_dir = self.temp_dir.path().join(&config.name);
-        
+
         // Generate project
         let basic_config = ProjectConfig {
             name: config.name.clone(),
             project_type: config.project_type.clone(),
             author: config.author.clone(),
             description: config.description.clone(),
+            esp32_chip: None,
+            target: None,
             features: config.features.clone(),
         };
 
-        self.generator.generate(&basic_config, &project_dir)
+        self.generator
+            .generate(&basic_config, &project_dir)
             .map_err(|e| format!("Failed to generate project: {}", e))?;
 
         // Apply validation rules
@@ -504,7 +548,7 @@ impl FeatureMatrixTestSuite {
     pub fn run_all_matrix_tests(&mut self) -> HashMap<String, Result<(), String>> {
         let matrix = Self::generate_test_matrix();
         let mut results = HashMap::new();
-        
+
         for config in matrix {
             let result = self.run_matrix_test(&config);
             match &result {
@@ -513,7 +557,7 @@ impl FeatureMatrixTestSuite {
             }
             results.insert(config.name.clone(), result);
         }
-        
+
         results
     }
 
@@ -521,45 +565,54 @@ impl FeatureMatrixTestSuite {
     pub fn generate_matrix_report(&self, results: &HashMap<String, Result<(), String>>) -> String {
         let mut report = String::new();
         report.push_str("=== Feature Matrix Test Report ===\n\n");
-        
+
         // Group results by category
         let matrix = Self::generate_test_matrix();
         let mut categories: HashMap<String, Vec<(String, bool)>> = HashMap::new();
-        
+
         for config in matrix {
             let category = config.test_category.clone();
             let test_name = config.name.clone();
             let success = results.get(&test_name).map_or(false, |r| r.is_ok());
-            
-            categories.entry(category).or_insert_with(Vec::new).push((test_name, success));
+
+            categories
+                .entry(category)
+                .or_insert_with(Vec::new)
+                .push((test_name, success));
         }
-        
+
         // Generate report by category
         for (category, tests) in categories {
             let total = tests.len();
             let passed = tests.iter().filter(|(_, success)| *success).count();
             let failed = total - passed;
-            
+
             report.push_str(&format!("## {}\n", category));
-            report.push_str(&format!("Total: {}, Passed: {}, Failed: {}\n", total, passed, failed));
-            
+            report.push_str(&format!(
+                "Total: {}, Passed: {}, Failed: {}\n",
+                total, passed, failed
+            ));
+
             for (test_name, success) in tests {
                 let status = if success { "PASS" } else { "FAIL" };
                 report.push_str(&format!("  {} - {}\n", test_name, status));
             }
             report.push('\n');
         }
-        
+
         let total_tests = results.len();
         let passed_tests = results.values().filter(|r| r.is_ok()).count();
         let failed_tests = total_tests - passed_tests;
-        
+
         report.push_str(&format!("=== Summary ===\n"));
         report.push_str(&format!("Total Tests: {}\n", total_tests));
         report.push_str(&format!("Passed: {}\n", passed_tests));
         report.push_str(&format!("Failed: {}\n", failed_tests));
-        report.push_str(&format!("Success Rate: {:.2}%\n", (passed_tests as f64 / total_tests as f64) * 100.0));
-        
+        report.push_str(&format!(
+            "Success Rate: {:.2}%\n",
+            (passed_tests as f64 / total_tests as f64) * 100.0
+        ));
+
         report
     }
 }
@@ -569,17 +622,18 @@ impl FeatureMatrixTestSuite {
 fn test_feature_matrix_comprehensive() {
     let mut test_suite = FeatureMatrixTestSuite::new();
     let results = test_suite.run_all_matrix_tests();
-    
+
     // Generate and print report
     let report = test_suite.generate_matrix_report(&results);
     println!("{}", report);
-    
+
     // Ensure all tests passed
-    let failed_tests: Vec<&String> = results.iter()
+    let failed_tests: Vec<&String> = results
+        .iter()
         .filter(|(_, result)| result.is_err())
         .map(|(name, _)| name)
         .collect();
-    
+
     if !failed_tests.is_empty() {
         panic!("The following matrix tests failed: {:?}", failed_tests);
     }
@@ -589,14 +643,14 @@ fn test_feature_matrix_comprehensive() {
 #[test]
 fn test_edge_cases() {
     let mut test_suite = FeatureMatrixTestSuite::new();
-    
+
     // Test single character project name
     let config = MatrixTestConfig {
         name: "x".to_string(),
         project_type: "library".to_string(),
         author: "Test <test@example.com>".to_string(),
         description: Some("Single char test".to_string()),
-                features: vec![],
+        features: vec![],
         test_category: "Edge Cases".to_string(),
         expected_behavior: TestExpectation::Success,
         validation_rules: vec![
@@ -604,8 +658,9 @@ fn test_edge_cases() {
             ValidationRule::FileExists("Cargo.toml".to_string()),
         ],
     };
-    
-    test_suite.run_matrix_test(&config)
+
+    test_suite
+        .run_matrix_test(&config)
         .expect("Single character project name should work");
 }
 
@@ -614,7 +669,7 @@ fn test_edge_cases() {
 fn test_matrix_performance() {
     let start_time = std::time::Instant::now();
     let mut test_suite = FeatureMatrixTestSuite::new();
-    
+
     // Generate multiple projects rapidly
     let configs = vec![
         MatrixTestConfig {
@@ -622,7 +677,7 @@ fn test_matrix_performance() {
             project_type: "library".to_string(),
             author: "Perf Test <perf@example.com>".to_string(),
             description: Some("Performance test 1".to_string()),
-                features: vec![],
+            features: vec![],
             test_category: "Performance".to_string(),
             expected_behavior: TestExpectation::Success,
             validation_rules: vec![ValidationRule::CargoCheckPasses],
@@ -632,7 +687,7 @@ fn test_matrix_performance() {
             project_type: "cli-tool".to_string(),
             author: "Perf Test <perf@example.com>".to_string(),
             description: Some("Performance test 2".to_string()),
-                features: vec![],
+            features: vec![],
             test_category: "Performance".to_string(),
             expected_behavior: TestExpectation::Success,
             validation_rules: vec![ValidationRule::CargoCheckPasses],
@@ -642,21 +697,26 @@ fn test_matrix_performance() {
             project_type: "api-server".to_string(),
             author: "Perf Test <perf@example.com>".to_string(),
             description: Some("Performance test 3".to_string()),
-                features: vec![],
+            features: vec![],
             test_category: "Performance".to_string(),
             expected_behavior: TestExpectation::Success,
             validation_rules: vec![ValidationRule::CargoCheckPasses],
         },
     ];
-    
+
     for config in configs {
-        test_suite.run_matrix_test(&config)
+        test_suite
+            .run_matrix_test(&config)
             .expect(&format!("Performance test {} should pass", config.name));
     }
-    
+
     let elapsed = start_time.elapsed();
     println!("Matrix performance test completed in {:?}", elapsed);
-    
+
     // Should complete within reasonable time
-    assert!(elapsed.as_secs() < 60, "Matrix performance test took too long: {:?}", elapsed);
+    assert!(
+        elapsed.as_secs() < 60,
+        "Matrix performance test took too long: {:?}",
+        elapsed
+    );
 }
