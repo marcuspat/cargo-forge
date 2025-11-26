@@ -28,10 +28,10 @@ name = "cargo-forge"
 path = "src/main.rs"
 
 [dependencies]
-clap = { version = "4.4", features = ["derive"] }
-clap_complete = "4.4"
+clap = { version = "4.5", features = ["derive"] }
+clap_complete = "4.5"
 inquire = "0.7"
-tera = "1.19"
+tera = "1.20"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 include_dir = "0.7"
@@ -39,16 +39,13 @@ anyhow = "1.0"
 indicatif = "0.17"
 colored = "2.0"
 dirs = "5.0"
-toml = "0.8.8"
-which = "4.0"
+toml = "0.8"
+which = "6.0"
 
 [build-dependencies]
-clap = { version = "4", features = ["derive"] }
-clap_complete = "4"
-
+clap = { version = "4.5", features = ["derive"] }
 
 [dev-dependencies]
 tempfile = "3"
 toml = "0.8"
 chrono = { version = "0.4", features = ["serde"] }
-cargo-release = "0.25"

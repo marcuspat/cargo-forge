@@ -1,0 +1,93 @@
+name: Release and Publish
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  publish:
+    name: Publish to crates.io
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+
+      - name: Cache Cargo registry
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache Cargo index
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/git
+          key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache Cargo target
+        uses: actions/cache@v4
+        with:
+          path: target
+          key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Verify package
+        run: cargo verify --all-features
+
+      - name: Run tests
+        run: cargo test --all-features
+
+      - name: Publish to crates.io
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        run: cargo publish
+
+  create-github-release:
+    name: Create GitHub Release
+    needs: publish
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          body: |
+            ## ✨ Release ${{ github.ref_name }}
+
+            ### 🎯 ESP32 Support
+            - **Interactive Mode**: Added ESP32 support in interactive mode with separate options for ESP32 and Cortex-M based chips
+            - **Enhanced Templates**: Improved embedded project templates with better target selection
+            - **Chip-Specific**: Dedicated support for different microcontroller architectures
+
+            ### 🛠️ Development Environment
+            - **DevContainer**: Added devcontainer configuration for Claude workspace integration
+            - **Enhanced Setup**: Comprehensive development environment setup for better developer experience
+            - **Modern Tooling**: Updated development tooling and configuration
+
+            ### 🔧 Improvements
+            - **Dependencies**: Updated dependency management for better compatibility
+            - **Performance**: Enhanced project generation capabilities
+            - **Stability**: Improved error handling and validation
+
+            ## 🚀 Installation
+            ```bash
+            cargo install cargo-forge --version ${{ github.ref_name }}
+            ```
+
+            ## 📖 Documentation
+            - [Documentation](https://docs.rs/cargo-forge/${{ github.ref_name }})
+            - [Repository](https://github.com/marcuspat/cargo-forge)
+
+            ---
+            🤖 Generated with Claude Code
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
