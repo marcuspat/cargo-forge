@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.5] - 2025-11-26
+### Added
+- ESP32 support in interactive mode with separate options for ESP32 and Cortex-M based chips
+- Enhanced project generation capabilities for embedded systems
+- Devcontainer configuration for Claude workspace integration
+- Comprehensive development environment setup
+
+### Changed
+- Improved embedded project templates with better target selection
+- Updated dependency management for better compatibility
+
+## [0.1.4] - 2025-11-26
+### Fixed
+- Internal development environment improvements
+- Updated development tooling and documentation
+
 ## [0.1.3] - 2025-07-03
 ### Fixed
 - Fixed all command examples to use correct `cargo-forge` syntax instead of `cargo forge`
