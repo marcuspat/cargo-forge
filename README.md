@@ -6,7 +6,6 @@
 
 [![Crates.io](https://img.shields.io/crates/v/cargo-forge.svg)](https://crates.io/crates/cargo-forge)
 [![Documentation](https://docs.rs/cargo-forge/badge.svg)](https://docs.rs/cargo-forge)
-[![CI](https://github.com/marcuspat/cargo-forge/workflows/CI/badge.svg)](https://github.com/marcuspat/cargo-forge/actions)
 [![License](https://img.shields.io/crates/l/cargo-forge.svg)](https://github.com/marcuspat/cargo-forge#license)
 [![Test Coverage](https://img.shields.io/badge/coverage-45.84%25-yellow.svg)](https://github.com/marcuspat/cargo-forge)
 
@@ -47,6 +46,8 @@ Cargo-Forge supports 7 project types with templates:
 | **game-engine** | Game development | • Bevy engine<br>• Asset pipeline structure<br>• Basic game setup<br>• Development ready |
 | **embedded** | Embedded systems | • no_std setup<br>• Memory configuration<br>• HAL integration<br>• Debug configs |
 | **workspace** | Multi-crate projects | • Organized structure<br>• Shared dependencies<br>• Cross-crate testing<br>• Unified configuration |
+
+_Note: the `cli-tool` and `api-server` templates currently generate placeholder/stub files for the core logic (`handlers.rs`, `routes.rs`, `models.rs`) rather than working implementations -- treat "Route handlers structure" etc. above as scaffolding to fill in, not functional code out of the box._
 
 ### 🛠️ Core Features
 
