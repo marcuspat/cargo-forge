@@ -13,6 +13,12 @@
 
 </div>
 
+## 🎬 Demo
+
+![cargo-forge generating an API server project](demo.gif)
+
+*Recorded from the actual binary with [asciinema](https://asciinema.org) + [agg](https://github.com/asciinema/agg).*
+
 ## 🚀 Quick Start
 
 ```bash
