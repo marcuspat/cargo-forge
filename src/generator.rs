@@ -180,7 +180,7 @@ impl Generator {
         output_dir: &Path,
         feature_context: &FeatureContext,
     ) -> Result<()> {
-        let mut content = String::from("/target\n");
+        let mut content = String::from("/target\n**/*.rs.bk\n.DS_Store\n");
 
         // Add Cargo.lock for libraries
         if config.project_type == "library" {
@@ -264,6 +264,49 @@ impl Generator {
                 content.push_str("```rust\n// Example usage\n```\n\n");
                 content.push_str("### API Documentation\n\n");
                 content.push_str("Run `cargo doc --open` to view the documentation.\n");
+            }
+            "wasm-app" => {
+                content.push_str("## WebAssembly App\n\n");
+                content.push_str("This project compiles Rust to WebAssembly for the browser.\n\n");
+                content.push_str("### Building\n\n");
+                content.push_str("```bash\nwasm-pack build --target web\n```\n\n");
+                content.push_str("### Running locally\n\n");
+                content.push_str("Serve the project directory and open `index.html`:\n\n");
+                content.push_str("```bash\npython3 -m http.server 8080\n```\n\n");
+                content.push_str("### Testing\n\n");
+                content.push_str("```bash\nwasm-pack test --headless --firefox\n```\n");
+            }
+            "game-engine" => {
+                content.push_str("## Game Engine Project\n\n");
+                content.push_str("A game built on the Bevy engine.\n\n");
+                content.push_str("### Running\n\n");
+                content.push_str("```bash\ncargo run\n```\n\n");
+                content.push_str("### Assets\n\n");
+                content.push_str("Place sprites, sounds, and other assets in the `assets/` directory.\n\n");
+                content.push_str("### Release builds\n\n");
+                content.push_str("```bash\ncargo build --release\n```\n\n");
+                content.push_str("Release builds enable optimizations for smooth frame rates.\n");
+            }
+            "embedded" => {
+                content.push_str("## Embedded Project\n\n");
+                content.push_str("Bare-metal firmware for microcontrollers (no_std).\n\n");
+                content.push_str("### Building\n\n");
+                content.push_str("```bash\ncargo build --release\n```\n\n");
+                content.push_str("### Flashing\n\n");
+                content.push_str("```bash\ncargo run --release  # via probe-rs runner\n```\n\n");
+                content.push_str("### Target\n\n");
+                content.push_str("See `.cargo/config.toml` for the configured target triple and runner.\n");
+            }
+            "workspace" => {
+                content.push_str("## Cargo Workspace\n\n");
+                content.push_str("A multi-crate workspace layout.\n\n");
+                content.push_str("### Structure\n\n");
+                content.push_str("- `crates/` — member crates\n");
+                content.push_str("- `Cargo.toml` — workspace manifest\n\n");
+                content.push_str("### Building everything\n\n");
+                content.push_str("```bash\ncargo build --workspace\n```\n\n");
+                content.push_str("### Testing everything\n\n");
+                content.push_str("```bash\ncargo test --workspace\n```\n");
             }
             _ => {}
         }
@@ -540,22 +583,8 @@ anyhow = "1.0"
 
         // Generate workspace Cargo.toml for workspace projects
         if config.project_type == "workspace" {
-            // Add package section for workspace root
-            content.push_str("[package]\n");
-            content.push_str(&format!(r#"name = "{}""#, config.name));
-            content.push('\n');
-            content.push_str(r#"version = "0.1.0""#);
-            content.push('\n');
-            content.push_str(&format!(r#"authors = ["{}"]"#, config.author));
-            content.push('\n');
-            content.push_str(r#"edition = "2021""#);
-            content.push('\n');
-            if let Some(desc) = &config.description {
-                content.push_str(&format!(r#"description = "{}""#, desc));
-                content.push('\n');
-            }
-            content.push_str("\n");
-
+            // Workspace root is a virtual manifest: no [package] section,
+            // since the root has no src/ targets of its own.
             content.push_str("[workspace]\n");
             content.push_str("resolver = \"2\"\n");
             content.push_str("members = [\n");
