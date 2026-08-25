@@ -269,7 +269,7 @@ We love contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/cargo-forge
+git clone https://github.com/marcuspat/cargo-forge
 cd cargo-forge
 
 # Run tests
