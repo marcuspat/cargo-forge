@@ -325,7 +325,7 @@ impl Plugin for CIPlugin {
 
 This project uses GitHub Actions for continuous integration.
 
-[![CI](https://github.com/USERNAME/REPO/actions/workflows/ci.yml/badge.svg)](https://github.com/USERNAME/REPO/actions/workflows/ci.yml)
+[![CI](https://github.com/${{ github.repository }}/actions/workflows/ci.yml/badge.svg)](https://github.com/${{ github.repository }}/actions/workflows/ci.yml)
 
 The CI pipeline runs:
 - Tests on multiple OS (Ubuntu, Windows, macOS) and Rust versions
@@ -350,7 +350,7 @@ The CI pipeline runs:
 This project supports both GitHub Actions and GitLab CI for continuous integration.
 
 ### GitHub Actions
-[![CI](https://github.com/USERNAME/REPO/actions/workflows/ci.yml/badge.svg)](https://github.com/USERNAME/REPO/actions/workflows/ci.yml)
+[![CI](https://github.com/${{ github.repository }}/actions/workflows/ci.yml/badge.svg)](https://github.com/${{ github.repository }}/actions/workflows/ci.yml)
 
 ### GitLab CI
 The pipeline configuration is in `.gitlab-ci.yml`
