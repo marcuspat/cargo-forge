@@ -4,7 +4,7 @@ type: software
 title: "cargo-forge"
 version: "0.1.6"
 repository-code: "https://github.com/marcuspat/cargo-forge"
-url: "https://cargo-forge.rs"
+url: "https://crates.io/crates/cargo-forge"
 license: "MIT OR Apache-2.0"
 abstract: "Interactive Rust project generator with 7 typed templates — CLI, API server, WASM, game engine, embedded, library, workspace."
 authors:
