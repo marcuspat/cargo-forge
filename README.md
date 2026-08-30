@@ -2,7 +2,7 @@
 
 # ⚒️ Cargo-Forge
 
-**An interactive Rust project generator with templates and common features**
+**A Rust project generator with templates and common features**
 
 [![Crates.io](https://img.shields.io/crates/v/cargo-forge.svg)](https://crates.io/crates/cargo-forge)
 [![Documentation](https://docs.rs/cargo-forge/badge.svg)](https://docs.rs/cargo-forge)
@@ -35,7 +35,7 @@ cargo-forge new my-api --project-type api-server
 cargo-forge init --project-type library
 ```
 
-📖 **[Detailed Installation Guide](INSTALLATION.md)** - Including shell completions, pre-built binaries, and platform-specific instructions.
+📖 See [Quick Reference](docs/QUICK_REFERENCE.md) for shell completions and common commands, or [Troubleshooting](docs/TROUBLESHOOTING.md) for platform-specific install issues.
 
 ## ✨ Features
 
@@ -57,7 +57,7 @@ _Note: the `cli-tool` and `api-server` templates currently generate placeholder/
 
 ### 🛠️ Core Features
 
-Current features available in v0.1.3:
+Current features available in v0.1.6:
 
 #### **Project Structure**
 - **Clean Templates**: Well-organized project structures for each type
@@ -217,9 +217,9 @@ cargo bench
 cargo test --features proptest
 ```
 
-## 🚢 CI/CD Integration
+## 🚢 CI/CD Integration (Planned)
 
-All project types can include CI/CD configuration:
+Not yet implemented (see Future Features above) — the goal is for every project type to optionally include:
 
 ### GitHub Actions
 - Multi-platform testing (Windows, Mac, Linux)
@@ -234,9 +234,9 @@ All project types can include CI/CD configuration:
 - Deploy stages for different environments
 - Container registry integration
 
-## 🐳 Docker Support
+## 🐳 Docker Support (Planned)
 
-Generated Dockerfiles use multi-stage builds for optimal image size:
+Not yet implemented. Generated Dockerfiles would use multi-stage builds for optimal image size, along the lines of:
 
 ```dockerfile
 # Build stage
@@ -253,13 +253,13 @@ CMD ["app"]
 
 ## 🔒 Security
 
-Cargo-Forge security features:
+Properties of the generated templates today:
 
 - No hardcoded secrets in templates
 - Secure default configurations
 - Environment variable usage for sensitive data
-- Security audit integration in CI
-- OWASP compliance for web projects
+
+**Planned:** security audit integration in CI and OWASP-aligned checks for the `api-server` template — both depend on the CI/CD integration above, which isn't implemented yet.
 
 ## 🤝 Contributing
 
