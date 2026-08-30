@@ -53,7 +53,7 @@ jobs:
           key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Verify package
-        run: cargo verify
+        run: cargo package --locked
 
       - name: Dry run
         if: ${{ github.event.inputs.dry_run == 'true' }}
