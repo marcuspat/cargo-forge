@@ -73,16 +73,17 @@
 
 <path d="M-90 28 L90 28 L60 8 L-60 8 Z" fill="#1a1e26" stroke="#ffa657" stroke-width="2"/>
 <rect x="-90" y="28" width="180" height="14" rx="3" fill="#141920" stroke="#ffa657" stroke-width="2"/>
-<g transform="translate(-40,-44)">
-<rect x="-8" y="-60" width="16" height="76" rx="7" fill="#3a2a1a" stroke="#ffa657" stroke-width="2"/>
-<animateTransform attributeName="transform" type="rotate" additive="sum"
-values="0 -39 -16;-42 -39 -16;-42 -39 -16;0 -39 -16;0 -39 -16" keyTimes="0;0.12;0.2;0.24;1" dur="1.8s" repeatCount="indefinite"/>
+<g>
+<rect x="67" y="-34" width="6" height="64" rx="3" fill="#3a2a1a" stroke="#ffa657" stroke-width="1.5"/>
+<rect x="50" y="26" width="40" height="18" rx="4" fill="#ffa657" filter="url(#glow)"/>
+<animateTransform attributeName="transform" type="rotate"
+values="0 70 -34;0 70 -34;-75 70 -34;-75 70 -34;0 70 -34;0 70 -34" keyTimes="0;0.08;0.14;0.2;0.24;1" dur="1.8s" repeatCount="indefinite"/>
 </g>
 <g fill="#ffd29b" filter="url(#glow)">
-<circle cx="-14" cy="-16" r="3.5"><animate attributeName="opacity" values="0;1;0;0" keyTimes="0;0.27;0.6;1" dur="1.8s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="translate" values="0 0;-34 -34;-34 -34" keyTimes="0;0.6;1" dur="1.8s" repeatCount="indefinite"/></circle>
-<circle cx="10" cy="-16" r="3" ><animate attributeName="opacity" values="0;1;0;0" keyTimes="0;0.27;0.6;1" dur="1.8s" begin="-0.05s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="translate" values="0 0;40 -28;40 -28" keyTimes="0;0.6;1" dur="1.8s" begin="-0.05s" repeatCount="indefinite"/></circle>
-<circle cx="0" cy="-26" r="3" ><animate attributeName="opacity" values="0;1;0;0" keyTimes="0;0.27;0.6;1" dur="1.8s" begin="-0.1s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="translate" values="0 0;6 -50;6 -50" keyTimes="0;0.6;1" dur="1.8s" begin="-0.1s" repeatCount="indefinite"/></circle>
-<circle cx="-6" cy="-12" r="2.6"><animate attributeName="opacity" values="0;1;0;0" keyTimes="0;0.27;0.6;1" dur="1.8s" begin="-0.15s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="translate" values="0 0;-48 6;-48 6" keyTimes="0;0.6;1" dur="1.8s" begin="-0.15s" repeatCount="indefinite"/></circle>
+<circle cx="56" cy="14" r="3.5"><animate attributeName="opacity" values="0;1;0;0" keyTimes="0;0.27;0.6;1" dur="1.8s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="translate" values="0 0;-40 -36;-40 -36" keyTimes="0;0.6;1" dur="1.8s" repeatCount="indefinite"/></circle>
+<circle cx="86" cy="10" r="3" ><animate attributeName="opacity" values="0;1;0;0" keyTimes="0;0.27;0.6;1" dur="1.8s" begin="-0.05s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="translate" values="0 0;44 -30;44 -30" keyTimes="0;0.6;1" dur="1.8s" begin="-0.05s" repeatCount="indefinite"/></circle>
+<circle cx="72" cy="2" r="3" ><animate attributeName="opacity" values="0;1;0;0" keyTimes="0;0.27;0.6;1" dur="1.8s" begin="-0.1s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="translate" values="0 0;10 -52;10 -52" keyTimes="0;0.6;1" dur="1.8s" begin="-0.1s" repeatCount="indefinite"/></circle>
+<circle cx="50" cy="22" r="2.6"><animate attributeName="opacity" values="0;1;0;0" keyTimes="0;0.27;0.6;1" dur="1.8s" begin="-0.15s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="translate" values="0 0;-50 10;-50 10" keyTimes="0;0.6;1" dur="1.8s" begin="-0.15s" repeatCount="indefinite"/></circle>
 </g>
 <text x="0" y="60" font-family="ui-monospace,Menlo,Consolas,monospace" font-size="13" fill="#7d8590" text-anchor="middle">cargo install cargo-forge</text>
 <g font-family="ui-monospace,Menlo,Consolas,monospace" font-size="12" text-anchor="middle">
