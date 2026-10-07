@@ -1,3 +1,5 @@
+<p align="center"><img src="assets/banner.svg" alt="cargo-forge — animated banner" width="100%"></p>
+
 <div align="center">
 
 # ⚒️ Cargo-Forge
