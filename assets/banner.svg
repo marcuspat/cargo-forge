@@ -74,27 +74,27 @@
 <path d="M-90 28 L90 28 L60 8 L-60 8 Z" fill="#1a1e26" stroke="#ffa657" stroke-width="2"/>
 <rect x="-90" y="28" width="180" height="14" rx="3" fill="#141920" stroke="#ffa657" stroke-width="2"/>
 <g>
-<rect x="67" y="-34" width="6" height="64" rx="3" fill="#3a2a1a" stroke="#ffa657" stroke-width="1.5"/>
-<rect x="50" y="26" width="40" height="18" rx="4" fill="#ffa657" filter="url(#glow)"/>
+<rect x="67" y="-58" width="6" height="48" rx="3" fill="#3a2a1a" stroke="#ffa657" stroke-width="1.5"/>
+<rect x="50" y="-10" width="40" height="18" rx="4" fill="#ffa657" filter="url(#glow)"/>
 <animateTransform attributeName="transform" type="rotate"
-values="0 70 -34;0 70 -34;-75 70 -34;-75 70 -34;0 70 -34;0 70 -34" keyTimes="0;0.08;0.14;0.2;0.24;1" dur="1.8s" repeatCount="indefinite"/>
+values="0 70 -58;0 70 -58;-75 70 -58;-75 70 -58;0 70 -58;0 70 -58" keyTimes="0;0.08;0.14;0.2;0.24;1" dur="1.8s" repeatCount="indefinite"/>
 </g>
 <g fill="#ffd29b" filter="url(#glow)">
-<circle cx="56" cy="14" r="3.5"><animate attributeName="opacity" values="0;1;0;0" keyTimes="0;0.27;0.6;1" dur="1.8s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="translate" values="0 0;-40 -36;-40 -36" keyTimes="0;0.6;1" dur="1.8s" repeatCount="indefinite"/></circle>
-<circle cx="86" cy="10" r="3" ><animate attributeName="opacity" values="0;1;0;0" keyTimes="0;0.27;0.6;1" dur="1.8s" begin="-0.05s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="translate" values="0 0;44 -30;44 -30" keyTimes="0;0.6;1" dur="1.8s" begin="-0.05s" repeatCount="indefinite"/></circle>
-<circle cx="72" cy="2" r="3" ><animate attributeName="opacity" values="0;1;0;0" keyTimes="0;0.27;0.6;1" dur="1.8s" begin="-0.1s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="translate" values="0 0;10 -52;10 -52" keyTimes="0;0.6;1" dur="1.8s" begin="-0.1s" repeatCount="indefinite"/></circle>
-<circle cx="50" cy="22" r="2.6"><animate attributeName="opacity" values="0;1;0;0" keyTimes="0;0.27;0.6;1" dur="1.8s" begin="-0.15s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="translate" values="0 0;-50 10;-50 10" keyTimes="0;0.6;1" dur="1.8s" begin="-0.15s" repeatCount="indefinite"/></circle>
+<circle cx="56" cy="2" r="3.5"><animate attributeName="opacity" values="0;0;1;0;0" keyTimes="0;0.24;0.3;0.65;1" dur="1.8s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="translate" values="0 0;0 0;-40 -36;-40 -36" keyTimes="0;0.24;0.7;1" dur="1.8s" repeatCount="indefinite"/></circle>
+<circle cx="86" cy="-4" r="3" ><animate attributeName="opacity" values="0;0;1;0;0" keyTimes="0;0.24;0.3;0.65;1" dur="1.8s" begin="-0.05s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="translate" values="0 0;0 0;44 -30;44 -30" keyTimes="0;0.24;0.7;1" dur="1.8s" begin="-0.05s" repeatCount="indefinite"/></circle>
+<circle cx="72" cy="-12" r="3" ><animate attributeName="opacity" values="0;0;1;0;0" keyTimes="0;0.24;0.3;0.65;1" dur="1.8s" begin="-0.1s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="translate" values="0 0;0 0;10 -52;10 -52" keyTimes="0;0.24;0.7;1" dur="1.8s" begin="-0.1s" repeatCount="indefinite"/></circle>
+<circle cx="50" cy="8" r="2.6"><animate attributeName="opacity" values="0;0;1;0;0" keyTimes="0;0.24;0.3;0.65;1" dur="1.8s" begin="-0.15s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="translate" values="0 0;0 0;-50 10;-50 10" keyTimes="0;0.24;0.7;1" dur="1.8s" begin="-0.15s" repeatCount="indefinite"/></circle>
 </g>
 <text x="0" y="60" font-family="ui-monospace,Menlo,Consolas,monospace" font-size="13" fill="#7d8590" text-anchor="middle">cargo install cargo-forge</text>
 <g font-family="ui-monospace,Menlo,Consolas,monospace" font-size="12" text-anchor="middle">
-<rect x="-460" y="-70" width="110" height="30" rx="8" fill="none" stroke="#566068"/><text x="-405" y="-50" fill="#8b98a5">cli</text>
-<rect x="-330" y="-70" width="110" height="30" rx="8" fill="none" stroke="#566068"/><text x="-275" y="-50" fill="#8b98a5">api</text>
-<rect x="-200" y="-70" width="110" height="30" rx="8" fill="none" stroke="#566068"/><text x="-145" y="-50" fill="#8b98a5">wasm</text>
-<rect x="-70" y="-70" width="110" height="30" rx="8" fill="none" stroke="#566068"/><text x="-15" y="-50" fill="#8b98a5">game</text>
-<rect x="60" y="-70" width="110" height="30" rx="8" fill="none" stroke="#566068"/><text x="115" y="-50" fill="#8b98a5">emb</text>
-<rect x="190" y="-70" width="110" height="30" rx="8" fill="none" stroke="#566068"/><text x="245" y="-50" fill="#8b98a5">lib</text>
-<rect x="320" y="-70" width="110" height="30" rx="8" fill="none" stroke="#566068"/><text x="375" y="-50" fill="#8b98a5">ws</text>
-<rect x="-460" y="-70" width="110" height="30" rx="8" fill="none" stroke="#ffa657" stroke-width="2.5" filter="url(#glow)">
+<rect x="-445" y="-70" width="110" height="30" rx="8" fill="none" stroke="#566068"/><text x="-390" y="-50" fill="#8b98a5">cli</text>
+<rect x="-315" y="-70" width="110" height="30" rx="8" fill="none" stroke="#566068"/><text x="-260" y="-50" fill="#8b98a5">api</text>
+<rect x="-185" y="-70" width="110" height="30" rx="8" fill="none" stroke="#566068"/><text x="-130" y="-50" fill="#8b98a5">wasm</text>
+<rect x="-55" y="-70" width="110" height="30" rx="8" fill="none" stroke="#566068"/><text x="0" y="-50" fill="#8b98a5">game</text>
+<rect x="75" y="-70" width="110" height="30" rx="8" fill="none" stroke="#566068"/><text x="130" y="-50" fill="#8b98a5">emb</text>
+<rect x="205" y="-70" width="110" height="30" rx="8" fill="none" stroke="#566068"/><text x="260" y="-50" fill="#8b98a5">lib</text>
+<rect x="335" y="-70" width="110" height="30" rx="8" fill="none" stroke="#566068"/><text x="390" y="-50" fill="#8b98a5">ws</text>
+<rect x="-445" y="-70" width="110" height="30" rx="8" fill="none" stroke="#ffa657" stroke-width="2.5" filter="url(#glow)">
 <animateTransform attributeName="transform" type="translate" calcMode="discrete"
 values="0 0;130 0;260 0;390 0;520 0;650 0;780 0;0 0" keyTimes="0;0.14;0.28;0.43;0.57;0.71;0.86;1" dur="4.2s" repeatCount="indefinite"/>
 </rect>
