@@ -1,12 +1,13 @@
 [package]
 name = "cargo-forge"
-version = "0.1.6"
+version = "0.1.7"
 edition = "2021"
 rust-version = "1.70"
 authors = ["The Cargo-Forge Contributors"]
 description = "An interactive Rust project generator with templates and common features"
 readme = "README.md"
 repository = "https://github.com/marcuspat/cargo-forge"
+homepage = "https://www.adventurewavelabs.space/projects/cargo-forge"
 documentation = "https://docs.rs/cargo-forge"
 license = "MIT OR Apache-2.0"
 keywords = ["cargo", "template", "generator", "scaffold", "project"]
