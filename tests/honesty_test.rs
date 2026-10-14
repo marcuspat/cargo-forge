@@ -103,11 +103,11 @@ fn toml_config_is_accepted() {
     let path = temp.path().join("defaults.toml");
     fs::write(
         &path,
-        'default_author = "Toml Author"
+        r#"default_author = "Toml Author"
 default_license = "MIT"
 preferred_project_types = ["library"]
 default_features = { api-server = ["axum"] }
-',
+"#,
     )
     .unwrap();
     let config = ForgeConfig::load_from(&path).expect("TOML config must load");
@@ -145,11 +145,11 @@ fn non_interactive_honors_preferred_project_type() {
     let config_path = temp.path().join("defaults.toml");
     fs::write(
         &config_path,
-        'default_author = "Config Author"
+        r#"default_author = "Config Author"
 default_license = "MIT"
 preferred_project_types = ["library"]
 default_features = { api-server = ["axum"] }
-',
+"#,
     )
     .unwrap();
 
