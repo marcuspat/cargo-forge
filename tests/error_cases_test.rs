@@ -128,7 +128,9 @@ mod generator_error_tests {
 
         let result = generator.generate(&config, &output_dir);
         assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("already exists"));
+        // The generator-level error for a pre-populated directory is "not
+        // empty" (the "already exists" message comes from the Forge wrapper).
+        assert!(result.unwrap_err().to_string().contains("not empty"));
     }
 
     #[test]
@@ -885,7 +887,7 @@ mod recovery_tests {
 
         // Should fail because directory is not empty
         assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("already exists"));
+        assert!(result.unwrap_err().to_string().contains("not empty"));
 
         // Original files should still exist
         assert!(output_dir.join("Cargo.toml").exists());
