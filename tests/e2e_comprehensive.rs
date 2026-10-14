@@ -166,8 +166,10 @@ fn test_comprehensive_project_matrix() {
             .generate(&config, &project_dir)
             .expect(&format!("Failed to generate {} project", project_type));
 
-        // Verify the project compiles (skip embedded which needs special targets)
-        if *project_type != "embedded" {
+        // Verify the project compiles (skip embedded which needs special
+        // targets, and game-engine whose Bevy builds need Linux graphics
+        // dev libraries absent from headless environments)
+        if !matches!(*project_type, "embedded" | "game-engine") {
             match run_cargo_check(&project_dir) {
                 Ok(_) => println!("✓ {} project with config {} compiles", project_type, i),
                 Err(e) => panic!("✗ {} project with config {} failed: {}", project_type, i, e),
@@ -569,8 +571,10 @@ fn test_project_compilation_modes() {
             );
         }
 
-        // Test cargo build (skip for embedded and wasm which need special setup)
-        if !matches!(project_type, "embedded" | "wasm-app") {
+        // Test cargo build (skip for embedded/wasm which need special setup,
+        // and game-engine whose Bevy builds need Linux graphics dev libraries
+        // such as libwayland-dev that headless environments lack)
+        if !matches!(project_type, "embedded" | "wasm-app" | "game-engine") {
             match run_cargo_build(&project_dir) {
                 Ok(_) => println!("✓ {} project builds successfully", project_type),
                 Err(e) => panic!("✗ {} project fails to build: {}", project_type, e),
@@ -582,8 +586,8 @@ fn test_project_compilation_modes() {
             );
         }
 
-        // Test cargo test (skip for embedded and wasm which may need special setup)
-        if !matches!(project_type, "embedded" | "wasm-app") {
+        // Test cargo test (skip for embedded/wasm/game-engine as above)
+        if !matches!(project_type, "embedded" | "wasm-app" | "game-engine") {
             match run_cargo_test(&project_dir) {
                 Ok(_) => println!("✓ {} project passes tests", project_type),
                 Err(e) => panic!("✗ {} project fails tests: {}", project_type, e),

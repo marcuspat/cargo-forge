@@ -282,6 +282,9 @@ impl Generator {
             "game-engine" => {
                 content.push_str("## Game Engine Project\n\n");
                 content.push_str("A game built on the Bevy engine.\n\n");
+                content.push_str("### Prerequisites (Linux)\n\n");
+                content.push_str("Bevy's windowing stack needs system libraries. On Debian/Ubuntu:\n\n");
+                content.push_str("```bash\nsudo apt install libwayland-dev libxkbcommon-dev pkg-config\n```\n\n");
                 content.push_str("### Running\n\n");
                 content.push_str("```bash\ncargo run\n```\n\n");
                 content.push_str("### Assets\n\n");
@@ -461,7 +464,7 @@ pub enum Commands {
             output_dir.join("tests/cli.rs"),
             &format!(
                 r#"#[test]
-fn hello_command_help_snapshot() {{
+fn hello_command_greets_by_name() {{
     let output = std::process::Command::new(env!("CARGO_BIN_EXE_{}"))
         .args(["hello", "--name", "forge"])
         .output()
@@ -470,7 +473,7 @@ fn hello_command_help_snapshot() {{
     assert!(String::from_utf8_lossy(&output.stdout).contains("Hello, forge!"));
 }}
 "#,
-                config.name.replace('-', "_")
+                config.name
             ),
         )?;
 
