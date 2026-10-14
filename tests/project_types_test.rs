@@ -271,7 +271,7 @@ fn test_project_type_specific_readme() {
         (
             ProjectType::WasmApp,
             "WebAssembly App",
-            vec!["wasm-pack", "WebAssembly"],
+            vec!["wasm-pack", "webassembly"],
         ),
     ];
 

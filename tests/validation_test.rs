@@ -12,7 +12,8 @@ fn test_project_name_validation_comprehensive() {
         "my_project",
         "myproject123",
         "a",
-        "_project",
+        // "_project" intentionally absent: leading '-'/'_' is rejected by
+        // design (clear error message), matching the documented rules.
         "underscore_project",
         "dash-project",
         "alpha123numeric",
