@@ -430,6 +430,7 @@ impl E2ETestSuite {
             project_type: config.project_type.clone(),
             author: config.author.clone(),
             description: config.description.clone(),
+            license: None,
             features: vec![],
             target: None,
             esp32_chip: None,
