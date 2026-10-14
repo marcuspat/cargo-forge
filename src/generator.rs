@@ -21,6 +21,12 @@ pub struct ProjectConfig {
 
 pub struct Generator;
 
+/// Escape a value for use inside a basic TOML string (handles the
+/// description/author/license free-text fields users type).
+fn toml_escape(value: &str) -> String {
+    value.replace('\\', "\\\\").replace('"', "\\\"")
+}
+
 impl Generator {
     pub fn new() -> Self {
         Self
@@ -676,6 +682,8 @@ up_mode = "NoBlockSkip"
     }
 
     fn generate_workspace(&self, config: &ProjectConfig, output_dir: &Path) -> Result<()> {
+        // Free-text author can contain quotes — escape for the member manifests.
+        let author = toml_escape(&config.author);
         // Create workspace structure
         fs::create_dir_all(output_dir.join("crates/core/src"))?;
         fs::create_dir_all(output_dir.join("crates/api/src"))?;
@@ -702,7 +710,7 @@ authors = ["{}"]
 serde = {{ version = "1.0", features = ["derive"] }}
 anyhow = "1.0"
 "#,
-            config.name, config.author
+            config.name, author
         );
         fs::write(output_dir.join("crates/core/Cargo.toml"), core_cargo_toml)?;
 
@@ -727,7 +735,7 @@ serde = {{ version = "1.0", features = ["derive"] }}
 name = "{}_api"
 "#,
             config.name,
-            config.author,
+            author,
             config.name,
             config.name.replace('-', "_")
         );
@@ -752,7 +760,7 @@ path = "src/main.rs"
 clap = {{ version = "4", features = ["derive"] }}
 anyhow = "1.0"
 "#,
-            config.name, config.author, config.name, config.name
+            config.name, author, config.name, config.name
         );
         fs::write(output_dir.join("crates/cli/Cargo.toml"), cli_cargo_toml)?;
 
@@ -783,16 +791,16 @@ anyhow = "1.0"
             content.push_str("[workspace.package]\n");
             content.push_str(&format!(r#"version = "0.1.0""#));
             content.push('\n');
-            content.push_str(&format!(r#"authors = ["{}"]"#, config.author));
+            content.push_str(&format!(r#"authors = ["{}"]"#, toml_escape(&config.author)));
             content.push('\n');
             content.push_str(r#"edition = "2021""#);
             content.push('\n');
             if let Some(desc) = &config.description {
-                content.push_str(&format!(r#"description = "{}""#, desc));
+                content.push_str(&format!(r#"description = "{}""#, toml_escape(desc)));
                 content.push('\n');
             }
             if let Some(license) = &config.license {
-                content.push_str(&format!(r#"license = "{}""#, license));
+                content.push_str(&format!(r#"license = "{}""#, toml_escape(license)));
                 content.push('\n');
             }
             content.push_str("\n");
@@ -813,18 +821,18 @@ anyhow = "1.0"
         content.push('\n');
         content.push_str(r#"version = "0.1.0""#);
         content.push('\n');
-        content.push_str(&format!(r#"authors = ["{}"]"#, config.author));
+        content.push_str(&format!(r#"authors = ["{}"]"#, toml_escape(&config.author)));
         content.push('\n');
         content.push_str(r#"edition = "2021""#);
         content.push('\n');
 
         if let Some(desc) = &config.description {
-            content.push_str(&format!(r#"description = "{}""#, desc));
+            content.push_str(&format!(r#"description = "{}""#, toml_escape(desc)));
             content.push('\n');
         }
 
         if let Some(license) = &config.license {
-            content.push_str(&format!(r#"license = "{}""#, license));
+            content.push_str(&format!(r#"license = "{}""#, toml_escape(license)));
             content.push('\n');
         }
 

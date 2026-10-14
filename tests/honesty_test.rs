@@ -172,3 +172,19 @@ default_features = { api-server = ["axum"] }
     assert!(manifest.contains("[lib]"));
     assert!(manifest.contains(r#"license = "MIT""#), "config default_license must apply");
 }
+
+#[test]
+fn special_characters_in_description_produce_valid_toml() {
+    let temp = TempDir::new().unwrap();
+    let mut cfg = config_with_license("special-desc", "library", None);
+    cfg.description = Some("Description with \"quotes\", 'apostrophes', and @#$%^&*()".to_string());
+    let dir = temp.path().join("special-desc");
+    Generator::new().generate(&cfg, &dir).expect("generation should succeed");
+
+    let manifest = fs::read_to_string(dir.join("Cargo.toml")).unwrap();
+    // Escaped quotes keep the manifest parseable.
+    assert!(manifest.contains("quotes"));
+    let parsed: toml::Value = toml::from_str(&manifest).expect("Cargo.toml must be valid TOML");
+    let desc = parsed.get("package").unwrap().get("description").unwrap().as_str().unwrap();
+    assert!(desc.contains("\"quotes\""));
+}
