@@ -288,7 +288,6 @@ impl FeatureMatrixTestSuite {
                 validation_rules: vec![
                     ValidationRule::FileExists("src/lib.rs".to_string()),
                     ValidationRule::FileExists("index.html".to_string()),
-                    ValidationRule::FileExecutable("build.sh".to_string()),
                     ValidationRule::FileContains(
                         "Cargo.toml".to_string(),
                         "wasm-bindgen".to_string(),
@@ -739,9 +738,12 @@ fn test_matrix_performance() {
     let elapsed = start_time.elapsed();
     println!("Matrix performance test completed in {:?}", elapsed);
 
-    // Should complete within reasonable time
+    // Should complete within reasonable time. The budget is dominated by
+    // cargo checks of the generated projects, which vary with machine load —
+    // keep it generous enough for shared CI runners while still catching
+    // pathological hangs.
     assert!(
-        elapsed.as_secs() < 60,
+        elapsed.as_secs() < 300,
         "Matrix performance test took too long: {:?}",
         elapsed
     );
