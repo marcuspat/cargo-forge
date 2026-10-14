@@ -294,8 +294,13 @@ impl E2ETestSuite {
             }
         }
 
-        // Validate basic metadata
-        if !content.contains(&format!("name = \"{}\"", config.name)) {
+        // Validate basic metadata. Workspace roots are virtual manifests
+        // (correct Cargo semantics: [workspace] + [workspace.package], no
+        // top-level name) — their required sections are asserted above and
+        // the member crates carry the names.
+        if config.project_type != "workspace"
+            && !content.contains(&format!("name = \"{}\"", config.name))
+        {
             return Err("Cargo.toml missing correct project name".to_string());
         }
 
