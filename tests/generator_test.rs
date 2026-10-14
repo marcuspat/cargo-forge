@@ -54,13 +54,11 @@ fn test_directory_creation() {
     );
     assert!(output_dir.join("src").is_dir(), "src should be a directory");
 
+    // Library projects ship tests inside src/lib.rs (#[cfg(test)]) and an
+    // examples/ directory instead of an empty tests/ directory.
     assert!(
-        output_dir.join("tests").exists(),
-        "tests directory should exist"
-    );
-    assert!(
-        output_dir.join("tests").is_dir(),
-        "tests should be a directory"
+        output_dir.join("examples").exists(),
+        "examples directory should exist for library projects"
     );
 
     assert!(
