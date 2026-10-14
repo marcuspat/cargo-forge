@@ -177,6 +177,7 @@ fn test_validation_called_in_dry_run_mode() {
         Some("cli-tool".to_string()),
         None,
         None,
+        None,
         true, // non_interactive
         None,
     );
