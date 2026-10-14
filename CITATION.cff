@@ -2,7 +2,7 @@ cff-version: 1.2.0
 message: "If you use this software, please cite it as below."
 type: software
 title: "cargo-forge"
-version: "0.1.6"
+version: "0.1.8"
 repository-code: "https://github.com/marcuspat/cargo-forge"
 url: "https://crates.io/crates/cargo-forge"
 license: "MIT OR Apache-2.0"

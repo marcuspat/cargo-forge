@@ -1,5 +1,5 @@
 use crate::{Config, Generator, ProjectConfig, ProjectType};
-use anyhow::{anyhow, Ok, Result};
+use anyhow::{anyhow, Result};
 use colored::*;
 use indicatif::{ProgressBar, ProgressStyle};
 use inquire::{Confirm, MultiSelect, Select, Text};

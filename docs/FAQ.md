@@ -170,7 +170,7 @@ Not directly, but you can:
 
 ### What template engine does Cargo-Forge use?
 
-Cargo-Forge uses [Tera](https://tera.netlify.app/), a Jinja2-like template engine for Rust.
+Generation is code-driven: cargo-forge ships built-in starters for its 7 project types (no external template files or template syntax to learn). Custom template repositories are not supported — use cargo-generate if you need those.
 
 ### How are templates packaged?
 

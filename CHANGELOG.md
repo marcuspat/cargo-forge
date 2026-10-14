@@ -7,6 +7,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.8] - 2026-10-14
+### Fixed (honesty pass: claims now match behavior)
+- `--license` on `new` is no longer silently discarded — it writes a
+  `license = "..."` field into `Cargo.toml` (and `[workspace.package]` for
+  workspaces), the same convention as `cargo new --license`
+- `init --author` and `init --license` are no longer silently discarded
+- `--from-config` now accepts TOML (the documented format) in addition to
+  JSON; invalid files report both parse errors instead of a cryptic one
+- non-interactive mode honors `preferred_project_types` from the config
+  file (previously only the dedicated from-config path did)
+- dry-run preview no longer claims a `LICENSE` file is created
+- interactive feature selection now offers only features the generator
+  actually applies (docker / CI / database flavors); unknown features
+  print a warning instead of silently vanishing
+
+### Changed
+- Templates generate working starter code instead of empty stubs:
+  api-server ships a running Axum server with a `GET /` health check,
+  cli-tool a Clap skeleton with a `hello` command and an integration
+  test, library a `greet` API with a unit test, wasm-app a
+  wasm-bindgen export matching its documented wasm-pack flow,
+  game-engine a minimal Bevy app
+- game-engine: bevy 0.12 -> 0.20 (the old pin no longer compiled with
+  current transitive dependencies)
+- Empty scaffolding removed from wasm-app (webpack/package.json/
+  build.sh) and game-engine (empty wasm.yml workflow)
+- devcontainer.json is now a cargo-forge dev container (Rust + SSHD
+  features) instead of a personal agent workspace; it no longer pins
+  Rust 1.70, which could not build the current dependency tree
+
+### Removed
+- Dead Tera template engine: `src/templates`, the `templates/` tree,
+  `tera`/`include_dir` dependencies, and `docs/TEMPLATE_SYNTAX.md` —
+  generation has always been code-driven, not template-file-driven
+- Test files that exercised mock structs defined inside the tests
+  themselves rather than the product
+
 ## [0.1.5] - 2025-11-26
 ### Added
 - ESP32 support in interactive mode with separate options for ESP32 and Cortex-M based chips
