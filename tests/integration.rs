@@ -970,8 +970,10 @@ fn test_all_project_types_compilation() {
             .generate(&config, &project_dir)
             .expect(&format!("Failed to generate {} project", project_type));
 
-        // Ensure the project compiles without errors (skip embedded as it requires special targets)
-        if project_type != "embedded" {
+        // Ensure the project compiles without errors (skip embedded as it
+        // requires special targets, and game-engine whose Bevy builds need
+        // Linux graphics dev libraries)
+        if !matches!(project_type, "embedded" | "game-engine") {
             match run_cargo_check(&project_dir) {
                 Ok(_) => println!("✓ {} project compiles successfully", project_type),
                 Err(e) => panic!("✗ {} project compilation failed: {}", project_type, e),

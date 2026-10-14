@@ -229,8 +229,9 @@ fn test_basic_project_types_with_default_features() {
             _ => {} // Library and workspace don't have specific dependencies
         }
 
-        // Verify project compiles (skip embedded which needs special targets)
-        if project_type != "embedded" {
+        // Verify project compiles (skip embedded which needs special targets,
+        // and game-engine whose Bevy builds need Linux graphics dev libraries)
+        if !matches!(project_type, "embedded" | "game-engine") {
             match run_cargo_check(&project_dir) {
                 Ok(_) => println!("✓ {} project with default features compiles", project_type),
                 Err(e) => panic!(
@@ -499,8 +500,9 @@ fn test_future_feature_system_design() {
             _ => {}
         }
 
-        // Verify current project compiles (skip embedded)
-        if extended_config.project_type != "embedded" {
+        // Verify current project compiles (skip embedded, and game-engine
+        // whose Bevy builds need Linux graphics dev libraries)
+        if !matches!(extended_config.project_type.as_str(), "embedded" | "game-engine") {
             match run_cargo_check(&project_dir) {
                 Ok(_) => println!(
                     "✓ Extended config {} compiles with basic features",
@@ -584,8 +586,9 @@ fn test_dependency_management_patterns() {
                 .expect(&format!("{} should have {} dependency", project_type, dep));
         }
 
-        // Verify project compiles with these dependencies (skip embedded)
-        if project_type != "embedded" {
+        // Verify project compiles with these dependencies (skip embedded and
+        // game-engine as above)
+        if !matches!(project_type, "embedded" | "game-engine") {
             match run_cargo_check(&project_dir) {
                 Ok(_) => println!("✓ {} with standard dependencies compiles", project_type),
                 Err(e) => panic!(
