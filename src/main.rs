@@ -44,7 +44,7 @@ fn main() -> Result<()> {
             project_type,
             author,
             description,
-            license: _,
+            license,
             non_interactive,
             from_config,
             dry_run,
@@ -68,15 +68,30 @@ fn main() -> Result<()> {
                     project_type,
                     author,
                     description,
+                    license,
                     non_interactive,
                     from_config,
                 )?;
             } else if non_interactive {
-                forge.run_non_interactive(name, project_type, author, description, from_config)?;
+                forge.run_non_interactive(
+                    name,
+                    project_type,
+                    author,
+                    description,
+                    license,
+                    from_config,
+                )?;
             } else if let Some(config_path) = from_config {
-                forge.run_from_config(config_path, name, project_type, author, description)?;
+                forge.run_from_config(
+                    config_path,
+                    name,
+                    project_type,
+                    author,
+                    description,
+                    license,
+                )?;
             } else if name.is_some() && project_type.is_some() {
-                forge.run_with_args(name, project_type, author, description)?;
+                forge.run_with_args(name, project_type, author, description, license)?;
             } else {
                 // Main interactive mode - our TDD implementation works here
                 forge.run()?;
@@ -84,8 +99,8 @@ fn main() -> Result<()> {
         }
         Some(Commands::Init {
             project_type,
-            author: _,
-            license: _,
+            author,
+            license,
             non_interactive,
             from_config,
             dry_run,
@@ -103,13 +118,13 @@ fn main() -> Result<()> {
                         .bright_yellow()
                         .bold()
                 );
-                forge.run_init_dry_run(project_type, non_interactive, from_config)?;
+                forge.run_init_dry_run(project_type, author, license, non_interactive, from_config)?;
             } else if non_interactive {
-                forge.run_init_non_interactive(project_type, from_config)?;
+                forge.run_init_non_interactive(project_type, author, license, from_config)?;
             } else if let Some(config_path) = from_config {
-                forge.run_init_from_config(config_path, project_type)?;
+                forge.run_init_from_config(config_path, project_type, author, license)?;
             } else {
-                forge.run_init(project_type)?;
+                forge.run_init(project_type, author, license)?;
             }
         }
         Some(Commands::Completions { shell }) => {

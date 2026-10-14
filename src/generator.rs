@@ -13,6 +13,7 @@ pub struct ProjectConfig {
     pub project_type: String,
     pub author: String,
     pub description: Option<String>,
+    pub license: Option<String>,
     pub features: Vec<String>,
     pub target: Option<String>,
     pub esp32_chip: Option<String>,
@@ -56,10 +57,9 @@ impl Generator {
             fs::create_dir_all(output_dir)?;
         }
 
-        // Only create src and tests directories for non-workspace projects
+        // Only create src directory for non-workspace projects
         if config.project_type != "workspace" {
             fs::create_dir_all(output_dir.join("src"))?;
-            fs::create_dir_all(output_dir.join("tests"))?;
         }
 
         // Generate files based on project type
@@ -119,7 +119,10 @@ impl Generator {
                         plugin_manager.register(Box::new(DatabasePlugin::new(DatabaseType::MySQL)));
                     }
                     _ => {
-                        // Unknown features are ignored
+                        eprintln!(
+                            "⚠️  Feature '{}' is not implemented yet — skipping it.",
+                            feature
+                        );
                     }
                 }
             }
@@ -322,57 +325,242 @@ impl Generator {
     }
 
     fn generate_api_server(&self, _config: &ProjectConfig, output_dir: &Path) -> Result<()> {
-        // Create API server specific files
-        fs::write(output_dir.join("src/main.rs"), "fn main() {}\n")?;
-        fs::write(output_dir.join("src/routes.rs"), "")?;
-        fs::write(output_dir.join("src/handlers.rs"), "")?;
-        fs::write(output_dir.join("src/models.rs"), "")?;
+        // Minimal working Axum server: GET / returns a JSON health check.
+        let main_rs = r#"use tokio::net::TcpListener;
+
+mod handlers;
+mod models;
+mod routes;
+
+#[tokio::main]
+async fn main() {
+    let app = routes::routes();
+
+    let port: u16 = std::env::var("PORT")
+        .ok()
+        .and_then(|p| p.parse().ok())
+        .unwrap_or(3000);
+
+    let listener = TcpListener::bind(("0.0.0.0", port))
+        .await
+        .expect("failed to bind listener");
+
+    println!("API server listening on http://localhost:{port}");
+
+    axum::serve(listener, app).await.expect("server error");
+}
+"#;
+        fs::write(output_dir.join("src/main.rs"), main_rs)?;
+
+        let routes_rs = r#"use axum::{routing::get, Router};
+
+use crate::handlers;
+
+pub fn routes() -> Router {
+    Router::new().route("/", get(handlers::health))
+}
+"#;
+        fs::write(output_dir.join("src/routes.rs"), routes_rs)?;
+
+        let handlers_rs = r#"use axum::Json;
+
+use crate::models::Health;
+
+/// GET / — health check
+pub async fn health() -> Json<Health> {
+    Json(Health::ok())
+}
+"#;
+        fs::write(output_dir.join("src/handlers.rs"), handlers_rs)?;
+
+        let models_rs = r#"use serde::Serialize;
+
+#[derive(Serialize)]
+pub struct Health {
+    pub status: String,
+}
+
+impl Health {
+    pub fn ok() -> Self {
+        Self {
+            status: "ok".to_string(),
+        }
+    }
+}
+"#;
+        fs::write(output_dir.join("src/models.rs"), models_rs)?;
 
         fs::create_dir_all(output_dir.join("config"))?;
-        fs::write(output_dir.join("config/default.toml"), "")?;
-        fs::write(output_dir.join(".env.example"), "")?;
+        fs::write(
+            output_dir.join("config/default.toml"),
+            "# Server configuration (loaded by your config code as needed)\n[server]\nport = 3000\n",
+        )?;
+        fs::write(
+            output_dir.join(".env.example"),
+            "# Copy to .env and adjust as needed. PORT overrides config/default.toml\n# PORT=3000\n",
+        )?;
 
         Ok(())
     }
 
-    fn generate_cli_tool(&self, _config: &ProjectConfig, output_dir: &Path) -> Result<()> {
-        // Create CLI tool specific files
-        fs::write(output_dir.join("src/main.rs"), "fn main() {}\n")?;
-        fs::write(output_dir.join("src/cli.rs"), "")?;
-        fs::write(output_dir.join("src/commands.rs"), "")?;
+    fn generate_cli_tool(&self, config: &ProjectConfig, output_dir: &Path) -> Result<()> {
+        // Minimal working Clap CLI with a `hello` subcommand.
+        let main_rs = r#"mod cli;
+mod commands;
+
+use clap::Parser;
+
+use crate::cli::{Cli, Commands};
+
+fn main() {
+    let cli = Cli::parse();
+
+    match cli.command {
+        Some(Commands::Hello { name }) => commands::hello(name.as_deref()),
+        None => {
+            println!(
+                "{} — run with --help to see available commands.",
+                env!("CARGO_PKG_NAME")
+            );
+        }
+    }
+}
+"#;
+        fs::write(output_dir.join("src/main.rs"), main_rs)?;
+
+        let cli_rs = r#"use clap::{Parser, Subcommand};
+
+#[derive(Parser)]
+#[command(name = env!("CARGO_PKG_NAME"), version, about = env!("CARGO_PKG_DESCRIPTION"))]
+pub struct Cli {
+    #[command(subcommand)]
+    pub command: Option<Commands>,
+}
+
+#[derive(Subcommand)]
+pub enum Commands {
+    /// Print a greeting
+    Hello {
+        /// Name to greet (defaults to "world")
+        #[arg(short, long)]
+        name: Option<String>,
+    },
+}
+"#;
+        fs::write(output_dir.join("src/cli.rs"), cli_rs)?;
+
+        let commands_rs = r#"pub fn hello(name: Option<&str>) {
+    println!("Hello, {}!", name.unwrap_or("world"));
+}
+"#;
+        fs::write(output_dir.join("src/commands.rs"), commands_rs)?;
+
+        // Smoke test so `cargo test` has something real to run.
+        fs::create_dir_all(output_dir.join("tests"))?;
+        fs::write(
+            output_dir.join("tests/cli.rs"),
+            &format!(
+                r#"#[test]
+fn hello_command_help_snapshot() {{
+    let output = std::process::Command::new(env!("CARGO_BIN_EXE_{}"))
+        .args(["hello", "--name", "forge"])
+        .output()
+        .expect("failed to run binary");
+    assert!(output.status.success());
+    assert!(String::from_utf8_lossy(&output.stdout).contains("Hello, forge!"));
+}}
+"#,
+                config.name.replace('-', "_")
+            ),
+        )?;
 
         Ok(())
     }
 
     fn generate_library(&self, config: &ProjectConfig, output_dir: &Path) -> Result<()> {
-        // Create library specific files
+        // Small real API with a unit test, plus a runnable example.
+        let lib_name = config.name.replace('-', "_");
         let lib_content = format!(
-            "//! {}\n\n",
-            config.description.as_deref().unwrap_or("A Rust library")
+            r#"//! {}
+
+/// Return a greeting for `name`.
+pub fn greet(name: &str) -> String {{
+    format!("Hello, {{}}!", name)
+}}
+
+#[cfg(test)]
+mod tests {{
+    use super::greet;
+
+    #[test]
+    fn greets_by_name() {{
+        assert_eq!(greet("forge"), "Hello, forge!");
+    }}
+}}
+"#,
+            config
+                .description
+                .as_deref()
+                .unwrap_or("A Rust library")
         );
         fs::write(output_dir.join("src/lib.rs"), lib_content)?;
 
         fs::create_dir_all(output_dir.join("examples"))?;
-        fs::write(output_dir.join("examples/basic.rs"), "fn main() {}\n")?;
+        fs::write(
+            output_dir.join("examples/basic.rs"),
+            &format!("fn main() {{\n    println!(\"{{}}\", {}::greet(\"world\"));\n}}\n", lib_name),
+        )?;
 
         Ok(())
     }
 
-    fn generate_wasm_app(&self, _config: &ProjectConfig, output_dir: &Path) -> Result<()> {
-        // Create WASM app specific files
-        fs::write(output_dir.join("src/lib.rs"), "")?;
-        fs::write(output_dir.join("index.html"), "")?;
-        fs::write(output_dir.join("index.js"), "")?;
-        fs::write(output_dir.join("package.json"), "{}")?;
-        fs::write(output_dir.join("webpack.config.js"), "")?;
-        fs::write(output_dir.join("build.sh"), "#!/bin/bash\n")?;
+    fn generate_wasm_app(&self, config: &ProjectConfig, output_dir: &Path) -> Result<()> {
+        // Working wasm-bindgen export; build flow matches the generated README
+        // (wasm-pack --target web + static server), so no node/webpack files.
+        let lib_rs = r#"use wasm_bindgen::prelude::*;
+
+#[wasm_bindgen]
+pub fn greet(name: &str) -> String {
+    format!("Hello, {}!", name)
+}
+"#;
+        fs::write(output_dir.join("src/lib.rs"), lib_rs)?;
+
+        let index_html = format!(
+            r#"<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>{name}</title>
+  </head>
+  <body>
+    <script type="module">
+      import init, {{ greet }} from "./pkg/{pkg}.js";
+
+      init().then(() => {{
+        document.body.textContent = greet("world");
+      }});
+    </script>
+  </body>
+</html>
+"#,
+            name = config.name,
+            pkg = config.name.replace('-', "_")
+        );
+        fs::write(output_dir.join("index.html"), index_html)?;
 
         Ok(())
     }
 
     fn generate_game_engine(&self, _config: &ProjectConfig, output_dir: &Path) -> Result<()> {
-        // Create game engine specific files
-        fs::write(output_dir.join("src/main.rs"), "fn main() {}\n")?;
+        // Minimal Bevy app that opens a window.
+        let main_rs = r#"use bevy::prelude::*;
+
+fn main() {
+    App::new().add_plugins(DefaultPlugins).run();
+}
+"#;
+        fs::write(output_dir.join("src/main.rs"), main_rs)?;
 
         // Create assets directory structure
         fs::create_dir_all(output_dir.join("assets/models"))?;
@@ -385,10 +573,6 @@ impl Generator {
             output_dir.join("assets/README.md"),
             "# Assets\n\nPlace your game assets here.",
         )?;
-
-        // Create GitHub Actions for WASM builds
-        fs::create_dir_all(output_dir.join(".github/workflows"))?;
-        fs::write(output_dir.join(".github/workflows/wasm.yml"), "")?;
 
         Ok(())
     }
@@ -604,6 +788,10 @@ anyhow = "1.0"
                 content.push_str(&format!(r#"description = "{}""#, desc));
                 content.push('\n');
             }
+            if let Some(license) = &config.license {
+                content.push_str(&format!(r#"license = "{}""#, license));
+                content.push('\n');
+            }
             content.push_str("\n");
 
             content.push_str("[workspace.dependencies]\n");
@@ -632,6 +820,11 @@ anyhow = "1.0"
             content.push('\n');
         }
 
+        if let Some(license) = &config.license {
+            content.push_str(&format!(r#"license = "{}""#, license));
+            content.push('\n');
+        }
+
         content.push_str("\n[dependencies]\n");
 
         // Add project-type specific dependencies
@@ -640,6 +833,7 @@ anyhow = "1.0"
                 content.push_str("axum = \"0.7\"\n");
                 content.push_str("tokio = { version = \"1\", features = [\"full\"] }\n");
                 content.push_str("serde = { version = \"1\", features = [\"derive\"] }\n");
+                content.push_str("serde_json = \"1\"\n");
                 content.push_str("tower = \"0.4\"\n");
             }
             "cli-tool" => {
@@ -667,7 +861,7 @@ anyhow = "1.0"
                 content.push('\n');
             }
             "game-engine" => {
-                content.push_str("bevy = \"0.12\"\n");
+                content.push_str("bevy = \"0.20\"\n");
 
                 content.push_str("\n[target.'cfg(target_arch = \"wasm32\")'.dependencies]\n");
                 content.push_str("wasm-bindgen = \"0.2\"\n");

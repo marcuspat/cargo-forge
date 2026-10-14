@@ -16,6 +16,7 @@ fn test_file_generation_functionality() {
         description: Some("Test description".to_string()),
         features: vec![],
         target: None,
+        license: None,
         esp32_chip: None
     };
 
@@ -39,6 +40,7 @@ fn test_directory_creation() {
         description: None,
         features: vec![],
         target: None,
+        license: None,
         esp32_chip: None
     };
 
@@ -84,6 +86,7 @@ fn test_proper_permissions() {
         description: Some("A CLI tool".to_string()),
         features: vec![],
         target: None,
+        license: None,
         esp32_chip: None
     };
 
@@ -124,6 +127,7 @@ fn test_overwrite_protection() {
         description: None,
         features: vec![],
         target: None,
+        license: None,
         esp32_chip: None
     };
 
@@ -150,6 +154,7 @@ fn test_template_variable_injection() {
         description: Some("A test API server".to_string()),
         features: vec![],
         target: None,
+        license: None,
         esp32_chip: None
     };
 
@@ -186,6 +191,7 @@ fn test_binary_vs_library_generation() {
         description: None,
         features: vec![],
         target: None,
+        license: None,
         esp32_chip: None
     };
 
@@ -210,6 +216,7 @@ fn test_binary_vs_library_generation() {
         description: None,
         features: vec![],
         target: None,
+        license: None,
         esp32_chip: None
     };
 
@@ -238,6 +245,7 @@ fn test_gitignore_generation() {
         description: None,
         features: vec![],
         target: None,
+        license: None,
         esp32_chip: None
     };
 
@@ -271,6 +279,7 @@ fn test_readme_generation() {
         description: Some("An awesome API server".to_string()),
         features: vec![],
         target: None,
+        license: None,
         esp32_chip: None
     };
 

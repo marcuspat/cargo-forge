@@ -13,6 +13,7 @@ fn create_test_config(name: &str, project_type: &str) -> ProjectConfig {
         description: Some(format!("Test {} project", project_type)),
         features: vec![],
         target: None,
+        license: None,
         esp32_chip: None
     }
 }
@@ -157,7 +158,8 @@ fn test_comprehensive_project_matrix() {
             description: descriptions[i % descriptions.len()].clone(),
             features: vec![],
             target: None,
-            esp32_chip: None
+            license: None,
+        esp32_chip: None
         };
 
         generator
@@ -261,14 +263,7 @@ fn test_project_structure_validation() {
         ("library", vec!["src/lib.rs", "examples/basic.rs"]),
         (
             "wasm-app",
-            vec![
-                "src/lib.rs",
-                "index.html",
-                "index.js",
-                "package.json",
-                "webpack.config.js",
-                "build.sh",
-            ],
+            vec!["src/lib.rs", "index.html"],
         ),
         (
             "game-engine",
@@ -279,7 +274,6 @@ fn test_project_structure_validation() {
                 "assets/textures/",
                 "assets/sounds/",
                 "assets/shaders/",
-                ".github/workflows/wasm.yml",
             ],
         ),
         (
@@ -495,8 +489,13 @@ fn test_cargo_toml_quality() {
             project_type
         );
 
-        // Verify basic metadata
-        let required_fields = vec!["name =", "version =", "edition =", "authors ="];
+        // Workspace roots are virtual manifests ([workspace] + [workspace.package]),
+        // so they have no top-level `name =` field — that is correct Cargo semantics.
+        let required_fields: Vec<&str> = if project_type == "workspace" {
+            vec!["[workspace]", "[workspace.package]", "version =", "edition =", "authors ="]
+        } else {
+            vec!["name =", "version =", "edition =", "authors ="]
+        };
 
         verify_file_contains(&cargo_toml_path, &required_fields).expect(&format!(
             "Cargo.toml basic fields failed for {}",

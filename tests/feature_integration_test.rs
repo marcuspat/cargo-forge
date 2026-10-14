@@ -15,6 +15,7 @@ fn test_docker_feature_generates_files() {
         description: Some("Test API with Docker".to_string()),
         features: vec!["docker".to_string()],
         target: None,
+        license: None,
         esp32_chip: None
     };
 
@@ -55,6 +56,7 @@ fn test_ci_feature_generates_files() {
         description: Some("Test CLI with CI".to_string()),
         features: vec!["ci".to_string()],
         target: None,
+        license: None,
         esp32_chip: None
     };
 
@@ -80,6 +82,7 @@ fn test_database_feature_generates_files() {
         description: Some("Test API with Database".to_string()),
         features: vec!["database".to_string()],
         target: None,
+        license: None,
         esp32_chip: None
     };
 
@@ -113,6 +116,7 @@ fn test_multiple_features() {
             "database".to_string(),
         ],
         target: None,
+        license: None,
         esp32_chip: None
     };
 

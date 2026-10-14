@@ -124,7 +124,8 @@ mod stress_tests {
             description: Some("Project with extreme number of files".to_string()),
             features: vec![],
             target: None,
-            esp32_chip: None
+            license: None,
+        esp32_chip: None
         };
 
         let output_dir = temp_dir.path().join("extreme-files");
@@ -232,7 +233,8 @@ mod stress_tests {
             description: Some("Recovery test".to_string()),
             features: vec![],
             target: None,
-            esp32_chip: None
+            license: None,
+        esp32_chip: None
         };
 
         let output_dir = temp_dir.path().join("recovery-test");

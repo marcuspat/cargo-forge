@@ -26,7 +26,8 @@ mod generator_error_tests {
             description: Some("Test".to_string()),
             features: vec![],
             target: None,
-            esp32_chip: None
+            license: None,
+        esp32_chip: None
         };
 
         let output_dir = temp_dir.path().join("empty-name-test");
