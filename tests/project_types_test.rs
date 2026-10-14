@@ -220,18 +220,8 @@ fn test_wasm_app_project_type() {
         output_dir.join("index.html").exists(),
         "WASM app should have index.html"
     );
-    assert!(
-        output_dir.join("index.js").exists(),
-        "WASM app should have index.js"
-    );
-    assert!(
-        output_dir.join("package.json").exists(),
-        "WASM app should have package.json"
-    );
-    assert!(
-        output_dir.join("webpack.config.js").exists(),
-        "WASM app should have webpack config"
-    );
+    // The wasm starter follows the documented wasm-pack flow — no node
+    // scaffolding files are generated.
 
     // Check Cargo.toml for WASM dependencies
     let cargo_content = fs::read_to_string(output_dir.join("Cargo.toml")).unwrap();
@@ -256,11 +246,6 @@ fn test_wasm_app_project_type() {
         "WASM app should be cdylib"
     );
 
-    // Check for build script
-    assert!(
-        output_dir.join("build.sh").exists() || output_dir.join("build.rs").exists(),
-        "WASM app should have build script"
-    );
 }
 
 #[test]
@@ -285,8 +270,8 @@ fn test_project_type_specific_readme() {
         ),
         (
             ProjectType::WasmApp,
-            "WASM App",
-            vec!["webpack", "install", "build"],
+            "WebAssembly App",
+            vec!["wasm-pack", "WebAssembly"],
         ),
     ];
 

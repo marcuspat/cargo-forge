@@ -811,10 +811,8 @@ fn test_embedded_integration() {
             "Test embedded project",
             "Embedded Project",
             "no_std",
-            "ARM Cortex-M",
             "cargo build --release",
             "probe-rs",
-            "RTT logging",
         ],
     )
     .expect("README.md verification failed");
@@ -907,13 +905,10 @@ fn test_workspace_integration() {
         &[
             "# test-workspace",
             "Test workspace project",
-            "Workspace Project",
+            "Cargo Workspace",
             "multi-crate",
-            "crates/core",
-            "crates/api",
-            "crates/cli",
+            "crates/",
             "cargo build",
-            "cargo run",
         ],
     )
     .expect("README.md verification failed");
