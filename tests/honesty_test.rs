@@ -56,7 +56,11 @@ fn license_lands_in_workspace_package_and_members() {
     assert!(manifest.contains("[workspace.package]"));
     assert!(manifest.contains(r#"license = "MIT""#));
     // The member crates must actually carry the license, not just the root.
-    for member in ["crates/core/Cargo.toml", "crates/api/Cargo.toml", "crates/cli/Cargo.toml"] {
+    for member in [
+        "crates/core/Cargo.toml",
+        "crates/api/Cargo.toml",
+        "crates/cli/Cargo.toml",
+    ] {
         let m = fs::read_to_string(dir.join(member)).unwrap();
         assert!(
             m.contains(r#"license = "MIT""#),
@@ -228,10 +232,18 @@ fn control_characters_in_description_produce_valid_toml() {
     let mut cfg = config_with_license("ctrl-desc", "cli-tool", Some("MIT"));
     cfg.description = Some("line one\nline two\ttabbed \u{0007}bell".to_string());
     let dir = temp.path().join("ctrl-desc");
-    Generator::new().generate(&cfg, &dir).expect("generation should succeed");
+    Generator::new()
+        .generate(&cfg, &dir)
+        .expect("generation should succeed");
     let manifest = fs::read_to_string(dir.join("Cargo.toml")).unwrap();
     let parsed: toml::Value = toml::from_str(&manifest).expect("manifest must stay valid TOML");
-    let desc = parsed.get("package").unwrap().get("description").unwrap().as_str().unwrap();
+    let desc = parsed
+        .get("package")
+        .unwrap()
+        .get("description")
+        .unwrap()
+        .as_str()
+        .unwrap();
     assert!(desc.contains("line one\nline two"));
 }
 
@@ -241,7 +253,9 @@ fn multiline_description_keeps_library_compilable() {
     let mut cfg = config_with_license("multiline-lib", "library", None);
     cfg.description = Some("First line\nSecond line".to_string());
     let dir = temp.path().join("multiline-lib");
-    Generator::new().generate(&cfg, &dir).expect("generation should succeed");
+    Generator::new()
+        .generate(&cfg, &dir)
+        .expect("generation should succeed");
     let lib = fs::read_to_string(dir.join("src/lib.rs")).unwrap();
     assert!(lib.contains("//! First line"));
     assert!(lib.contains("//! Second line"));
@@ -254,9 +268,14 @@ fn database_feature_lands_sqlx_in_manifest() {
     let mut cfg = config_with_license("db-api", "api-server", None);
     cfg.features = vec!["database".to_string()];
     let dir = temp.path().join("db-api");
-    Generator::new().generate(&cfg, &dir).expect("generation should succeed");
+    Generator::new()
+        .generate(&cfg, &dir)
+        .expect("generation should succeed");
     let manifest = fs::read_to_string(dir.join("Cargo.toml")).unwrap();
-    assert!(manifest.contains("sqlx"), "database feature must add sqlx: {manifest}");
+    assert!(
+        manifest.contains("sqlx"),
+        "database feature must add sqlx: {manifest}"
+    );
     let parsed: toml::Value = toml::from_str(&manifest).expect("manifest must be valid TOML");
 }
 
