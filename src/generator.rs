@@ -1002,41 +1002,79 @@ anyhow = "1.0"
         }
 
         // Feature plugins contribute dependencies (e.g. sqlx for the
-        // database feature) — append them so generated projects compile
-        // with the feature files they ship. Skip names already provided by
-        // the project-type defaults (e.g. tokio for api-server) to keep the
+        // database feature) so generated projects compile with the feature
+        // files they ship. Those deps must land INSIDE [dependencies],
+        // which is not the manifest's last table for every type
+        // (game-engine/embedded append [target]/[profile] tables after
+        // their deps; cli-tool/library/wasm-app append [[bin]]/[lib]), so
+        // they are inserted right after the [dependencies] header rather
+        // than appended at the end. Skip names already provided by the
+        // project-type defaults (e.g. tokio for api-server) to keep the
         // manifest free of duplicate keys. Workspace roots are virtual
         // manifests and do not take a [dependencies] section.
         if config.project_type != "workspace" {
-            for (name, spec) in &feature_context.dependencies {
-                let already_present = content
-                    .lines()
-                    .any(|line| line.starts_with(&format!("{} =", name)));
-                if already_present {
-                    continue;
-                }
-                content.push_str(&format!("{} = {}\n", name, spec));
+            let dep_lines: Vec<String> = feature_context
+                .dependencies
+                .iter()
+                .filter(|(name, _)| !dep_already_present(&content, name))
+                .map(|(name, spec)| format!("{} = {}\n", name, spec))
+                .collect();
+            let dev_dep_lines: Vec<String> = feature_context
+                .dev_dependencies
+                .iter()
+                .filter(|(name, _)| !dep_already_present(&content, name))
+                .map(|(name, spec)| format!("{} = {}\n", name, spec))
+                .collect();
+            if !dep_lines.is_empty() {
+                insert_in_table(&mut content, "[dependencies]", &dep_lines);
             }
-            if !feature_context.dev_dependencies.is_empty() {
-                let mut added_dev_header = false;
-                for (name, spec) in &feature_context.dev_dependencies {
-                    let already_present = content
-                        .lines()
-                        .any(|line| line.starts_with(&format!("{} =", name)));
-                    if already_present {
-                        continue;
-                    }
-                    if !added_dev_header {
-                        content.push_str("\n[dev-dependencies]\n");
-                        added_dev_header = true;
-                    }
-                    content.push_str(&format!("{} = {}\n", name, spec));
-                }
+            if !dev_dep_lines.is_empty() {
+                insert_in_table(&mut content, "[dev-dependencies]", &dev_dep_lines);
             }
         }
 
         fs::write(output_dir.join("Cargo.toml"), content)?;
         Ok(())
+    }
+}
+
+/// True when a `name = …` key already exists anywhere in the manifest, so a
+/// plugin-provided dependency the project type already declares is skipped
+/// instead of duplicated.
+fn dep_already_present(content: &str, name: &str) -> bool {
+    content
+        .lines()
+        .any(|line| line.starts_with(&format!("{} =", name)))
+}
+
+/// Insert `lines` directly under `header` in a generated manifest. The
+/// header is matched on the exact trimmed line, so nested tables like
+/// `[target.'…'.dependencies]` can never shadow `[dependencies]`. A missing
+/// header (e.g. no [dev-dependencies] table yet) appends a new table at the
+/// end of the manifest.
+fn insert_in_table(content: &mut String, header: &str, lines: &[String]) {
+    match content.lines().position(|l| l.trim() == header) {
+        Some(idx) => {
+            let mut all: Vec<&str> = content.lines().collect();
+            for (offset, line) in lines
+                .iter()
+                .map(|l| l.trim_end_matches('\n'))
+                .enumerate()
+            {
+                all.insert(idx + 1 + offset, line);
+            }
+            content.clear();
+            content.push_str(&all.join("\n"));
+            content.push('\n');
+        }
+        None => {
+            content.push('\n');
+            content.push_str(header);
+            content.push('\n');
+            for line in lines {
+                content.push_str(line);
+            }
+        }
     }
 }
 

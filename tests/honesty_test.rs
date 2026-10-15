@@ -280,6 +280,41 @@ fn database_feature_lands_sqlx_in_manifest() {
 }
 
 #[test]
+fn database_feature_deps_land_in_dependencies_table_for_every_type() {
+    // Regression: plugin deps used to be appended after the manifest's last
+    // table, so for types whose [dependencies] is followed by other tables
+    // (game-engine: [target]/[profile], embedded: [profile], cli-tool:
+    // [[bin]], library/wasm-app: [lib]) sqlx landed outside [dependencies]
+    // and the generated project could not compile.
+    for project_type in [
+        "game-engine",
+        "wasm-app",
+        "library",
+        "embedded",
+        "cli-tool",
+        "api-server",
+    ] {
+        let temp = TempDir::new().unwrap();
+        let mut cfg = config_with_license("db-check", project_type, None);
+        cfg.features = vec!["database".to_string()];
+        let dir = temp.path().join("db-check");
+        Generator::new()
+            .generate(&cfg, &dir)
+            .expect("generation should succeed");
+        let manifest = fs::read_to_string(dir.join("Cargo.toml")).unwrap();
+        let value = toml::from_str::<toml::Value>(&manifest)
+            .unwrap_or_else(|e| panic!("{project_type} manifest must be valid TOML: {e}"));
+        assert!(
+            value
+                .get("dependencies")
+                .and_then(|deps| deps.get("sqlx"))
+                .is_some(),
+            "{project_type}: database feature must put sqlx under [dependencies], got:\n{manifest}"
+        );
+    }
+}
+
+#[test]
 fn generation_is_fast() {
     let temp = TempDir::new().unwrap();
     let start = std::time::Instant::now();
