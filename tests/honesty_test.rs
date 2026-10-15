@@ -272,7 +272,10 @@ fn database_feature_lands_sqlx_in_manifest() {
         .generate(&cfg, &dir)
         .expect("generation should succeed");
     let manifest = fs::read_to_string(dir.join("Cargo.toml")).unwrap();
-    assert!(manifest.contains("sqlx"), "database feature must add sqlx: {manifest}");
+    assert!(
+        manifest.contains("sqlx"),
+        "database feature must add sqlx: {manifest}"
+    );
     toml::from_str::<toml::Value>(&manifest).expect("manifest must be valid TOML");
 }
 
