@@ -209,15 +209,15 @@ impl Forge {
         // Optional fields: CLI flags (when given) pre-answer the prompts;
         // config defaults and prompts fill in the rest.
         let author = match self.overrides.author.clone() {
-            Some(a) => a,
+            Some(a) => Some(a),
             None => self.prompt_author_with_config(&mut config)?,
         };
         let description = match self.overrides.description.clone() {
-            Some(d) => d,
+            Some(d) => Some(d),
             None => self.prompt_optional_field("Description", "A new Rust project")?,
         };
         let license = match self.overrides.license.clone() {
-            Some(l) => l,
+            Some(l) => Some(l),
             None => self.prompt_license_with_config(&mut config)?,
         };
 
