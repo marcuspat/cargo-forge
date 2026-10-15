@@ -111,6 +111,26 @@ impl Generator {
             }
         };
 
+        // The emptiness check above ran BEFORE the claim was taken. Between
+        // that check and this point another generator may have completed a
+        // full project and released its own claim, so exclusivity requires a
+        // second look: once we hold the claim, the directory must hold
+        // nothing but the claim file.
+        ensure_empty_except_claim(output_dir, &claim_path)?;
+
+        // Reject feature/project-type combinations that cannot compile
+        // before writing anything: the database family (sqlx) needs a
+        // native binary or library target.
+        for feature in &config.features {
+            if !feature_supported(feature, &config.project_type) {
+                return Err(anyhow!(
+                    "Feature '{}' is not supported for '{}' projects",
+                    feature,
+                    config.project_type
+                ));
+            }
+        }
+
         // Only create src directory for non-workspace projects
         if config.project_type != "workspace" {
             fs::create_dir_all(output_dir.join("src"))?;
@@ -486,7 +506,7 @@ impl Health {
         )?;
         fs::write(
             output_dir.join(".env.example"),
-            "# Copy to .env and adjust as needed. PORT overrides config/default.toml\n# PORT=3000\n",
+            "# The server binds to the PORT environment variable when set\n# (default 3000). Nothing else reads this file; the starter has no\n# dotenv dependency, so exporting PORT is what takes effect.\n# PORT=3000\n",
         )?;
 
         Ok(())
@@ -1055,13 +1075,69 @@ anyhow = "1.0"
     }
 }
 
-/// True when a `name = …` key already exists anywhere in the manifest, so a
-/// plugin-provided dependency the project type already declares is skipped
-/// instead of duplicated.
-fn dep_already_present(content: &str, name: &str) -> bool {
-    content
-        .lines()
-        .any(|line| line.starts_with(&format!("{} =", name)))
+/// True when a `name = …` key already exists in `table` of the manifest, so
+/// a plugin-provided dependency the project type already declares is skipped
+/// instead of duplicated. Parsed as TOML so a match in a different table
+/// (e.g. a `[target.'…'.dependencies]` entry) never hides a main-table dep.
+fn dep_already_present(content: &str, table: &str, name: &str) -> bool {
+    toml::from_str::<toml::Value>(content)
+        .ok()
+        .and_then(|v| v.get(table).map(|t| t.get(name).is_some()))
+        .unwrap_or(false)
+}
+
+/// Features the generator can honestly apply per project type. The database
+/// family (sqlx + tokio) only links for native binaries and libraries:
+/// embedded is no_std, wasm-app targets wasm32, game-engine carries a
+/// wasm32 target table, and workspace roots are virtual manifests whose
+/// feature dependencies are skipped on purpose.
+pub fn feature_supported(feature: &str, project_type: &str) -> bool {
+    match feature {
+        "database" | "sqlite" | "mysql" => {
+            matches!(project_type, "api-server" | "cli-tool" | "library")
+        }
+        _ => true,
+    }
+}
+
+/// Re-verify the directory holds nothing except our claim file. The initial
+/// emptiness check runs before the claim is taken; between that check and
+/// this one another generator may have finished a complete project and
+/// released its claim, so exclusivity requires a second look.
+fn ensure_empty_except_claim(output_dir: &Path, claim_path: &Path) -> Result<()> {
+    for entry in fs::read_dir(output_dir)?.flatten() {
+        if entry.path() == claim_path {
+            continue;
+        }
+        anyhow::bail!("Directory '{}' is not empty", output_dir.display());
+    }
+    Ok(())
+}
+
+#[cfg(test)]
+mod claim_tests {
+    use super::*;
+
+    #[test]
+    fn stray_file_beside_the_claim_is_rejected() {
+        let temp = tempfile::TempDir::new().unwrap();
+        let dir = temp.path().join("proj");
+        fs::create_dir_all(&dir).unwrap();
+        let claim = dir.join(".cargo-forge-claim");
+        fs::write(&claim, "").unwrap();
+        fs::write(dir.join("src"), "").unwrap(); // leftover from a prior run
+        assert!(ensure_empty_except_claim(&dir, &claim).is_err());
+    }
+
+    #[test]
+    fn claim_only_directory_passes() {
+        let temp = tempfile::TempDir::new().unwrap();
+        let dir = temp.path().join("proj");
+        fs::create_dir_all(&dir).unwrap();
+        let claim = dir.join(".cargo-forge-claim");
+        fs::write(&claim, "").unwrap();
+        assert!(ensure_empty_except_claim(&dir, &claim).is_ok());
+    }
 }
 
 /// Insert `lines` directly under `header` in a generated manifest. The

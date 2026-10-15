@@ -18,7 +18,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   now written into the generated manifest — they were collected but never
   rendered, so feature files referenced crates the project did not depend on
 - concurrent generation into the same directory is now exclusive via an
-  O_EXCL claim file (previously a TOCTOU race allowed multiple writers)
+  O_EXCL claim file (previously a TOCTOU race allowed multiple writers);
+  the claim is cleaned up on every exit path via a Drop guard
+- game-engine starter verified to compile against bevy 0.20 via
+  `cargo check --target wasm32-unknown-unknown` (native desktop builds
+  additionally need the Linux windowing libraries noted in the README)
 - control characters in descriptions/authors/licenses can no longer
   produce invalid manifests (full TOML escaping); multi-line descriptions
   in libraries become multiple `//!` lines instead of broken code
