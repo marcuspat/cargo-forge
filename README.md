@@ -59,7 +59,7 @@ _Note: the templates are deliberately minimal starting points, not frameworks. `
 
 ### 🛠️ Core Features
 
-Current features available in v0.1.8:
+Current features available in v0.2.0:
 
 #### **Project Structure**
 - **Working starters**: every template generates real starter code (an Axum

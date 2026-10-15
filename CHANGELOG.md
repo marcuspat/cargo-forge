@@ -7,7 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.1.8] - 2026-10-14
+## [0.2.0] - 2026-10-14
+
+> 0.2.0 rather than 0.1.8: this release removes the public `TemplateEngine`
+> API and adds a required `license` field to `ProjectConfig` — source-
+> incompatible changes for library consumers that a patch bump would
+> misrepresent.
 ### Fixed (honesty pass: claims now match behavior)
 - `rust-version` raised 1.70 → 1.88 — the committed Cargo.lock cannot
   build on 1.70 (clap 4.6 line requires a newer toolchain; floor verified

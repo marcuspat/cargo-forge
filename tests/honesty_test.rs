@@ -412,3 +412,94 @@ fn lone_carriage_return_in_description_keeps_library_sane() {
     assert!(lib.contains("//! before"));
     assert!(lib.contains("//! after"));
 }
+
+#[test]
+fn cli_license_flag_reaches_manifest_end_to_end() {
+    let temp = TempDir::new().unwrap();
+    let out = std::process::Command::new(env!("CARGO_BIN_EXE_cargo-forge"))
+        .args([
+            "new",
+            "cli-flag-app",
+            "--project-type",
+            "cli-tool",
+            "--license",
+            "Apache-2.0",
+            "--non-interactive",
+        ])
+        .current_dir(temp.path())
+        .output()
+        .expect("failed to run cargo-forge binary");
+    assert!(
+        out.status.success(),
+        "cargo-forge new should succeed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let manifest = fs::read_to_string(temp.path().join("cli-flag-app/Cargo.toml")).unwrap();
+    assert!(manifest.contains(r#"license = "Apache-2.0""#));
+}
+
+#[test]
+fn cli_license_flag_overrides_config_default() {
+    let temp = TempDir::new().unwrap();
+    fs::write(
+        temp.path().join("defaults.toml"),
+        r#"default_author = "Config Author"
+default_license = "MIT"
+preferred_project_types = ["library"]
+default_features = { api-server = ["docker"] }
+"#,
+    )
+    .unwrap();
+    let out = std::process::Command::new(env!("CARGO_BIN_EXE_cargo-forge"))
+        .args([
+            "new",
+            "cli-override-app",
+            "--from-config",
+            "defaults.toml",
+            "--license",
+            "Apache-2.0",
+            "--non-interactive",
+        ])
+        .current_dir(temp.path())
+        .output()
+        .expect("failed to run cargo-forge binary");
+    assert!(out.status.success());
+    let manifest = fs::read_to_string(temp.path().join("cli-override-app/Cargo.toml")).unwrap();
+    assert!(
+        manifest.contains(r#"license = "Apache-2.0""#),
+        "CLI --license must win over config default_license"
+    );
+    assert!(
+        manifest.contains(r#"authors = ["Config Author"]"#),
+        "config default_author must still apply when not given on the CLI"
+    );
+}
+
+#[test]
+fn cli_init_author_and_license_flags_reach_manifest() {
+    let temp = TempDir::new().unwrap();
+    let project = temp.path().join("init-flag-dir");
+    fs::create_dir_all(&project).unwrap();
+    let out = std::process::Command::new(env!("CARGO_BIN_EXE_cargo-forge"))
+        .args([
+            "init",
+            "--project-type",
+            "library",
+            "--author",
+            "Init Author",
+            "--license",
+            "BSD-3-Clause",
+            "--non-interactive",
+        ])
+        .current_dir(&project)
+        .output()
+        .expect("failed to run cargo-forge binary");
+    assert!(
+        out.status.success(),
+        "cargo-forge init should succeed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let manifest = fs::read_to_string(project.join("Cargo.toml")).unwrap();
+    assert!(manifest.contains(r#"authors = ["Init Author"]"#));
+    assert!(manifest.contains(r#"license = "BSD-3-Clause""#));
+}
