@@ -91,20 +91,26 @@ fn test_proper_permissions() {
     let generator = Generator::new();
     generator.generate(&config, &output_dir).unwrap();
 
-    // Check directory permissions (should be readable and executable)
+    // The generator does not manage permissions itself — files and dirs get
+    // the OS default for the active umask, and not every environment runs
+    // umask 022 (a codespace shell here carried 0o021, yielding 0o756 dirs).
+    // Assert the semantics the code guarantees: the owner can read and
+    // traverse what was generated, whatever the umask left in place.
     let src_metadata = fs::metadata(output_dir.join("src")).unwrap();
     let src_permissions = src_metadata.permissions();
     assert!(
-        src_permissions.mode() & 0o755 >= 0o755,
-        "src directory should have proper permissions"
+        src_permissions.mode() & 0o500 == 0o500,
+        "src directory should be readable and executable by its owner (mode {:o})",
+        src_permissions.mode()
     );
 
     // Check file permissions (should be readable)
     let cargo_metadata = fs::metadata(output_dir.join("Cargo.toml")).unwrap();
     let cargo_permissions = cargo_metadata.permissions();
     assert!(
-        cargo_permissions.mode() & 0o644 >= 0o644,
-        "Cargo.toml should have proper permissions"
+        cargo_permissions.mode() & 0o400 == 0o400,
+        "Cargo.toml should be readable by its owner (mode {:o})",
+        cargo_permissions.mode()
     );
 }
 
