@@ -818,13 +818,13 @@ name = "{}_api"
 "#,
             config.name,
             author,
+            config.name,
+            config.name.replace('-', "_"),
             license_line = if license_line.is_empty() {
                 String::new()
             } else {
                 format!("{}\n", license_line)
-            },
-            config.name,
-            config.name.replace('-', "_")
+            }
         );
         fs::write(output_dir.join("crates/api/Cargo.toml"), api_cargo_toml)?;
 
@@ -849,13 +849,13 @@ anyhow = "1.0"
 "#,
             config.name,
             author,
+            config.name,
+            config.name,
             license_line = if license_line.is_empty() {
                 String::new()
             } else {
                 format!("{}\n", license_line)
-            },
-            config.name,
-            config.name
+            }
         );
         fs::write(output_dir.join("crates/cli/Cargo.toml"), cli_cargo_toml)?;
 
@@ -1008,13 +1008,11 @@ anyhow = "1.0"
         // manifest free of duplicate keys. Workspace roots are virtual
         // manifests and do not take a [dependencies] section.
         if config.project_type != "workspace" {
-            let already_present = |name: &str| {
-                content
-                    .lines()
-                    .any(|line| line.starts_with(&format!("{} =", name)))
-            };
             for (name, spec) in &feature_context.dependencies {
-                if already_present(name) {
+                let already_present = content
+                    .lines()
+                    .any(|line| line.starts_with(&format!("{} =", name)));
+                if already_present {
                     continue;
                 }
                 content.push_str(&format!("{} = {}\n", name, spec));
@@ -1022,7 +1020,10 @@ anyhow = "1.0"
             if !feature_context.dev_dependencies.is_empty() {
                 let mut added_dev_header = false;
                 for (name, spec) in &feature_context.dev_dependencies {
-                    if already_present(name) {
+                    let already_present = content
+                        .lines()
+                        .any(|line| line.starts_with(&format!("{} =", name)));
+                    if already_present {
                         continue;
                     }
                     if !added_dev_header {
