@@ -1053,27 +1053,25 @@ fn dep_already_present(content: &str, name: &str) -> bool {
 /// header (e.g. no [dev-dependencies] table yet) appends a new table at the
 /// end of the manifest.
 fn insert_in_table(content: &mut String, header: &str, lines: &[String]) {
-    match content.lines().position(|l| l.trim() == header) {
-        Some(idx) => {
-            let mut all: Vec<&str> = content.lines().collect();
-            for (offset, line) in lines
-                .iter()
-                .map(|l| l.trim_end_matches('\n'))
-                .enumerate()
-            {
-                all.insert(idx + 1 + offset, line);
+    if let Some(idx) = content.lines().position(|l| l.trim() == header) {
+        let mut out = String::with_capacity(content.len() + 64);
+        for (i, line) in content.lines().enumerate() {
+            out.push_str(line);
+            out.push('\n');
+            if i == idx {
+                for l in lines {
+                    out.push_str(l.trim_end_matches('\n'));
+                    out.push('\n');
+                }
             }
-            content.clear();
-            content.push_str(&all.join("\n"));
-            content.push('\n');
         }
-        None => {
-            content.push('\n');
-            content.push_str(header);
-            content.push('\n');
-            for line in lines {
-                content.push_str(line);
-            }
+        *content = out;
+    } else {
+        content.push('\n');
+        content.push_str(header);
+        content.push('\n');
+        for line in lines {
+            content.push_str(line);
         }
     }
 }
