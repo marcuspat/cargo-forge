@@ -334,6 +334,47 @@ fn database_feature_rejected_for_unsupported_types() {
 }
 
 #[test]
+fn game_engine_starter_compiles_for_wasm32_when_target_installed() {
+    // Real compile coverage for the changed starter (bevy 0.12 -> 0.20),
+    // replacing the e2e matrix's unconditional skips for target-specific
+    // types. Runs wherever the wasm32 target is installed (`rustup target
+    // add wasm32-unknown-unknown`); when it is not, the skip is stated —
+    // never reported as a pass. A stable shared target dir keeps repeat
+    // runs incremental instead of recompiling bevy every time.
+    let temp = TempDir::new().unwrap();
+    let cfg = config_with_license("ge-wasm32", "game-engine", None);
+    let dir = temp.path().join("ge-wasm32");
+    Generator::new()
+        .generate(&cfg, &dir)
+        .expect("generation should succeed");
+
+    let installed = std::process::Command::new("rustup")
+        .args(["target", "list", "--installed"])
+        .output()
+        .map(|o| String::from_utf8_lossy(&o.stdout).contains("wasm32-unknown-unknown"))
+        .unwrap_or(false);
+    if !installed {
+        println!(
+            "SKIP game-engine wasm32 compile check: wasm32-unknown-unknown \
+             target not installed (rustup target add wasm32-unknown-unknown \
+             to enable this check)"
+        );
+        return;
+    }
+    let shared_target = std::env::temp_dir().join("cargo-forge-ge-wasm32-target");
+    let status = std::process::Command::new("cargo")
+        .args(["check", "--target", "wasm32-unknown-unknown"])
+        .env("CARGO_TARGET_DIR", &shared_target)
+        .current_dir(&dir)
+        .status()
+        .expect("cargo should launch");
+    assert!(
+        status.success(),
+        "game-engine starter (bevy 0.20) must compile for wasm32-unknown-unknown"
+    );
+}
+
+#[test]
 fn second_generate_into_released_claim_directory_fails() {
     // A completed generation releases its claim but leaves the project
     // files behind. A later run must refuse the directory even though it

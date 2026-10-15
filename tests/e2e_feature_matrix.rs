@@ -296,7 +296,10 @@ impl FeatureMatrixTestSuite {
                         "Cargo.toml".to_string(),
                         "crate-type = [\"cdylib\"]".to_string(),
                     ),
-                    ValidationRule::CargoCheckPasses,
+                    // No CargoCheckPasses here: wasm-app compilation needs
+                    // the wasm32 target; wasm compile coverage lives in
+                    // honesty_test (game_engine / wasm starters) behind a
+                    // target-installed probe.
                 ],
             },
         ]);
@@ -376,7 +379,9 @@ impl FeatureMatrixTestSuite {
                 ValidationRule::DirectoryExists("assets/sounds".to_string()),
                 ValidationRule::DirectoryExists("assets/shaders".to_string()),
                 ValidationRule::FileExists("assets/README.md".to_string()),
-                ValidationRule::CargoCheckPasses,
+                // No CargoCheckPasses here: bevy needs system libraries /
+                // the wasm32 target; the game-engine starter's compile
+                // coverage is honesty_test's wasm32 check.
             ],
         }]);
 
@@ -452,14 +457,14 @@ impl FeatureMatrixTestSuite {
                 }
             }
             ValidationRule::CargoCheckPasses if cargo_needs_special_setup => {
-                // Skipped, and said so: game-engine needs Bevy's system
-                // libraries, embedded needs its target toolchain. Manifest
-                // correctness for these types is asserted by the
-                // FileContains/TOML rules in this matrix and the honesty
-                // suite.
-                println!(
-                    "SKIP cargo check ({project_type}: needs target-specific toolchain)"
-                );
+                // Fail-closed: cargo rules must not appear in matrices for
+                // target-specific types (they cannot run here — wasm32 /
+                // embedded toolchains, Bevy's system libraries). If a
+                // future matrix entry adds one, this is a test bug.
+                return Err(format!(
+                    "CargoCheckPasses is not runnable for {project_type} \
+                     (target-specific toolchain) — remove the rule from the matrix"
+                ));
             }
             ValidationRule::CargoCheckPasses => {
                 let output = Command::new("cargo")
@@ -473,9 +478,10 @@ impl FeatureMatrixTestSuite {
                 }
             }
             ValidationRule::CargoBuildPasses if cargo_needs_special_setup => {
-                println!(
-                    "SKIP cargo build ({project_type}: needs target-specific toolchain)"
-                );
+                return Err(format!(
+                    "CargoBuildPasses is not runnable for {project_type} \
+                     (target-specific toolchain) — remove the rule from the matrix"
+                ));
             }
             ValidationRule::CargoBuildPasses => {
                 let output = Command::new("cargo")
@@ -489,9 +495,10 @@ impl FeatureMatrixTestSuite {
                 }
             }
             ValidationRule::CargoTestPasses if cargo_needs_special_setup => {
-                println!(
-                    "SKIP cargo test ({project_type}: needs target-specific toolchain)"
-                );
+                return Err(format!(
+                    "CargoTestPasses is not runnable for {project_type} \
+                     (target-specific toolchain) — remove the rule from the matrix"
+                ));
             }
             ValidationRule::CargoTestPasses => {
                 let output = Command::new("cargo")
