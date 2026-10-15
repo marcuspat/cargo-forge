@@ -1090,10 +1090,12 @@ fn dep_already_present(content: &str, table: &str, name: &str) -> bool {
 /// family (sqlx + tokio) only links for native binaries and libraries:
 /// embedded is no_std, wasm-app targets wasm32, game-engine carries a
 /// wasm32 target table, and workspace roots are virtual manifests whose
-/// feature dependencies are skipped on purpose.
+/// feature dependencies are skipped on purpose. `postgres` registers the
+/// same plugin as `database` (see the registration match) and is guarded
+/// identically.
 pub fn feature_supported(feature: &str, project_type: &str) -> bool {
     match feature {
-        "database" | "sqlite" | "mysql" => {
+        "database" | "postgres" | "sqlite" | "mysql" => {
             matches!(project_type, "api-server" | "cli-tool" | "library")
         }
         _ => true,
@@ -1105,7 +1107,8 @@ pub fn feature_supported(feature: &str, project_type: &str) -> bool {
 /// this one another generator may have finished a complete project and
 /// released its claim, so exclusivity requires a second look.
 fn ensure_empty_except_claim(output_dir: &Path, claim_path: &Path) -> Result<()> {
-    for entry in fs::read_dir(output_dir)?.flatten() {
+    for entry in fs::read_dir(output_dir)? {
+        let entry = entry?;
         if entry.path() == claim_path {
             continue;
         }

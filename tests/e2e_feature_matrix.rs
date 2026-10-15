@@ -451,7 +451,16 @@ impl FeatureMatrixTestSuite {
                     return Err(format!("File {} should not contain '{}'", file, content));
                 }
             }
-            ValidationRule::CargoCheckPasses if cargo_needs_special_setup => {}
+            ValidationRule::CargoCheckPasses if cargo_needs_special_setup => {
+                // Skipped, and said so: game-engine needs Bevy's system
+                // libraries, embedded needs its target toolchain. Manifest
+                // correctness for these types is asserted by the
+                // FileContains/TOML rules in this matrix and the honesty
+                // suite.
+                println!(
+                    "SKIP cargo check ({project_type}: needs target-specific toolchain)"
+                );
+            }
             ValidationRule::CargoCheckPasses => {
                 let output = Command::new("cargo")
                     .arg("check")
@@ -463,7 +472,11 @@ impl FeatureMatrixTestSuite {
                     return Err(format!("Cargo check failed: {}", stderr));
                 }
             }
-            ValidationRule::CargoBuildPasses if cargo_needs_special_setup => {}
+            ValidationRule::CargoBuildPasses if cargo_needs_special_setup => {
+                println!(
+                    "SKIP cargo build ({project_type}: needs target-specific toolchain)"
+                );
+            }
             ValidationRule::CargoBuildPasses => {
                 let output = Command::new("cargo")
                     .arg("build")
@@ -475,7 +488,11 @@ impl FeatureMatrixTestSuite {
                     return Err(format!("Cargo build failed: {}", stderr));
                 }
             }
-            ValidationRule::CargoTestPasses if cargo_needs_special_setup => {}
+            ValidationRule::CargoTestPasses if cargo_needs_special_setup => {
+                println!(
+                    "SKIP cargo test ({project_type}: needs target-specific toolchain)"
+                );
+            }
             ValidationRule::CargoTestPasses => {
                 let output = Command::new("cargo")
                     .arg("test")

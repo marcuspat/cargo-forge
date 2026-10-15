@@ -314,19 +314,22 @@ fn database_feature_rejected_for_unsupported_types() {
     // embedded is no_std, wasm-app targets wasm32, game-engine carries a
     // wasm32 target table, and workspace roots are virtual manifests —
     // sqlx cannot link in any of them, so the combination must be an
-    // error, not a project that compiles nowhere.
+    // error, not a project that compiles nowhere. "postgres" registers
+    // the same plugin as "database" and must be guarded identically.
     for project_type in ["embedded", "wasm-app", "game-engine", "workspace"] {
-        let temp = TempDir::new().unwrap();
-        let mut cfg = config_with_license("db-bad", project_type, None);
-        cfg.features = vec!["database".to_string()];
-        let dir = temp.path().join("db-bad");
-        let err = Generator::new()
-            .generate(&cfg, &dir)
-            .expect_err("unsupported feature/type combination must fail");
-        assert!(
-            err.to_string().contains("not supported"),
-            "{project_type}: expected a 'not supported' error, got: {err}"
-        );
+        for alias in ["database", "postgres"] {
+            let temp = TempDir::new().unwrap();
+            let mut cfg = config_with_license("db-bad", project_type, None);
+            cfg.features = vec![alias.to_string()];
+            let dir = temp.path().join("db-bad");
+            let err = Generator::new()
+                .generate(&cfg, &dir)
+                .expect_err("unsupported feature/type combination must fail");
+            assert!(
+                err.to_string().contains("not supported"),
+                "{project_type}/{alias}: expected a 'not supported' error, got: {err}"
+            );
+        }
     }
 }
 
