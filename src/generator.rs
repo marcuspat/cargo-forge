@@ -553,12 +553,20 @@ fn hello_command_greets_by_name() {{
     fn generate_library(&self, config: &ProjectConfig, output_dir: &Path) -> Result<()> {
         // Small real API with a unit test, plus a runnable example.
         let lib_name = config.name.replace('-', "_");
+        // Multi-line descriptions become multiple `//!` lines so the crate
+        // stays compilable regardless of what the user typed.
+        let doc_header: String = config
+            .description
+            .as_deref()
+            .unwrap_or("A Rust library")
+            .lines()
+            .map(|line| format!("//! {}\n", line))
+            .collect();
         let lib_content = format!(
-            r#"//! {}
-
+            "{doc_header}\
 /// Return a greeting for `name`.
 pub fn greet(name: &str) -> String {{
-    format!("Hello, {{}}!", name)
+    format!(\"Hello, {{}}!\", name)
 }}
 
 #[cfg(test)]
@@ -567,11 +575,10 @@ mod tests {{
 
     #[test]
     fn greets_by_name() {{
-        assert_eq!(greet("forge"), "Hello, forge!");
+        assert_eq!(greet(\"forge\"), \"Hello, forge!\");
     }}
 }}
-"#,
-            config.description.as_deref().unwrap_or("A Rust library")
+"
         );
         fs::write(output_dir.join("src/lib.rs"), lib_content)?;
 
@@ -799,7 +806,7 @@ name = "{}-api"
 version = "0.1.0"
 edition = "2021"
 authors = ["{}"]
-
+{license_line}
 [dependencies]
 {}-core = {{ path = "../core" }}
 tokio = {{ version = "1", features = ["full"] }}
@@ -811,6 +818,11 @@ name = "{}_api"
 "#,
             config.name,
             author,
+            license_line = if license_line.is_empty() {
+                String::new()
+            } else {
+                format!("{}\n", license_line)
+            },
             config.name,
             config.name.replace('-', "_")
         );
@@ -825,7 +837,7 @@ name = "{}-cli"
 version = "0.1.0"
 edition = "2021"
 authors = ["{}"]
-
+{license_line}
 [[bin]]
 name = "{}"
 path = "src/main.rs"
@@ -835,7 +847,15 @@ path = "src/main.rs"
 clap = {{ version = "4", features = ["derive"] }}
 anyhow = "1.0"
 "#,
-            config.name, author, config.name, config.name
+            config.name,
+            author,
+            license_line = if license_line.is_empty() {
+                String::new()
+            } else {
+                format!("{}\n", license_line)
+            },
+            config.name,
+            config.name
         );
         fs::write(output_dir.join("crates/cli/Cargo.toml"), cli_cargo_toml)?;
 
@@ -983,15 +1003,32 @@ anyhow = "1.0"
 
         // Feature plugins contribute dependencies (e.g. sqlx for the
         // database feature) — append them so generated projects compile
-        // with the feature files they ship. Workspace roots are virtual
+        // with the feature files they ship. Skip names already provided by
+        // the project-type defaults (e.g. tokio for api-server) to keep the
+        // manifest free of duplicate keys. Workspace roots are virtual
         // manifests and do not take a [dependencies] section.
         if config.project_type != "workspace" {
+            let already_present = |name: &str| {
+                content
+                    .lines()
+                    .any(|line| line.starts_with(&format!("{} =", name)))
+            };
             for (name, spec) in &feature_context.dependencies {
+                if already_present(name) {
+                    continue;
+                }
                 content.push_str(&format!("{} = {}\n", name, spec));
             }
             if !feature_context.dev_dependencies.is_empty() {
-                content.push_str("\n[dev-dependencies]\n");
+                let mut added_dev_header = false;
                 for (name, spec) in &feature_context.dev_dependencies {
+                    if already_present(name) {
+                        continue;
+                    }
+                    if !added_dev_header {
+                        content.push_str("\n[dev-dependencies]\n");
+                        added_dev_header = true;
+                    }
                     content.push_str(&format!("{} = {}\n", name, spec));
                 }
             }
