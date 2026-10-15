@@ -66,8 +66,9 @@ Current features available in v0.1.8:
   health-check server, a Clap CLI with a `hello` command, a library with a
   unit-tested `greet` API, a wasm-bindgen export, a minimal Bevy app).
   api-server, cli-tool, library and workspace starters are compile-verified
-  by the test suite. The game-engine starter (bevy 0.20) is verified with
-  `cargo check --target wasm32-unknown-unknown`; native desktop builds
+  by the test suite. The game-engine starter (bevy 0.20) was verified
+  manually with `cargo check --target wasm32-unknown-unknown` (the automated
+  suite skips game-engine cargo checks); native desktop builds
   additionally need Bevy's Linux windowing libraries (noted in the
   generated README). The wasm-app starter follows the standard wasm-pack
   flow

@@ -93,8 +93,12 @@ fn main() -> Result<()> {
             } else if name.is_some() && project_type.is_some() {
                 forge.run_with_args(name, project_type, author, description, license)?;
             } else {
-                // Main interactive mode - our TDD implementation works here
-                forge.run()?;
+                // Main interactive mode. CLI flags pre-answer their prompts
+                // so `--author/--description/--license` are honored here too
+                // instead of being discarded.
+                forge
+                    .with_cli_overrides(author, description, license)
+                    .run()?;
             }
         }
         Some(Commands::Init {

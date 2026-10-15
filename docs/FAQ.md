@@ -174,7 +174,7 @@ Generation is code-driven: cargo-forge ships built-in starters for its 7 project
 
 ### How does generation work?
 
-Templates are embedded in the binary using `include_dir!`, making Cargo-Forge a single self-contained executable.
+Generation is code-driven: each project type's starter files are written by dedicated Rust functions in the binary — there is no template directory and no template engine. That keeps cargo-forge a single self-contained executable.
 
 ### Can I use environment variables in templates?
 

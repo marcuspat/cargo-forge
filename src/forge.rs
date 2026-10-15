@@ -114,9 +114,20 @@ impl ForgeConfig {
     }
 }
 
+/// Values passed on the CLI (`--author`, `--description`, `--license`) that
+/// must survive into the interactive flow: when present they pre-answer the
+/// corresponding prompts instead of being silently discarded.
+#[derive(Default)]
+pub struct CliOverrides {
+    pub author: Option<String>,
+    pub description: Option<String>,
+    pub license: Option<String>,
+}
+
 pub struct Forge {
     base_path: PathBuf,
     config: Config,
+    overrides: CliOverrides,
 }
 
 impl Forge {
@@ -125,7 +136,25 @@ impl Forge {
         Self {
             base_path: base_path.as_ref().to_path_buf(),
             config,
+            overrides: CliOverrides::default(),
         }
+    }
+
+    /// Seed the interactive flow with CLI flags so `--author`,
+    /// `--description` and `--license` pre-answer their prompts instead of
+    /// being discarded when `cargo-forge new` drops into interactive mode.
+    pub fn with_cli_overrides(
+        mut self,
+        author: Option<String>,
+        description: Option<String>,
+        license: Option<String>,
+    ) -> Self {
+        self.overrides = CliOverrides {
+            author,
+            description,
+            license,
+        };
+        self
     }
 
     pub fn run(&self) -> Result<()> {
@@ -177,10 +206,20 @@ impl Forge {
         // Feature selection based on project type
         let features = self.prompt_features(&project_type, target.clone())?;
 
-        // Optional fields with config defaults
-        let author = self.prompt_author_with_config(&mut config)?;
-        let description = self.prompt_optional_field("Description", "A new Rust project")?;
-        let license = self.prompt_license_with_config(&mut config)?;
+        // Optional fields: CLI flags (when given) pre-answer the prompts;
+        // config defaults and prompts fill in the rest.
+        let author = match self.overrides.author.clone() {
+            Some(a) => a,
+            None => self.prompt_author_with_config(&mut config)?,
+        };
+        let description = match self.overrides.description.clone() {
+            Some(d) => d,
+            None => self.prompt_optional_field("Description", "A new Rust project")?,
+        };
+        let license = match self.overrides.license.clone() {
+            Some(l) => l,
+            None => self.prompt_license_with_config(&mut config)?,
+        };
 
         // Save config if any choices were remembered
         if config.remember_choices {
@@ -313,13 +352,16 @@ impl Forge {
 
     /// Prompt for features based on project type.
     ///
-    /// Only features the generator actually applies are offered: the plugin
-    /// set (docker / CI / database flavors). Per-type default dependencies
-    /// (axum, tokio, clap, ...) are always included in the manifest and are
-    /// therefore not presented as optional features.
+    /// Only features the generator can honestly apply are offered: the
+    /// plugin set (docker / CI / database flavors), filtered by project
+    /// type — the database family (sqlx) does not link for embedded
+    /// (no_std), wasm-app (wasm32 target) or workspace (virtual manifest)
+    /// projects, so it is not offered for them. Per-type default
+    /// dependencies (axum, tokio, clap, ...) are always included in the
+    /// manifest and are therefore not presented as optional features.
     fn prompt_features(
         &self,
-        _project_type: &ProjectType,
+        project_type: &ProjectType,
         target: Option<String>,
     ) -> Result<Vec<String>> {
         // ESP32 projects are delegated to esp-generate, which has its own
@@ -330,13 +372,19 @@ impl Forge {
             }
         }
 
+        let type_str = project_type.to_string();
         let available_features = vec![
             ("docker", "Dockerfile + .dockerignore", false),
             ("ci", "GitHub Actions CI workflow", false),
             ("database", "PostgreSQL via sqlx", false),
             ("sqlite", "SQLite via sqlx", false),
             ("mysql", "MySQL via sqlx", false),
-        ];
+        ]
+        .into_iter()
+        .filter(|(name, _, _)| {
+            crate::generator::feature_supported(name, &type_str)
+        })
+        .collect::<Vec<_>>();
 
         let _default_features: Vec<String> = available_features
             .iter()

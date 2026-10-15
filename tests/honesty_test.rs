@@ -280,20 +280,15 @@ fn database_feature_lands_sqlx_in_manifest() {
 }
 
 #[test]
-fn database_feature_deps_land_in_dependencies_table_for_every_type() {
+fn database_feature_deps_land_in_dependencies_table_for_every_supported_type() {
     // Regression: plugin deps used to be appended after the manifest's last
     // table, so for types whose [dependencies] is followed by other tables
-    // (game-engine: [target]/[profile], embedded: [profile], cli-tool:
-    // [[bin]], library/wasm-app: [lib]) sqlx landed outside [dependencies]
-    // and the generated project could not compile.
-    for project_type in [
-        "game-engine",
-        "wasm-app",
-        "library",
-        "embedded",
-        "cli-tool",
-        "api-server",
-    ] {
+    // (cli-tool: [[bin]], library: [lib]) sqlx landed outside
+    // [dependencies] and the generated project could not compile. The
+    // database feature is only supported where sqlx links (see
+    // feature_supported); the unsupported types are covered by
+    // database_feature_rejected_for_unsupported_types below.
+    for project_type in ["api-server", "cli-tool", "library"] {
         let temp = TempDir::new().unwrap();
         let mut cfg = config_with_license("db-check", project_type, None);
         cfg.features = vec!["database".to_string()];
@@ -312,6 +307,48 @@ fn database_feature_deps_land_in_dependencies_table_for_every_type() {
             "{project_type}: database feature must put sqlx under [dependencies], got:\n{manifest}"
         );
     }
+}
+
+#[test]
+fn database_feature_rejected_for_unsupported_types() {
+    // embedded is no_std, wasm-app targets wasm32, game-engine carries a
+    // wasm32 target table, and workspace roots are virtual manifests —
+    // sqlx cannot link in any of them, so the combination must be an
+    // error, not a project that compiles nowhere.
+    for project_type in ["embedded", "wasm-app", "game-engine", "workspace"] {
+        let temp = TempDir::new().unwrap();
+        let mut cfg = config_with_license("db-bad", project_type, None);
+        cfg.features = vec!["database".to_string()];
+        let dir = temp.path().join("db-bad");
+        let err = Generator::new()
+            .generate(&cfg, &dir)
+            .expect_err("unsupported feature/type combination must fail");
+        assert!(
+            err.to_string().contains("not supported"),
+            "{project_type}: expected a 'not supported' error, got: {err}"
+        );
+    }
+}
+
+#[test]
+fn second_generate_into_released_claim_directory_fails() {
+    // A completed generation releases its claim but leaves the project
+    // files behind. A later run must refuse the directory even though it
+    // could re-acquire the (now free) claim — the post-claim emptiness
+    // re-check exists exactly for this window.
+    let temp = TempDir::new().unwrap();
+    let dir = temp.path().join("claimed-once");
+    let cfg = config_with_license("claimed-once", "cli-tool", None);
+    Generator::new()
+        .generate(&cfg, &dir)
+        .expect("first generation should succeed");
+    let err = Generator::new()
+        .generate(&cfg, &dir)
+        .expect_err("second generation into the same directory must fail");
+    assert!(
+        err.to_string().contains("not empty"),
+        "expected a 'not empty' error, got: {err}"
+    );
 }
 
 #[test]
@@ -341,11 +378,19 @@ fn generation_is_fast() {
 fn claim_file_cleaned_up_on_error() {
     let temp = TempDir::new().unwrap();
     let dir = temp.path().join("claim-err");
-    // Unknown project type: generate() errors after claiming the directory.
+    // Unknown project type: generate() errors at the type dispatch, which
+    // runs AFTER the directory is created, claimed and given its src dir.
+    // Asserting src/ exists proves the run reached past the claim — so the
+    // missing claim file below is the cleanup working, not the error
+    // firing before the claim was ever taken.
     let mut cfg = config_with_license("claim-err", "bogus-type", None);
     cfg.project_type = "bogus-type".to_string();
     let result = Generator::new().generate(&cfg, &dir);
     assert!(result.is_err(), "unknown type must fail");
+    assert!(
+        dir.join("src").exists(),
+        "test setup: the error must fire after the claim (src dir created)"
+    );
     assert!(
         !dir.join(".cargo-forge-claim").exists(),
         "claim file must be removed on error paths"

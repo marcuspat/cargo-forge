@@ -1053,13 +1053,13 @@ anyhow = "1.0"
             let dep_lines: Vec<String> = feature_context
                 .dependencies
                 .iter()
-                .filter(|(name, _)| !dep_already_present(&content, name))
+                .filter(|(name, _)| !dep_already_present(&content, "dependencies", name))
                 .map(|(name, spec)| format!("{} = {}\n", name, spec))
                 .collect();
             let dev_dep_lines: Vec<String> = feature_context
                 .dev_dependencies
                 .iter()
-                .filter(|(name, _)| !dep_already_present(&content, name))
+                .filter(|(name, _)| !dep_already_present(&content, "dev-dependencies", name))
                 .map(|(name, spec)| format!("{} = {}\n", name, spec))
                 .collect();
             if !dep_lines.is_empty() {

@@ -19,8 +19,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   rendered, so feature files referenced crates the project did not depend on
 - concurrent generation into the same directory is now exclusive via an
   O_EXCL claim file (previously a TOCTOU race allowed multiple writers);
-  the claim is cleaned up on every exit path via a Drop guard
-- game-engine starter verified to compile against bevy 0.20 via
+  the claim is cleaned up on every exit path via a Drop guard, and the
+  directory is re-checked for foreign files after the claim is taken, so a
+  generator that acquires a just-released claim cannot overwrite the
+  completed project that released it
+- game-engine starter verified to compile against bevy 0.20 via manual
   `cargo check --target wasm32-unknown-unknown` (native desktop builds
   additionally need the Linux windowing libraries noted in the README)
 - control characters in descriptions/authors/licenses can no longer
@@ -28,7 +31,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   in libraries become multiple `//!` lines instead of broken code
 - `--license` on `new` is no longer silently discarded — it writes a
   `license = "..."` field into `Cargo.toml` (and `[workspace.package]` for
-  workspaces), the same convention as `cargo new --license`
+  workspaces), the same convention as `cargo new --license`; on every
+  path, including the interactive prompts (`--author` and
+  `--description` too, which pre-answer their prompts)
 - `init --author` and `init --license` are no longer silently discarded
 - `--from-config` now accepts TOML (the documented format) in addition to
   JSON; invalid files report both parse errors instead of a cryptic one
@@ -38,6 +43,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - interactive feature selection now offers only features the generator
   actually applies (docker / CI / database flavors); unknown features
   print a warning instead of silently vanishing
+- the database feature family (database / sqlite / mysql) is only offered
+  — and only accepted — for project types where sqlx links: api-server,
+  cli-tool and library. embedded (no_std), wasm-app (wasm32 target),
+  game-engine (wasm32 target table) and workspace (virtual manifest)
+  projects get an explicit error instead of a project that cannot build
+- feature-plugin dependencies land inside the generated manifest's
+  `[dependencies]` table (previously they were appended after the last
+  table, which for game-engine/embedded/cli-tool/library/wasm-app meant
+  they ended up under `[profile.*]`/`[target.*]`/`[[bin]]`/`[lib]`)
+- the api-server `.env.example` now documents what actually takes effect
+  (the `PORT` environment variable) instead of describing a dotenv
+  workflow and config-override relationship the starter does not have
 
 ### Changed
 - Templates generate working starter code instead of empty stubs:
