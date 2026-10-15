@@ -49,12 +49,20 @@ fn no_license_field_when_none_given() {
 }
 
 #[test]
-fn license_lands_in_workspace_package() {
+fn license_lands_in_workspace_package_and_members() {
     let temp = TempDir::new().unwrap();
     let dir = generate(&temp, "licensed-ws", "workspace", Some("MIT"));
     let manifest = fs::read_to_string(dir.join("Cargo.toml")).unwrap();
     assert!(manifest.contains("[workspace.package]"));
     assert!(manifest.contains(r#"license = "MIT""#));
+    // The member crates must actually carry the license, not just the root.
+    for member in ["crates/core/Cargo.toml", "crates/api/Cargo.toml", "crates/cli/Cargo.toml"] {
+        let m = fs::read_to_string(dir.join(member)).unwrap();
+        assert!(
+            m.contains(r#"license = "MIT""#),
+            "{member} should carry the license"
+        );
+    }
 }
 
 #[test]
@@ -212,4 +220,65 @@ fn special_characters_in_description_produce_valid_toml() {
         .as_str()
         .unwrap();
     assert!(desc.contains("\"quotes\""));
+}
+
+#[test]
+fn control_characters_in_description_produce_valid_toml() {
+    let temp = TempDir::new().unwrap();
+    let mut cfg = config_with_license("ctrl-desc", "cli-tool", Some("MIT"));
+    cfg.description = Some("line one\nline two\ttabbed \u{0007}bell".to_string());
+    let dir = temp.path().join("ctrl-desc");
+    Generator::new().generate(&cfg, &dir).expect("generation should succeed");
+    let manifest = fs::read_to_string(dir.join("Cargo.toml")).unwrap();
+    let parsed: toml::Value = toml::from_str(&manifest).expect("manifest must stay valid TOML");
+    let desc = parsed.get("package").unwrap().get("description").unwrap().as_str().unwrap();
+    assert!(desc.contains("line one\nline two"));
+}
+
+#[test]
+fn multiline_description_keeps_library_compilable() {
+    let temp = TempDir::new().unwrap();
+    let mut cfg = config_with_license("multiline-lib", "library", None);
+    cfg.description = Some("First line\nSecond line".to_string());
+    let dir = temp.path().join("multiline-lib");
+    Generator::new().generate(&cfg, &dir).expect("generation should succeed");
+    let lib = fs::read_to_string(dir.join("src/lib.rs")).unwrap();
+    assert!(lib.contains("//! First line"));
+    assert!(lib.contains("//! Second line"));
+    assert!(!lib.contains("\nSecond")); // not leaking raw newlines into code
+}
+
+#[test]
+fn database_feature_lands_sqlx_in_manifest() {
+    let temp = TempDir::new().unwrap();
+    let mut cfg = config_with_license("db-api", "api-server", None);
+    cfg.features = vec!["database".to_string()];
+    let dir = temp.path().join("db-api");
+    Generator::new().generate(&cfg, &dir).expect("generation should succeed");
+    let manifest = fs::read_to_string(dir.join("Cargo.toml")).unwrap();
+    assert!(manifest.contains("sqlx"), "database feature must add sqlx: {manifest}");
+    let parsed: toml::Value = toml::from_str(&manifest).expect("manifest must be valid TOML");
+}
+
+#[test]
+fn generation_is_fast() {
+    let temp = TempDir::new().unwrap();
+    let start = std::time::Instant::now();
+    for project_type in [
+        "api-server",
+        "cli-tool",
+        "library",
+        "wasm-app",
+        "game-engine",
+        "embedded",
+        "workspace",
+    ] {
+        generate(&temp, &format!("perf-{}", project_type), project_type, None);
+    }
+    let elapsed = start.elapsed();
+    // Typical generation is ~0.3s per project; 2s each is the CI ceiling.
+    assert!(
+        elapsed.as_secs_f64() < 14.0,
+        "7 generations took {elapsed:?} — far off the documented ~0.3s/project"
+    );
 }

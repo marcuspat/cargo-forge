@@ -700,19 +700,10 @@ mod concurrency_tests {
             handle.join().unwrap();
         }
 
-        // At least one generation must succeed; concurrent writers into the
-        // same fresh directory race on the exists/empty check (TOCTOU), so
-        // more than one can observe an empty directory before writing. The
-        // guarantee that matters: failures are clean "not empty" errors and
-        // every success produces the same file set.
-        assert!(
-            success_count.load(Ordering::SeqCst) >= 1,
-            "at least one concurrent generation should succeed"
-        );
-        assert_eq!(
-            success_count.load(Ordering::SeqCst) + failure_count.load(Ordering::SeqCst),
-            10
-        );
+        // Exactly one winner: generation claims the directory with an
+        // O_EXCL claim file, so concurrent invocations fail cleanly.
+        assert_eq!(success_count.load(Ordering::SeqCst), 1);
+        assert_eq!(failure_count.load(Ordering::SeqCst), 9);
     }
 
     #[test]

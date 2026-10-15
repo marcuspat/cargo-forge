@@ -2,7 +2,7 @@
 name = "cargo-forge"
 version = "0.1.8"
 edition = "2021"
-rust-version = "1.70"
+rust-version = "1.88"
 authors = ["The Cargo-Forge Contributors"]
 description = "An interactive Rust project generator with templates and common features"
 readme = "README.md"

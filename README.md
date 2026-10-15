@@ -62,9 +62,13 @@ _Note: the templates are deliberately minimal starting points, not frameworks. `
 Current features available in v0.1.8:
 
 #### **Project Structure**
-- **Working starters**: every template generates code that compiles and runs
-  (an Axum health-check server, a Clap CLI with a `hello` command, a library
-  with a unit-tested `greet` API, a wasm-bindgen export, a minimal Bevy app)
+- **Working starters**: every template generates real starter code (an Axum
+  health-check server, a Clap CLI with a `hello` command, a library with a
+  unit-tested `greet` API, a wasm-bindgen export, a minimal Bevy app).
+  api-server, cli-tool, library and workspace starters are compile-verified
+  by the test suite; wasm-app and game-engine follow their standard
+  toolchain prerequisites (wasm-bindgen target / Bevy's Linux windowing
+  libraries — noted in the generated READMEs)
 - **Dependency Management**: Appropriate dependencies for each project type
 - **Documentation**: README files with project-specific instructions
 - **Testing**: the library and cli-tool starters ship tests you can run with
@@ -263,7 +267,8 @@ cargo build --release
 
 Cargo-Forge is optimized for speed:
 
-- Project generation: ~0.3 seconds
+- Project generation: ~0.3 seconds per project (bounded by
+  `generation_is_fast` in the test suite; 2s/project CI ceiling)
 - Name validation: <1ms
 - Cross-platform: Works on Windows, Mac, and Linux
 

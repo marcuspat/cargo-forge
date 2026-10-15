@@ -9,6 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.1.8] - 2026-10-14
 ### Fixed (honesty pass: claims now match behavior)
+- `rust-version` raised 1.70 → 1.88 — the committed Cargo.lock cannot
+  build on 1.70 (clap 4.6 line requires a newer toolchain; floor verified
+  empirically: 1.85 fails on the `home` crate, 1.88 compiles clean)
+- workspace `--license` now reaches the member crates, not just
+  `[workspace.package]` in the root manifest
+- feature-plugin dependencies (e.g. `sqlx` for the database feature) are
+  now written into the generated manifest — they were collected but never
+  rendered, so feature files referenced crates the project did not depend on
+- concurrent generation into the same directory is now exclusive via an
+  O_EXCL claim file (previously a TOCTOU race allowed multiple writers)
+- control characters in descriptions/authors/licenses can no longer
+  produce invalid manifests (full TOML escaping); multi-line descriptions
+  in libraries become multiple `//!` lines instead of broken code
 - `--license` on `new` is no longer silently discarded — it writes a
   `license = "..."` field into `Cargo.toml` (and `[workspace.package]` for
   workspaces), the same convention as `cargo new --license`
@@ -43,6 +56,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   generation has always been code-driven, not template-file-driven
 - Test files that exercised mock structs defined inside the tests
   themselves rather than the product
+- `install.sh` — it downloaded release binaries that were never published
+  (the repository has no release assets; `cargo install cargo-forge` is the
+  supported install path)
 
 ## [0.1.5] - 2025-11-26
 ### Added
