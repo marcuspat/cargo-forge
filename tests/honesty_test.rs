@@ -336,3 +336,31 @@ fn generation_is_fast() {
         "7 generations took {elapsed:?} — far off the documented ~0.3s/project"
     );
 }
+
+#[test]
+fn claim_file_cleaned_up_on_error() {
+    let temp = TempDir::new().unwrap();
+    let dir = temp.path().join("claim-err");
+    // Unknown project type: generate() errors after claiming the directory.
+    let mut cfg = config_with_license("claim-err", "bogus-type", None);
+    cfg.project_type = "bogus-type".to_string();
+    let result = Generator::new().generate(&cfg, &dir);
+    assert!(result.is_err(), "unknown type must fail");
+    assert!(
+        !dir.join(".cargo-forge-claim").exists(),
+        "claim file must be removed on error paths"
+    );
+}
+
+#[test]
+fn lone_carriage_return_in_description_keeps_library_sane() {
+    let temp = TempDir::new().unwrap();
+    let mut cfg = config_with_license("cr-lib", "library", None);
+    cfg.description = Some("before\rafter".to_string());
+    let dir = temp.path().join("cr-lib");
+    Generator::new().generate(&cfg, &dir).expect("generation should succeed");
+    let lib = fs::read_to_string(dir.join("src/lib.rs")).unwrap();
+    assert!(!lib.contains('\r'), "lone CR must not survive into lib.rs");
+    assert!(lib.contains("//! before"));
+    assert!(lib.contains("//! after"));
+}

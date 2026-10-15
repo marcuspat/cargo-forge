@@ -132,38 +132,6 @@ was spelled differently. The features the generator currently applies are:
 # default_features = { api-server = ["docker", "ci"] }
 ```
 
-### Variables not replaced in generated files
-
-**Problem**: See `{{ variable }}` in generated files.
-
-**Solution**:
-1. Check for typos in variable names
-2. Ensure using `.tera` extension for templates
-3. Verify template syntax:
-   ```tera
-   {# Correct #}
-   {{ project_name }}
-   
-   {# Incorrect #}
-   {{project_name}}    # Missing spaces
-   {{ project name }}  # Space in variable name
-   ```
-
-### Conditional blocks not working
-
-**Problem**: `{% if %}` blocks appear in output.
-
-**Solution**:
-```tera
-{# Ensure proper syntax #}
-{% if database %}
-use sqlx::PgPool;
-{% endif %}
-
-{# Not: #}
-{% if database = true %}  {# Wrong! #}
-```
-
 ### Build fails after generation
 
 **Problem**: Generated project doesn't compile.

@@ -172,7 +172,7 @@ Not directly, but you can:
 
 Generation is code-driven: cargo-forge ships built-in starters for its 7 project types (no external template files or template syntax to learn). Custom template repositories are not supported — use cargo-generate if you need those.
 
-### How are templates packaged?
+### How does generation work?
 
 Templates are embedded in the binary using `include_dir!`, making Cargo-Forge a single self-contained executable.
 
