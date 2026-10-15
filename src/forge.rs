@@ -993,7 +993,10 @@ impl Forge {
         author: Option<String>,
         license: Option<String>,
     ) -> Result<()> {
-        println!("{}", "📁 Initializing from configuration...".bright_cyan().bold());
+        println!(
+            "{}",
+            "📁 Initializing from configuration...".bright_cyan().bold()
+        );
 
         let config = ForgeConfig::load_from(config_path)?;
 

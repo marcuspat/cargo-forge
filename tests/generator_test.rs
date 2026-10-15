@@ -17,7 +17,7 @@ fn test_file_generation_functionality() {
         features: vec![],
         target: None,
         license: None,
-        esp32_chip: None
+        esp32_chip: None,
     };
 
     let generator = Generator::new();
@@ -41,7 +41,7 @@ fn test_directory_creation() {
         features: vec![],
         target: None,
         license: None,
-        esp32_chip: None
+        esp32_chip: None,
     };
 
     let generator = Generator::new();
@@ -85,7 +85,7 @@ fn test_proper_permissions() {
         features: vec![],
         target: None,
         license: None,
-        esp32_chip: None
+        esp32_chip: None,
     };
 
     let generator = Generator::new();
@@ -126,7 +126,7 @@ fn test_overwrite_protection() {
         features: vec![],
         target: None,
         license: None,
-        esp32_chip: None
+        esp32_chip: None,
     };
 
     let generator = Generator::new();
@@ -153,7 +153,7 @@ fn test_template_variable_injection() {
         features: vec![],
         target: None,
         license: None,
-        esp32_chip: None
+        esp32_chip: None,
     };
 
     let generator = Generator::new();
@@ -190,7 +190,7 @@ fn test_binary_vs_library_generation() {
         features: vec![],
         target: None,
         license: None,
-        esp32_chip: None
+        esp32_chip: None,
     };
 
     let generator = Generator::new();
@@ -215,7 +215,7 @@ fn test_binary_vs_library_generation() {
         features: vec![],
         target: None,
         license: None,
-        esp32_chip: None
+        esp32_chip: None,
     };
 
     generator.generate(&bin_config, &bin_dir).unwrap();
@@ -244,7 +244,7 @@ fn test_gitignore_generation() {
         features: vec![],
         target: None,
         license: None,
-        esp32_chip: None
+        esp32_chip: None,
     };
 
     let generator = Generator::new();
@@ -278,7 +278,7 @@ fn test_readme_generation() {
         features: vec![],
         target: None,
         license: None,
-        esp32_chip: None
+        esp32_chip: None,
     };
 
     let generator = Generator::new();

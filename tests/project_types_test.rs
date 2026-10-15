@@ -17,7 +17,7 @@ fn test_api_server_project_type() {
         features: vec![],
         target: None,
         license: None,
-        esp32_chip: None
+        esp32_chip: None,
     };
 
     let generator = Generator::new();
@@ -85,7 +85,7 @@ fn test_cli_tool_project_type() {
         features: vec![],
         target: None,
         license: None,
-        esp32_chip: None
+        esp32_chip: None,
     };
 
     let generator = Generator::new();
@@ -145,7 +145,7 @@ fn test_library_project_type() {
         features: vec![],
         target: None,
         license: None,
-        esp32_chip: None
+        esp32_chip: None,
     };
 
     let generator = Generator::new();
@@ -205,7 +205,7 @@ fn test_wasm_app_project_type() {
         features: vec![],
         target: None,
         license: None,
-        esp32_chip: None
+        esp32_chip: None,
     };
 
     let generator = Generator::new();
@@ -245,7 +245,6 @@ fn test_wasm_app_project_type() {
         cargo_content.contains(r#"crate-type = ["cdylib"]"#),
         "WASM app should be cdylib"
     );
-
 }
 
 #[test]
@@ -289,7 +288,7 @@ fn test_project_type_specific_readme() {
             features: vec![],
             target: None,
             license: None,
-        esp32_chip: None
+            esp32_chip: None,
         };
 
         let generator = Generator::new();
@@ -324,7 +323,7 @@ fn test_project_type_specific_gitignore() {
         features: vec![],
         target: None,
         license: None,
-        esp32_chip: None
+        esp32_chip: None,
     };
 
     let generator = Generator::new();
@@ -359,7 +358,7 @@ fn test_game_engine_project_type() {
         features: vec![],
         target: None,
         license: None,
-        esp32_chip: None
+        esp32_chip: None,
     };
 
     let generator = Generator::new();
@@ -423,7 +422,7 @@ fn test_embedded_project_type() {
         features: vec![],
         target: None,
         license: None,
-        esp32_chip: None
+        esp32_chip: None,
     };
 
     let generator = Generator::new();
@@ -484,7 +483,7 @@ fn test_workspace_project_type() {
         features: vec![],
         target: None,
         license: None,
-        esp32_chip: None
+        esp32_chip: None,
     };
 
     let generator = Generator::new();

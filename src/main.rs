@@ -118,7 +118,13 @@ fn main() -> Result<()> {
                         .bright_yellow()
                         .bold()
                 );
-                forge.run_init_dry_run(project_type, author, license, non_interactive, from_config)?;
+                forge.run_init_dry_run(
+                    project_type,
+                    author,
+                    license,
+                    non_interactive,
+                    from_config,
+                )?;
             } else if non_interactive {
                 forge.run_init_non_interactive(project_type, author, license, from_config)?;
             } else if let Some(config_path) = from_config {

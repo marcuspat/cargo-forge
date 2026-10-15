@@ -14,7 +14,7 @@ fn create_test_config(name: &str, project_type: &str) -> ProjectConfig {
         features: vec![],
         target: None,
         license: None,
-        esp32_chip: None
+        esp32_chip: None,
     }
 }
 
@@ -159,7 +159,7 @@ fn test_comprehensive_project_matrix() {
             features: vec![],
             target: None,
             license: None,
-        esp32_chip: None
+            esp32_chip: None,
         };
 
         generator
@@ -263,10 +263,7 @@ fn test_project_structure_validation() {
             vec!["src/main.rs", "src/cli.rs", "src/commands.rs"],
         ),
         ("library", vec!["src/lib.rs", "examples/basic.rs"]),
-        (
-            "wasm-app",
-            vec!["src/lib.rs", "index.html"],
-        ),
+        ("wasm-app", vec!["src/lib.rs", "index.html"]),
         (
             "game-engine",
             vec![
@@ -494,7 +491,13 @@ fn test_cargo_toml_quality() {
         // Workspace roots are virtual manifests ([workspace] + [workspace.package]),
         // so they have no top-level `name =` field — that is correct Cargo semantics.
         let required_fields: Vec<&str> = if project_type == "workspace" {
-            vec!["[workspace]", "[workspace.package]", "version =", "edition =", "authors ="]
+            vec![
+                "[workspace]",
+                "[workspace.package]",
+                "version =",
+                "edition =",
+                "authors =",
+            ]
         } else {
             vec!["name =", "version =", "edition =", "authors ="]
         };

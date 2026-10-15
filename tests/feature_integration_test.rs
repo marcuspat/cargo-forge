@@ -16,7 +16,7 @@ fn test_docker_feature_generates_files() {
         features: vec!["docker".to_string()],
         target: None,
         license: None,
-        esp32_chip: None
+        esp32_chip: None,
     };
 
     let generator = Generator::new();
@@ -57,7 +57,7 @@ fn test_ci_feature_generates_files() {
         features: vec!["ci".to_string()],
         target: None,
         license: None,
-        esp32_chip: None
+        esp32_chip: None,
     };
 
     let generator = Generator::new();
@@ -83,7 +83,7 @@ fn test_database_feature_generates_files() {
         features: vec!["database".to_string()],
         target: None,
         license: None,
-        esp32_chip: None
+        esp32_chip: None,
     };
 
     let generator = Generator::new();
@@ -117,7 +117,7 @@ fn test_multiple_features() {
         ],
         target: None,
         license: None,
-        esp32_chip: None
+        esp32_chip: None,
     };
 
     let generator = Generator::new();

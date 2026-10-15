@@ -502,7 +502,10 @@ fn test_future_feature_system_design() {
 
         // Verify current project compiles (skip embedded, and game-engine
         // whose Bevy builds need Linux graphics dev libraries)
-        if !matches!(extended_config.project_type.as_str(), "embedded" | "game-engine") {
+        if !matches!(
+            extended_config.project_type.as_str(),
+            "embedded" | "game-engine"
+        ) {
             match run_cargo_check(&project_dir) {
                 Ok(_) => println!(
                     "✓ Extended config {} compiles with basic features",

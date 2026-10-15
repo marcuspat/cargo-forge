@@ -19,7 +19,12 @@ fn config_with_license(name: &str, project_type: &str, license: Option<&str>) ->
     }
 }
 
-fn generate(temp: &TempDir, name: &str, project_type: &str, license: Option<&str>) -> std::path::PathBuf {
+fn generate(
+    temp: &TempDir,
+    name: &str,
+    project_type: &str,
+    license: Option<&str>,
+) -> std::path::PathBuf {
     let dir = temp.path().join(name);
     Generator::new()
         .generate(&config_with_license(name, project_type, license), &dir)
@@ -57,7 +62,10 @@ fn api_server_starter_actually_serves() {
     let temp = TempDir::new().unwrap();
     let dir = generate(&temp, "real-api", "api-server", None);
     let main = fs::read_to_string(dir.join("src/main.rs")).unwrap();
-    assert!(main.contains("axum::serve"), "api-server main must start a server");
+    assert!(
+        main.contains("axum::serve"),
+        "api-server main must start a server"
+    );
     assert!(main.contains("TcpListener"));
     let routes = fs::read_to_string(dir.join("src/routes.rs")).unwrap();
     assert!(routes.contains("Router"), "routes.rs must define a Router");
@@ -82,7 +90,10 @@ fn library_starter_has_tests() {
     let temp = TempDir::new().unwrap();
     let dir = generate(&temp, "real-lib", "library", None);
     let lib = fs::read_to_string(dir.join("src/lib.rs")).unwrap();
-    assert!(lib.contains("#[cfg(test)]"), "library template must ship a unit test");
+    assert!(
+        lib.contains("#[cfg(test)]"),
+        "library template must ship a unit test"
+    );
     assert!(lib.contains("pub fn"));
 }
 
@@ -167,10 +178,16 @@ default_features = { api-server = ["axum"] }
         .expect("non-interactive generation should succeed");
 
     let dir = temp.path().join("from-config-lib");
-    assert!(dir.join("src/lib.rs").is_file(), "preferred type library must be used");
+    assert!(
+        dir.join("src/lib.rs").is_file(),
+        "preferred type library must be used"
+    );
     let manifest = fs::read_to_string(dir.join("Cargo.toml")).unwrap();
     assert!(manifest.contains("[lib]"));
-    assert!(manifest.contains(r#"license = "MIT""#), "config default_license must apply");
+    assert!(
+        manifest.contains(r#"license = "MIT""#),
+        "config default_license must apply"
+    );
 }
 
 #[test]
@@ -179,12 +196,20 @@ fn special_characters_in_description_produce_valid_toml() {
     let mut cfg = config_with_license("special-desc", "library", None);
     cfg.description = Some("Description with \"quotes\", 'apostrophes', and @#$%^&*()".to_string());
     let dir = temp.path().join("special-desc");
-    Generator::new().generate(&cfg, &dir).expect("generation should succeed");
+    Generator::new()
+        .generate(&cfg, &dir)
+        .expect("generation should succeed");
 
     let manifest = fs::read_to_string(dir.join("Cargo.toml")).unwrap();
     // Escaped quotes keep the manifest parseable.
     assert!(manifest.contains("quotes"));
     let parsed: toml::Value = toml::from_str(&manifest).expect("Cargo.toml must be valid TOML");
-    let desc = parsed.get("package").unwrap().get("description").unwrap().as_str().unwrap();
+    let desc = parsed
+        .get("package")
+        .unwrap()
+        .get("description")
+        .unwrap()
+        .as_str()
+        .unwrap();
     assert!(desc.contains("\"quotes\""));
 }

@@ -289,12 +289,18 @@ impl Generator {
                 content.push_str("## Game Engine Project\n\n");
                 content.push_str("A game built on the Bevy engine.\n\n");
                 content.push_str("### Prerequisites (Linux)\n\n");
-                content.push_str("Bevy's windowing stack needs system libraries. On Debian/Ubuntu:\n\n");
-                content.push_str("```bash\nsudo apt install libwayland-dev libxkbcommon-dev pkg-config\n```\n\n");
+                content.push_str(
+                    "Bevy's windowing stack needs system libraries. On Debian/Ubuntu:\n\n",
+                );
+                content.push_str(
+                    "```bash\nsudo apt install libwayland-dev libxkbcommon-dev pkg-config\n```\n\n",
+                );
                 content.push_str("### Running\n\n");
                 content.push_str("```bash\ncargo run\n```\n\n");
                 content.push_str("### Assets\n\n");
-                content.push_str("Place sprites, sounds, and other assets in the `assets/` directory.\n\n");
+                content.push_str(
+                    "Place sprites, sounds, and other assets in the `assets/` directory.\n\n",
+                );
                 content.push_str("### Release builds\n\n");
                 content.push_str("```bash\ncargo build --release\n```\n\n");
                 content.push_str("Release builds enable optimizations for smooth frame rates.\n");
@@ -307,7 +313,9 @@ impl Generator {
                 content.push_str("### Flashing\n\n");
                 content.push_str("```bash\ncargo run --release  # via probe-rs runner\n```\n\n");
                 content.push_str("### Target\n\n");
-                content.push_str("See `.cargo/config.toml` for the configured target triple and runner.\n");
+                content.push_str(
+                    "See `.cargo/config.toml` for the configured target triple and runner.\n",
+                );
             }
             "workspace" => {
                 content.push_str("## Cargo Workspace\n\n");
@@ -507,17 +515,17 @@ mod tests {{
     }}
 }}
 "#,
-            config
-                .description
-                .as_deref()
-                .unwrap_or("A Rust library")
+            config.description.as_deref().unwrap_or("A Rust library")
         );
         fs::write(output_dir.join("src/lib.rs"), lib_content)?;
 
         fs::create_dir_all(output_dir.join("examples"))?;
         fs::write(
             output_dir.join("examples/basic.rs"),
-            &format!("fn main() {{\n    println!(\"{{}}\", {}::greet(\"world\"));\n}}\n", lib_name),
+            &format!(
+                "fn main() {{\n    println!(\"{{}}\", {}::greet(\"world\"));\n}}\n",
+                lib_name
+            ),
         )?;
 
         Ok(())

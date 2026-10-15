@@ -126,7 +126,7 @@ mod stress_tests {
             features: vec![],
             target: None,
             license: None,
-        esp32_chip: None
+            esp32_chip: None,
         };
 
         let output_dir = temp_dir.path().join("extreme-files");
@@ -237,7 +237,7 @@ mod stress_tests {
             features: vec![],
             target: None,
             license: None,
-        esp32_chip: None
+            esp32_chip: None,
         };
 
         let output_dir = temp_dir.path().join("recovery-test");
