@@ -119,60 +119,17 @@ cargo-forge --version
 cargo-forge new my-project --verbose
 ```
 
-### "Failed to render template"
+### "Feature is not implemented yet — skipping it"
 
-**Problem**: Template rendering fails with Tera errors.
+**Problem**: A selected feature printed a skip warning.
 
-**Common causes**:
+**Cause**: that feature exists in the selection list of an older version, or
+was spelled differently. The features the generator currently applies are:
+`docker`, `ci`, `database`, `postgres`, `sqlite`, `mysql`.
 
-1. **Special characters in input**
-   ```bash
-   # Avoid special characters in:
-   # - Project name
-   # - Author name (escape quotes)
-   # - Description
-   ```
-
-2. **Missing required variables**
-   ```bash
-   # Use defaults or provide all required info
-   cargo-forge new my-project \
-     --author "Your Name" \
-     --description "Project description"
-   ```
-
-## Template Rendering Problems
-
-### Variables not replaced in generated files
-
-**Problem**: See `{{ variable }}` in generated files.
-
-**Solution**:
-1. Check for typos in variable names
-2. Ensure using `.tera` extension for templates
-3. Verify template syntax:
-   ```tera
-   {# Correct #}
-   {{ project_name }}
-   
-   {# Incorrect #}
-   {{project_name}}    # Missing spaces
-   {{ project name }}  # Space in variable name
-   ```
-
-### Conditional blocks not working
-
-**Problem**: `{% if %}` blocks appear in output.
-
-**Solution**:
-```tera
-{# Ensure proper syntax #}
-{% if database %}
-use sqlx::PgPool;
-{% endif %}
-
-{# Not: #}
-{% if database = true %}  {# Wrong! #}
+```bash
+# Check spelling when selecting features interactively or in config:
+# default_features = { api-server = ["docker", "ci"] }
 ```
 
 ### Build fails after generation

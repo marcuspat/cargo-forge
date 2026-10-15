@@ -26,7 +26,8 @@ mod generator_error_tests {
             description: Some("Test".to_string()),
             features: vec![],
             target: None,
-            esp32_chip: None
+            license: None,
+            esp32_chip: None,
         };
 
         let output_dir = temp_dir.path().join("empty-name-test");
@@ -53,6 +54,7 @@ mod generator_error_tests {
 
         for invalid_name in invalid_names {
             let config = ProjectConfig {
+                license: None,
                 name: invalid_name.to_string(),
                 project_type: ProjectType::Library.to_string(),
                 author: "Test Author".to_string(),
@@ -86,6 +88,7 @@ mod generator_error_tests {
 
         for reserved_name in reserved_names {
             let config = ProjectConfig {
+                license: None,
                 name: reserved_name.to_string(),
                 project_type: ProjectType::Library.to_string(),
                 author: "Test Author".to_string(),
@@ -113,6 +116,7 @@ mod generator_error_tests {
         fs::write(output_dir.join("existing-file.txt"), "content").unwrap();
 
         let config = ProjectConfig {
+            license: None,
             name: "test-project".to_string(),
             project_type: ProjectType::Library.to_string(),
             author: "Test Author".to_string(),
@@ -124,7 +128,9 @@ mod generator_error_tests {
 
         let result = generator.generate(&config, &output_dir);
         assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("already exists"));
+        // The generator-level error for a pre-populated directory is "not
+        // empty" (the "already exists" message comes from the Forge wrapper).
+        assert!(result.unwrap_err().to_string().contains("not empty"));
     }
 
     #[test]
@@ -137,6 +143,7 @@ mod generator_error_tests {
         fs::create_dir_all(&output_dir).unwrap();
 
         let config = ProjectConfig {
+            license: None,
             name: "test-project".to_string(),
             project_type: ProjectType::Library.to_string(),
             author: "Test Author".to_string(),
@@ -167,6 +174,7 @@ mod generator_error_tests {
         let output_dir = readonly_dir.join("new-project");
 
         let config = ProjectConfig {
+            license: None,
             name: "test-project".to_string(),
             project_type: ProjectType::Library.to_string(),
             author: "Test Author".to_string(),
@@ -192,6 +200,7 @@ mod generator_error_tests {
         let output_dir = temp_dir.path().join("invalid-type-test");
 
         let config = ProjectConfig {
+            license: None,
             name: "test-project".to_string(),
             project_type: "invalid-type".to_string(),
             author: "Test Author".to_string(),
@@ -218,6 +227,7 @@ mod generator_error_tests {
         let long_name = "a".repeat(300);
 
         let config = ProjectConfig {
+            license: None,
             name: long_name.clone(),
             project_type: ProjectType::Library.to_string(),
             author: "Test Author".to_string(),
@@ -250,6 +260,7 @@ mod generator_error_tests {
 
         for unicode_name in unicode_names {
             let config = ProjectConfig {
+                license: None,
                 name: unicode_name.to_string(),
                 project_type: ProjectType::Library.to_string(),
                 author: "Test Author".to_string(),
@@ -279,6 +290,7 @@ mod generator_error_tests {
         let output_dir = temp_dir.path().join("null-desc-test");
 
         let config = ProjectConfig {
+            license: None,
             name: "test-project".to_string(),
             project_type: ProjectType::Library.to_string(),
             author: "Test Author".to_string(),
@@ -303,6 +315,7 @@ mod generator_error_tests {
         let output_dir = temp_dir.path().join("empty-author-test");
 
         let config = ProjectConfig {
+            license: None,
             name: "test-project".to_string(),
             project_type: ProjectType::Library.to_string(),
             author: "".to_string(),
@@ -329,6 +342,7 @@ mod generator_error_tests {
         let output_dir = temp_dir.path().join("test..project");
 
         let config = ProjectConfig {
+            license: None,
             name: "test-project".to_string(),
             project_type: ProjectType::Library.to_string(),
             author: "Test Author".to_string(),
@@ -416,6 +430,7 @@ mod extreme_edge_cases {
 
         for name in control_char_names {
             let config = ProjectConfig {
+                license: None,
                 name: name.to_string(),
                 project_type: ProjectType::Library.to_string(),
                 author: "Test Author".to_string(),
@@ -446,6 +461,7 @@ mod extreme_edge_cases {
         let long_author = "A".repeat(10_000);
 
         let config = ProjectConfig {
+            license: None,
             name: "test-project".to_string(),
             project_type: ProjectType::Library.to_string(),
             author: long_author,
@@ -475,6 +491,7 @@ mod extreme_edge_cases {
         let long_description = "This is a very long description. ".repeat(3000);
 
         let config = ProjectConfig {
+            license: None,
             name: "test-project".to_string(),
             project_type: ProjectType::Library.to_string(),
             author: "Test Author".to_string(),
@@ -510,6 +527,7 @@ mod extreme_edge_cases {
 
         for name in traversal_names {
             let config = ProjectConfig {
+                license: None,
                 name: name.to_string(),
                 project_type: ProjectType::Library.to_string(),
                 author: "Test Author".to_string(),
@@ -540,6 +558,7 @@ mod extreme_edge_cases {
         let output_dir = temp_dir.path().join(&very_long_path);
 
         let config = ProjectConfig {
+            license: None,
             name: "test".to_string(),
             project_type: ProjectType::Library.to_string(),
             author: "Test Author".to_string(),
@@ -569,6 +588,7 @@ mod extreme_edge_cases {
 
         for name in special_names {
             let config = ProjectConfig {
+                license: None,
                 name: name.to_string(),
                 project_type: ProjectType::Library.to_string(),
                 author: "Test Author".to_string(),
@@ -604,6 +624,7 @@ mod extreme_edge_cases {
 
         for (project_type, unique_name) in mixed_cases {
             let config = ProjectConfig {
+                license: None,
                 name: "test-project".to_string(),
                 project_type: project_type.to_string(),
                 author: "Test Author".to_string(),
@@ -656,6 +677,7 @@ mod concurrency_tests {
                 thread::spawn(move || {
                     let generator = Generator::new();
                     let config = ProjectConfig {
+                        license: None,
                         name: format!("test-project-{}", i),
                         project_type: ProjectType::Library.to_string(),
                         author: "Test Author".to_string(),
@@ -678,7 +700,8 @@ mod concurrency_tests {
             handle.join().unwrap();
         }
 
-        // Only one should succeed, others should fail
+        // Exactly one winner: generation claims the directory with an
+        // O_EXCL claim file, so concurrent invocations fail cleanly.
         assert_eq!(success_count.load(Ordering::SeqCst), 1);
         assert_eq!(failure_count.load(Ordering::SeqCst), 9);
     }
@@ -692,6 +715,7 @@ mod concurrency_tests {
         let start = Instant::now();
         for i in 0..50 {
             let config = ProjectConfig {
+                license: None,
                 name: format!("rapid-test-{}", i),
                 project_type: ProjectType::Library.to_string(),
                 author: "Test Author".to_string(),
@@ -850,6 +874,7 @@ mod recovery_tests {
         // Now try to generate a project in the same directory
         let generator = Generator::new();
         let config = ProjectConfig {
+            license: None,
             name: "test-project".to_string(),
             project_type: ProjectType::Library.to_string(),
             author: "Test Author".to_string(),
@@ -863,7 +888,7 @@ mod recovery_tests {
 
         // Should fail because directory is not empty
         assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("already exists"));
+        assert!(result.unwrap_err().to_string().contains("not empty"));
 
         // Original files should still exist
         assert!(output_dir.join("Cargo.toml").exists());
@@ -882,6 +907,7 @@ mod recovery_tests {
         if write_result.is_ok() {
             // If we can write, proceed with the test
             let config = ProjectConfig {
+                license: None,
                 name: "disk-full-test".to_string(),
                 project_type: ProjectType::Library.to_string(),
                 author: "Test Author".to_string(),
@@ -915,6 +941,7 @@ mod recovery_tests {
         // Try generation again
         let generator = Generator::new();
         let config = ProjectConfig {
+            license: None,
             name: "test-project".to_string(),
             project_type: ProjectType::Library.to_string(),
             author: "Test Author".to_string(),
@@ -948,6 +975,7 @@ mod performance_tests {
         let start = Instant::now();
 
         let config = ProjectConfig {
+            license: None,
             name: "large-workspace".to_string(),
             project_type: ProjectType::Workspace.to_string(),
             author: "Test Author".to_string(),
@@ -995,6 +1023,7 @@ mod performance_tests {
             let start = Instant::now();
 
             let config = ProjectConfig {
+                license: None,
                 name: name.to_string(),
                 project_type,
                 author: "Test Author".to_string(),
@@ -1055,6 +1084,7 @@ mod performance_tests {
             let large_author = "Author ".repeat(100 * size_multiplier);
 
             let config = ProjectConfig {
+                license: None,
                 name: format!("memory-test-{}", size_multiplier),
                 project_type: ProjectType::Library.to_string(),
                 author: large_author,

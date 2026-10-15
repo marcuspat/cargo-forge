@@ -240,7 +240,7 @@ my-project/
 ```bash
 cargo-forge new my-api \
   --project-type api-server
-# Select: PostgreSQL, JWT auth, Docker, GitHub Actions
+# Select optional features: docker, CI, database (postgres/sqlite/mysql)
 ```
 
 ### Library for crates.io

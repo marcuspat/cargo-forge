@@ -12,7 +12,8 @@ fn test_project_name_validation_comprehensive() {
         "my_project",
         "myproject123",
         "a",
-        "_project",
+        // "_project" intentionally absent: leading '-'/'_' is rejected by
+        // design (clear error message), matching the documented rules.
         "underscore_project",
         "dash-project",
         "alpha123numeric",
@@ -103,6 +104,7 @@ fn test_validation_called_in_non_interactive_mode() {
         None,
         None,
         None,
+        None,
     );
 
     assert!(
@@ -124,6 +126,7 @@ fn test_validation_called_in_with_args_mode() {
     let result = forge.run_with_args(
         Some("MY-PROJECT".to_string()),
         Some("cli-tool".to_string()),
+        None,
         None,
         None,
     );
@@ -148,7 +151,14 @@ fn test_validation_called_in_from_config_mode() {
     std::fs::write(&config_path, r#"{"default_author":"test","default_license":"MIT","preferred_project_types":["cli-tool"],"default_features":{},"edition":"2021"}"#).unwrap();
 
     // Test that invalid names are rejected when using config
-    let result = forge.run_from_config(config_path, Some("project-".to_string()), None, None, None);
+    let result = forge.run_from_config(
+        config_path,
+        Some("project-".to_string()),
+        None,
+        None,
+        None,
+        None,
+    );
 
     assert!(
         result.is_err(),
@@ -166,6 +176,7 @@ fn test_validation_called_in_dry_run_mode() {
     let result = forge.run_dry_run(
         Some("my/project".to_string()),
         Some("cli-tool".to_string()),
+        None,
         None,
         None,
         true, // non_interactive

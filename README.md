@@ -55,56 +55,76 @@ Cargo-Forge supports 7 project types with templates:
 | **embedded** | Embedded systems | • no_std setup<br>• Memory configuration<br>• HAL integration<br>• Debug configs |
 | **workspace** | Multi-crate projects | • Organized structure<br>• Shared dependencies<br>• Cross-crate testing<br>• Unified configuration |
 
-_Note: the `cli-tool` and `api-server` templates currently generate placeholder/stub files for the core logic (`handlers.rs`, `routes.rs`, `models.rs`) rather than working implementations -- treat "Route handlers structure" etc. above as scaffolding to fill in, not functional code out of the box._
+_Note: the templates are deliberately minimal starting points, not frameworks. `api-server` gives you a running server with one health-check route; the rest of the handlers/routes/models are yours to write. `game-engine` compiles a windowed Bevy app; real assets and systems are up to you._
 
 ### 🛠️ Core Features
 
-Current features available in v0.1.6:
+Current features available in v0.2.0:
 
 #### **Project Structure**
-- **Clean Templates**: Well-organized project structures for each type
+- **Working starters**: every template generates real starter code (an Axum
+  health-check server, a Clap CLI with a `hello` command, a library with a
+  unit-tested `greet` API, a wasm-bindgen export, a minimal Bevy app).
+  api-server, cli-tool, library and workspace starters are compile-verified
+  by the test suite. The game-engine starter (bevy 0.20) was verified
+  manually with `cargo check --target wasm32-unknown-unknown` (the automated
+  suite skips game-engine cargo checks); native desktop builds
+  additionally need Bevy's Linux windowing libraries (noted in the
+  generated README). The wasm-app starter follows the standard wasm-pack
+  flow
 - **Dependency Management**: Appropriate dependencies for each project type
 - **Documentation**: README files with project-specific instructions
-- **Testing Setup**: Basic test structure and configuration
+- **Testing**: the library and cli-tool starters ship tests you can run with
+  `cargo test` right after generation
 
 #### **Development Tools**
-- **Dry Run Mode**: Preview project structure before creation
+- **Dry Run Mode**: Preview project structure before creation (add
+  `--non-interactive` when running without a TTY, e.g. in CI)
 - **Non-interactive Mode**: CI-friendly project generation
 - **Name Validation**: Ensures valid Cargo package names
+- **License Field**: `--license` writes the SPDX `license` field into
+  `Cargo.toml` (same convention as `cargo new --license`; no LICENSE file
+  is generated)
 - **Shell Completions**: Bash, zsh, fish, and PowerShell support
+- **Config File**: `--from-config` reads TOML (JSON also accepted for
+  backward compatibility); `default_author`, `default_license`,
+  `preferred_project_types` and per-type `default_features` are applied
 
-#### **Future Features** (Planned)
-- **CI/CD Integration**: GitHub Actions and GitLab CI templates
-- **Database Support**: PostgreSQL, MySQL, and SQLite integration
-- **Authentication**: JWT, OAuth, and password authentication
-- **Docker**: Multi-stage Dockerfile and docker-compose setup
-- **Advanced Templates**: Feature-rich project templates
+#### **Optional Features** (select interactively or via config)
+- **Docker**: Dockerfile (multi-stage) + .dockerignore
+- **CI**: GitHub Actions workflow
+- **Database**: PostgreSQL, MySQL, or SQLite scaffolding via sqlx
+
+#### **Planned**
+- Authentication scaffolding (JWT/OAuth)
+- GitLab CI support
 
 ## 📋 Comparison with cargo-generate
 
 | Feature | cargo-forge | cargo-generate |
 |---------|------------|----------------|
-| **Interactive Mode** | ❌ Planned for future | ❌ Requires manual input |
-| **Project Types** | ✅ 7 specialized types | ⚠️ Generic templates |
+| **Interactive Mode** | ✅ Prompt-based (inquire) | ⚠️ Requires manual input |
+| **Project Types** | ✅ 7 built-in types | ✅ Arbitrary template repos |
 | **Defaults** | ✅ Pre-configured options | ❌ Manual configuration |
 | **Name Validation** | ✅ Built-in validation | ⚠️ Basic validation |
 | **Dry Run Mode** | ✅ Preview before creation | ❌ Not available |
 | **Non-interactive Mode** | ✅ CI-friendly with defaults | ✅ Available |
-| **Custom Templates** | ✅ Tera templates | ✅ Various engines |
+| **Custom Templates** | ❌ Built-in types only | ✅ Various engines |
 | **Shell Completions** | ✅ All major shells | ⚠️ Manual setup |
 | **Error Recovery** | ✅ Graceful handling | ⚠️ Basic errors |
-| **Performance** | ✅ <0.1s generation | ⚠️ Varies by template |
+| **Performance** | ✅ ~0.3s generation | ⚠️ Varies by template |
 
 ## 🎮 Usage Examples
 
 ### Command-Line Mode (Current)
 
 ```bash
-# Create an API server with PostgreSQL and JWT auth
+# Create an API server (Axum starter with a GET / health check)
 cargo-forge new my-api \
   --project-type api-server \
   --author "Jane Doe" \
-  --description "My awesome API"
+  --description "My awesome API" \
+  --license MIT
 
 # Create a CLI tool in non-interactive mode (great for CI)
 cargo-forge new my-cli \
@@ -117,8 +137,18 @@ cargo-forge init --project-type library
 # Dry run to preview what will be created
 cargo-forge new my-project --dry-run
 
-# Use saved configuration
+# Use saved configuration (TOML; JSON is also accepted)
 cargo-forge new my-project --from-config ~/.forge/defaults.toml
+```
+
+Example `defaults.toml`:
+
+```toml
+default_author = "Jane Doe"
+default_license = "MIT"
+preferred_project_types = ["api-server"]
+default_features = { api-server = ["docker", "ci"] }
+edition = "2021"
 ```
 
 ### Advanced Usage
@@ -141,13 +171,13 @@ cargo-forge new my-firmware --project-type embedded
 ```
 my-api/
 ├── src/
-│   ├── main.rs           # Application entry point
-│   ├── handlers.rs       # HTTP handlers (basic structure)
-│   ├── routes.rs         # Route definitions (basic structure)
-│   └── models.rs         # Data models (basic structure)
+│   ├── main.rs           # Tokio main: binds 0.0.0.0:3000 (PORT env overrides)
+│   ├── handlers.rs       # GET / health-check handler
+│   ├── routes.rs         # Router definition
+│   └── models.rs         # Health model
 ├── config/
 │   └── default.toml      # Configuration template
-├── tests/                # Test directory
+├── .env.example          # Documented env vars
 ├── .gitignore            # Git ignore file
 ├── Cargo.toml            # Project manifest with Axum dependencies
 └── README.md             # Project documentation
@@ -164,7 +194,8 @@ Cargo-Forge supports various command-line options:
 cargo-forge new my-project --project-type api-server --non-interactive
 
 # Dry run to preview what will be created
-cargo-forge new my-project --project-type library --dry-run
+# (add --non-interactive when there is no TTY, e.g. in CI)
+cargo-forge new my-project --project-type library --dry-run --non-interactive
 
 # Initialize in current directory
 cargo-forge init --project-type cli-tool
@@ -178,67 +209,18 @@ After project creation, you can customize:
 - Update configuration files as needed
 - Add additional features and integrations
 
-## 📊 Template Syntax
-
-Cargo-Forge uses Tera templates with custom helpers:
-
-```rust
-// Conditional compilation based on features
-{% if database %}
-use sqlx::{PgPool, postgres::PgPoolOptions};
-{% endif %}
-
-// Smart defaults with fallbacks
-const PORT: u16 = {{ port | default(value=3000) }};
-
-// Case transformations
-mod {{ name | snake_case }};
-struct {{ name | pascal_case }};
-
-// Feature combinations
-{% if auth and database %}
-// Authentication with database backend
-{% endif %}
-```
-
 ## 🧪 Testing
 
-Generated projects include comprehensive test setups:
+The library and cli-tool starters include tests that run immediately:
 
 ```bash
-# Run all tests
+# In a freshly generated library or cli-tool project
 cargo test
-
-# Run with coverage
-cargo tarpaulin
-
-# Benchmarks (if enabled)
-cargo bench
-
-# Property tests (if enabled)
-cargo test --features proptest
 ```
 
-## 🚢 CI/CD Integration (Planned)
+## 🐳 Docker Support (optional feature)
 
-Not yet implemented (see Future Features above) — the goal is for every project type to optionally include:
-
-### GitHub Actions
-- Multi-platform testing (Windows, Mac, Linux)
-- Rust version matrix (stable, beta, nightly)
-- Security audits and dependency checks
-- Release automation with cargo-release
-- Code coverage with Codecov
-
-### GitLab CI
-- Cached dependencies for faster builds
-- Parallel job execution
-- Deploy stages for different environments
-- Container registry integration
-
-## 🐳 Docker Support (Planned)
-
-Not yet implemented. Generated Dockerfiles would use multi-stage builds for optimal image size, along the lines of:
+Select the `docker` feature (interactively, or via `default_features` in your config) to generate a multi-stage Dockerfile plus .dockerignore. For `api-server` projects the container exposes port 3000. The generated Dockerfile uses multi-stage builds for optimal image size:
 
 ```dockerfile
 # Build stage
@@ -288,8 +270,8 @@ cargo build --release
 
 Cargo-Forge is optimized for speed:
 
-- Project generation: <0.1 seconds (extremely fast!)
-- Template rendering: <10ms
+- Project generation: ~0.3 seconds per project (bounded by
+  `generation_is_fast` in the test suite; 2s/project CI ceiling)
 - Name validation: <1ms
 - Cross-platform: Works on Windows, Mac, and Linux
 
@@ -326,7 +308,6 @@ cargo-forge new --dry-run
 
 - **[Quick Reference](docs/QUICK_REFERENCE.md)** - Command cheat sheet and quick examples
 - **[Project Types Guide](docs/PROJECT_TYPES.md)** - Detailed guide for each project type
-- **[Template Syntax](docs/TEMPLATE_SYNTAX.md)** - Tera template documentation
 - **[FAQ](docs/FAQ.md)** - Frequently asked questions
 - **[Troubleshooting](docs/TROUBLESHOOTING.md)** - Common issues and solutions
 - **[Contributing](CONTRIBUTING.md)** - Development guidelines

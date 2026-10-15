@@ -16,7 +16,8 @@ fn test_file_generation_functionality() {
         description: Some("Test description".to_string()),
         features: vec![],
         target: None,
-        esp32_chip: None
+        license: None,
+        esp32_chip: None,
     };
 
     let generator = Generator::new();
@@ -39,7 +40,8 @@ fn test_directory_creation() {
         description: None,
         features: vec![],
         target: None,
-        esp32_chip: None
+        license: None,
+        esp32_chip: None,
     };
 
     let generator = Generator::new();
@@ -52,13 +54,11 @@ fn test_directory_creation() {
     );
     assert!(output_dir.join("src").is_dir(), "src should be a directory");
 
+    // Library projects ship tests inside src/lib.rs (#[cfg(test)]) and an
+    // examples/ directory instead of an empty tests/ directory.
     assert!(
-        output_dir.join("tests").exists(),
-        "tests directory should exist"
-    );
-    assert!(
-        output_dir.join("tests").is_dir(),
-        "tests should be a directory"
+        output_dir.join("examples").exists(),
+        "examples directory should exist for library projects"
     );
 
     assert!(
@@ -84,26 +84,33 @@ fn test_proper_permissions() {
         description: Some("A CLI tool".to_string()),
         features: vec![],
         target: None,
-        esp32_chip: None
+        license: None,
+        esp32_chip: None,
     };
 
     let generator = Generator::new();
     generator.generate(&config, &output_dir).unwrap();
 
-    // Check directory permissions (should be readable and executable)
+    // The generator does not manage permissions itself — files and dirs get
+    // the OS default for the active umask, and not every environment runs
+    // umask 022 (a codespace shell here carried 0o021, yielding 0o756 dirs).
+    // Assert the semantics the code guarantees: the owner can read and
+    // traverse what was generated, whatever the umask left in place.
     let src_metadata = fs::metadata(output_dir.join("src")).unwrap();
     let src_permissions = src_metadata.permissions();
     assert!(
-        src_permissions.mode() & 0o755 >= 0o755,
-        "src directory should have proper permissions"
+        src_permissions.mode() & 0o500 == 0o500,
+        "src directory should be readable and executable by its owner (mode {:o})",
+        src_permissions.mode()
     );
 
     // Check file permissions (should be readable)
     let cargo_metadata = fs::metadata(output_dir.join("Cargo.toml")).unwrap();
     let cargo_permissions = cargo_metadata.permissions();
     assert!(
-        cargo_permissions.mode() & 0o644 >= 0o644,
-        "Cargo.toml should have proper permissions"
+        cargo_permissions.mode() & 0o400 == 0o400,
+        "Cargo.toml should be readable by its owner (mode {:o})",
+        cargo_permissions.mode()
     );
 }
 
@@ -124,7 +131,8 @@ fn test_overwrite_protection() {
         description: None,
         features: vec![],
         target: None,
-        esp32_chip: None
+        license: None,
+        esp32_chip: None,
     };
 
     let generator = Generator::new();
@@ -150,7 +158,8 @@ fn test_template_variable_injection() {
         description: Some("A test API server".to_string()),
         features: vec![],
         target: None,
-        esp32_chip: None
+        license: None,
+        esp32_chip: None,
     };
 
     let generator = Generator::new();
@@ -186,7 +195,8 @@ fn test_binary_vs_library_generation() {
         description: None,
         features: vec![],
         target: None,
-        esp32_chip: None
+        license: None,
+        esp32_chip: None,
     };
 
     let generator = Generator::new();
@@ -210,7 +220,8 @@ fn test_binary_vs_library_generation() {
         description: None,
         features: vec![],
         target: None,
-        esp32_chip: None
+        license: None,
+        esp32_chip: None,
     };
 
     generator.generate(&bin_config, &bin_dir).unwrap();
@@ -238,7 +249,8 @@ fn test_gitignore_generation() {
         description: None,
         features: vec![],
         target: None,
-        esp32_chip: None
+        license: None,
+        esp32_chip: None,
     };
 
     let generator = Generator::new();
@@ -271,7 +283,8 @@ fn test_readme_generation() {
         description: Some("An awesome API server".to_string()),
         features: vec![],
         target: None,
-        esp32_chip: None
+        license: None,
+        esp32_chip: None,
     };
 
     let generator = Generator::new();

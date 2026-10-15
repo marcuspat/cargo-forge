@@ -47,6 +47,7 @@ mod stress_tests {
                         let project_type = &project_types[project_id % project_types.len()];
 
                         let config = ProjectConfig {
+                            license: None,
                             name: format!("stress-test-{}-{}", thread_id, i),
                             project_type: project_type.clone(),
                             author: format!("Stress Tester {}", thread_id),
@@ -124,7 +125,8 @@ mod stress_tests {
             description: Some("Project with extreme number of files".to_string()),
             features: vec![],
             target: None,
-            esp32_chip: None
+            license: None,
+            esp32_chip: None,
         };
 
         let output_dir = temp_dir.path().join("extreme-files");
@@ -169,6 +171,7 @@ mod stress_tests {
         }
 
         let config = ProjectConfig {
+            license: None,
             name: "deep-nest".to_string(),
             project_type: ProjectType::Library.to_string(),
             author: "Test Author".to_string(),
@@ -202,6 +205,7 @@ mod stress_tests {
         let result = std::panic::catch_unwind(|| {
             let generator = Generator::new();
             let config = ProjectConfig {
+                license: None,
                 name: "panic-test".to_string(),
                 project_type: ProjectType::Library.to_string(),
                 author: "Test Author".to_string(),
@@ -232,7 +236,8 @@ mod stress_tests {
             description: Some("Recovery test".to_string()),
             features: vec![],
             target: None,
-            esp32_chip: None
+            license: None,
+            esp32_chip: None,
         };
 
         let output_dir = temp_dir.path().join("recovery-test");

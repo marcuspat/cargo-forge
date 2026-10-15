@@ -1,8 +1,8 @@
 [package]
 name = "cargo-forge"
-version = "0.1.7"
+version = "0.2.0"
 edition = "2021"
-rust-version = "1.70"
+rust-version = "1.88"
 authors = ["The Cargo-Forge Contributors"]
 description = "An interactive Rust project generator with templates and common features"
 readme = "README.md"
@@ -31,10 +31,8 @@ path = "src/main.rs"
 clap = { version = "4.5", features = ["derive"] }
 clap_complete = "4.5"
 inquire = "0.7"
-tera = "1.20"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-include_dir = "0.7"
 anyhow = "1.0"
 indicatif = "0.17"
 colored = "2.0"

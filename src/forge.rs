@@ -1,5 +1,5 @@
 use crate::{Config, Generator, ProjectConfig, ProjectType};
-use anyhow::{anyhow, Ok, Result};
+use anyhow::{anyhow, Result};
 use colored::*;
 use indicatif::{ProgressBar, ProgressStyle};
 use inquire::{Confirm, MultiSelect, Select, Text};
@@ -25,38 +25,6 @@ pub struct ProjectContext {
 }
 
 impl ProjectContext {
-    /// Build template context for Tera
-    pub fn build_template_context(&self) -> HashMap<String, serde_json::Value> {
-        let mut context = HashMap::new();
-        context.insert("project_name".to_string(), serde_json::json!(self.name));
-        context.insert(
-            "project_type".to_string(),
-            serde_json::json!(self.project_type.to_string()),
-        );
-        context.insert("features".to_string(), serde_json::json!(self.features));
-
-        if let Some(author) = &self.author {
-            context.insert("author".to_string(), serde_json::json!(author));
-        }
-        if let Some(description) = &self.description {
-            context.insert("description".to_string(), serde_json::json!(description));
-        }
-        if let Some(license) = &self.license {
-            context.insert("license".to_string(), serde_json::json!(license));
-        }
-
-        if let Some(target) = &self.target {
-            context.insert("target".to_string(), serde_json::json!(target));
-        }
-
-        if let Some(esp32_chip) = &self.esp32_chip {
-            context.insert("esp32_chip".to_string(), serde_json::json!(esp32_chip));
-        }
-
-        context.insert("edition".to_string(), serde_json::json!(self.edition));
-        context
-    }
-
     /// Convert to ProjectConfig for generator
     pub fn to_project_config(&self) -> ProjectConfig {
         ProjectConfig {
@@ -64,6 +32,7 @@ impl ProjectContext {
             project_type: self.project_type.to_string(),
             author: self.author.clone().unwrap_or_else(|| "Unknown".to_string()),
             description: self.description.clone(),
+            license: self.license.clone(),
             features: self.features.clone(),
             target: self.target.clone(),
             esp32_chip: self.esp32_chip.clone(),
@@ -125,17 +94,40 @@ impl ForgeConfig {
         Ok(config_dir.join("cargo-forge").join("config.json"))
     }
 
-    /// Load configuration from custom path
+    /// Load configuration from custom path.
+    ///
+    /// TOML is the documented format; JSON is accepted for backward
+    /// compatibility with configs saved by older versions.
     pub fn load_from<P: AsRef<Path>>(path: P) -> Result<Self> {
         let content = fs::read_to_string(path)?;
-        let config: ForgeConfig = serde_json::from_str(&content)?;
+        let config = match toml::from_str::<ForgeConfig>(&content) {
+            Ok(config) => config,
+            Err(toml_err) => serde_json::from_str(&content).map_err(|json_err| {
+                anyhow!(
+                    "config is neither valid TOML ({}) nor valid JSON ({})",
+                    toml_err,
+                    json_err
+                )
+            })?,
+        };
         Ok(config)
     }
+}
+
+/// Values passed on the CLI (`--author`, `--description`, `--license`) that
+/// must survive into the interactive flow: when present they pre-answer the
+/// corresponding prompts instead of being silently discarded.
+#[derive(Default)]
+pub struct CliOverrides {
+    pub author: Option<String>,
+    pub description: Option<String>,
+    pub license: Option<String>,
 }
 
 pub struct Forge {
     base_path: PathBuf,
     config: Config,
+    overrides: CliOverrides,
 }
 
 impl Forge {
@@ -144,7 +136,25 @@ impl Forge {
         Self {
             base_path: base_path.as_ref().to_path_buf(),
             config,
+            overrides: CliOverrides::default(),
         }
+    }
+
+    /// Seed the interactive flow with CLI flags so `--author`,
+    /// `--description` and `--license` pre-answer their prompts instead of
+    /// being discarded when `cargo-forge new` drops into interactive mode.
+    pub fn with_cli_overrides(
+        mut self,
+        author: Option<String>,
+        description: Option<String>,
+        license: Option<String>,
+    ) -> Self {
+        self.overrides = CliOverrides {
+            author,
+            description,
+            license,
+        };
+        self
     }
 
     pub fn run(&self) -> Result<()> {
@@ -196,10 +206,20 @@ impl Forge {
         // Feature selection based on project type
         let features = self.prompt_features(&project_type, target.clone())?;
 
-        // Optional fields with config defaults
-        let author = self.prompt_author_with_config(&mut config)?;
-        let description = self.prompt_optional_field("Description", "A new Rust project")?;
-        let license = self.prompt_license_with_config(&mut config)?;
+        // Optional fields: CLI flags (when given) pre-answer the prompts;
+        // config defaults and prompts fill in the rest.
+        let author = match self.overrides.author.clone() {
+            Some(a) => Some(a),
+            None => self.prompt_author_with_config(&mut config)?,
+        };
+        let description = match self.overrides.description.clone() {
+            Some(d) => Some(d),
+            None => self.prompt_optional_field("Description", "A new Rust project")?,
+        };
+        let license = match self.overrides.license.clone() {
+            Some(l) => Some(l),
+            None => self.prompt_license_with_config(&mut config)?,
+        };
 
         // Save config if any choices were remembered
         if config.remember_choices {
@@ -330,84 +350,41 @@ impl Forge {
         Ok(project_type)
     }
 
-    /// Prompt for features based on project type
+    /// Prompt for features based on project type.
+    ///
+    /// Only features the generator can honestly apply are offered: the
+    /// plugin set (docker / CI / database flavors), filtered by project
+    /// type — the database family (sqlx) does not link for embedded
+    /// (no_std), wasm-app (wasm32 target) or workspace (virtual manifest)
+    /// projects, so it is not offered for them. Per-type default
+    /// dependencies (axum, tokio, clap, ...) are always included in the
+    /// manifest and are therefore not presented as optional features.
     fn prompt_features(
         &self,
         project_type: &ProjectType,
         target: Option<String>,
     ) -> Result<Vec<String>> {
-        let available_features = match project_type {
-            ProjectType::ApiServer => vec![
-                ("axum", "Web framework", true),
-                ("tokio", "Async runtime", true),
-                ("serde", "Serialization", true),
-                ("tower", "Middleware framework", true),
-                ("sqlx", "SQL toolkit", false),
-                ("jwt", "JWT authentication", false),
-                ("cors", "CORS support", false),
-                ("tracing", "Structured logging", false),
-            ],
-            ProjectType::CliTool => vec![
-                ("clap", "CLI argument parsing", true),
-                ("anyhow", "Error handling", true),
-                ("env_logger", "Logging", true),
-                ("tokio", "Async runtime", false),
-                ("serde", "Serialization", false),
-                ("indicatif", "Progress bars", false),
-                ("colored", "Colored output", false),
-            ],
-            ProjectType::Library => vec![
-                ("serde", "Serialization", false),
-                ("thiserror", "Error types", false),
-                ("async-trait", "Async traits", false),
-                ("criterion", "Benchmarking", false),
-            ],
-            ProjectType::WasmApp => vec![
-                ("wasm-bindgen", "JS bindings", true),
-                ("web-sys", "Web APIs", true),
-                ("js-sys", "JS APIs", true),
-                ("wee_alloc", "Small allocator", false),
-                ("console_error_panic_hook", "Better panic messages", false),
-            ],
-            ProjectType::GameEngine => vec![
-                ("bevy", "Game engine framework", true),
-                ("audio", "Audio support", false),
-                ("networking", "Multiplayer networking", false),
-                ("physics", "Physics simulation", false),
-                ("ui", "UI framework", false),
-            ],
-            ProjectType::Embedded => {
-                // Handle different Embedded Targets
-                match target {
-                    Some(target_str) if target_str == "esp32" => {
-                        return Ok(Vec::new());
-                    }
-                    _ => {
-                        // Show Cortex-M specific features
-                        vec![
-                            ("cortex-m", "ARM Cortex-M support", true),
-                            ("cortex-m-rt", "Runtime support", true),
-                            ("panic-halt", "Halt on panic", true),
-                            ("panic-rtt", "RTT panic messages", false),
-                            ("rtt", "Real-time transfer debugging", false),
-                            ("semihosting", "Semihosting debug output", false),
-                            ("stm32f4", "STM32F4 HAL", false),
-                            ("stm32f1", "STM32F1 HAL", false),
-                            ("rp2040", "Raspberry Pi Pico support", false),
-                        ]
-                    }
-                }
+        // ESP32 projects are delegated to esp-generate, which has its own
+        // feature selection.
+        if let Some(target_str) = &target {
+            if target_str == "esp32" {
+                return Ok(Vec::new());
             }
-            ProjectType::Workspace => vec![
-                ("tokio", "Async runtime", true),
-                ("serde", "Serialization", true),
-                ("anyhow", "Error handling", true),
-                ("database", "Database support", false),
-                ("web", "Web framework", false),
-                ("clap", "CLI support", false),
-                ("testing", "Advanced testing", false),
-            ],
-        };
+        }
+
+        let type_str = project_type.to_string();
+        let available_features = vec![
+            ("docker", "Dockerfile + .dockerignore", false),
+            ("ci", "GitHub Actions CI workflow", false),
+            ("database", "PostgreSQL via sqlx", false),
+            ("sqlite", "SQLite via sqlx", false),
+            ("mysql", "MySQL via sqlx", false),
+        ]
+        .into_iter()
+        .filter(|(name, _, _)| {
+            crate::generator::feature_supported(name, &type_str)
+        })
+        .collect::<Vec<_>>();
 
         let _default_features: Vec<String> = available_features
             .iter()
@@ -780,6 +757,7 @@ impl Forge {
         project_type: Option<String>,
         author: Option<String>,
         description: Option<String>,
+        license: Option<String>,
         from_config: Option<PathBuf>,
     ) -> Result<()> {
         println!("{}", "🤖 Non-interactive mode".bright_blue().bold());
@@ -795,7 +773,9 @@ impl Forge {
         // Validate project name before doing anything else
         self.validate_project_name(&project_name)?;
 
-        let project_type_str = project_type.unwrap_or_else(|| "cli-tool".to_string());
+        let project_type_str = project_type
+            .or_else(|| config.preferred_project_types.first().cloned())
+            .unwrap_or_else(|| "cli-tool".to_string());
         let project_type = self.parse_project_type(&project_type_str)?;
 
         let context = ProjectContext {
@@ -808,7 +788,7 @@ impl Forge {
                 .unwrap_or_default(),
             author: author.or(config.default_author),
             description,
-            license: config.default_license,
+            license: license.or(config.default_license),
             edition: config.edition.unwrap_or_else(|| "2021".to_string()),
             target: None,
             esp32_chip: None,
@@ -825,6 +805,7 @@ impl Forge {
         project_type: Option<String>,
         author: Option<String>,
         description: Option<String>,
+        license: Option<String>,
     ) -> Result<()> {
         let project_name = name.ok_or_else(|| anyhow!("Project name is required"))?;
 
@@ -840,7 +821,7 @@ impl Forge {
             features: vec![], // Default features
             author,
             description,
-            license: Some("MIT".to_string()),
+            license,
             edition: "2021".to_string(),
             target: None,
             esp32_chip: None,
@@ -858,8 +839,9 @@ impl Forge {
         project_type: Option<String>,
         author: Option<String>,
         description: Option<String>,
+        license: Option<String>,
     ) -> Result<()> {
-        println!("{}", "📁 Loading configuration...".bright_cyan());
+        println!("{}", "📁 Loading configuration...".bright_cyan().bold());
 
         let config = ForgeConfig::load_from(config_path)?;
 
@@ -883,7 +865,7 @@ impl Forge {
                 .unwrap_or_default(),
             author: author.or(config.default_author),
             description,
-            license: config.default_license,
+            license: license.or(config.default_license),
             edition: config.edition.unwrap_or_else(|| "2021".to_string()),
             target: None,
             esp32_chip: None,
@@ -900,6 +882,7 @@ impl Forge {
         project_type: Option<String>,
         author: Option<String>,
         description: Option<String>,
+        license: Option<String>,
         non_interactive: bool,
         from_config: Option<PathBuf>,
     ) -> Result<()> {
@@ -915,7 +898,9 @@ impl Forge {
             // Validate project name before doing anything else
             self.validate_project_name(&project_name)?;
 
-            let project_type_str = project_type.unwrap_or_else(|| "cli-tool".to_string());
+            let project_type_str = project_type
+                .or_else(|| config.preferred_project_types.first().cloned())
+                .unwrap_or_else(|| "cli-tool".to_string());
             let project_type = self.parse_project_type(&project_type_str)?;
 
             let context = ProjectContext {
@@ -928,7 +913,7 @@ impl Forge {
                     .unwrap_or_default(),
                 author: author.or(config.default_author),
                 description,
-                license: config.default_license,
+                license: license.or(config.default_license),
                 edition: config.edition.unwrap_or_else(|| "2021".to_string()),
                 target: None,
                 esp32_chip: None,
@@ -945,6 +930,8 @@ impl Forge {
     pub fn run_init_non_interactive(
         &self,
         project_type: Option<String>,
+        author: Option<String>,
+        license: Option<String>,
         from_config: Option<PathBuf>,
     ) -> Result<()> {
         println!(
@@ -967,7 +954,9 @@ impl Forge {
             .unwrap_or("my-project")
             .to_string();
 
-        let project_type_str = project_type.unwrap_or_else(|| "cli-tool".to_string());
+        let project_type_str = project_type
+            .or_else(|| config.preferred_project_types.first().cloned())
+            .unwrap_or_else(|| "cli-tool".to_string());
         let project_type = self.parse_project_type(&project_type_str)?;
 
         let context = ProjectContext {
@@ -978,9 +967,9 @@ impl Forge {
                 .get(&project_type_str)
                 .cloned()
                 .unwrap_or_default(),
-            author: config.default_author,
+            author: author.or(config.default_author),
             description: None,
-            license: config.default_license,
+            license: license.or(config.default_license),
             edition: config.edition.unwrap_or_else(|| "2021".to_string()),
             target: None,
             esp32_chip: None,
@@ -991,7 +980,12 @@ impl Forge {
     }
 
     /// Initialize with regular interactive prompts
-    pub fn run_init(&self, project_type: Option<String>) -> Result<()> {
+    pub fn run_init(
+        &self,
+        project_type: Option<String>,
+        author: Option<String>,
+        license: Option<String>,
+    ) -> Result<()> {
         println!(
             "{}",
             "🔨 Initializing project in current directory"
@@ -1013,9 +1007,15 @@ impl Forge {
         };
 
         let features = self.prompt_features(&project_type, None)?;
-        let author = self.prompt_optional_field("Author", "your-name")?;
+        let author = match author {
+            Some(author) => Some(author),
+            None => self.prompt_optional_field("Author", "your-name")?,
+        };
         let description = self.prompt_optional_field("Description", "A new Rust project")?;
-        let license = self.prompt_license()?;
+        let license = match license {
+            Some(license) => Some(license),
+            None => self.prompt_license()?,
+        };
 
         let context = ProjectContext {
             name: project_name,
@@ -1038,8 +1038,13 @@ impl Forge {
         &self,
         config_path: PathBuf,
         project_type: Option<String>,
+        author: Option<String>,
+        license: Option<String>,
     ) -> Result<()> {
-        println!("{}", "📁 Initializing from configuration...".bright_cyan());
+        println!(
+            "{}",
+            "📁 Initializing from configuration...".bright_cyan().bold()
+        );
 
         let config = ForgeConfig::load_from(config_path)?;
 
@@ -1063,9 +1068,9 @@ impl Forge {
                 .get(&project_type_str)
                 .cloned()
                 .unwrap_or_default(),
-            author: config.default_author,
+            author: author.or(config.default_author),
             description: None,
-            license: config.default_license,
+            license: license.or(config.default_license),
             edition: config.edition.unwrap_or_else(|| "2021".to_string()),
             target: None,
             esp32_chip: None,
@@ -1079,6 +1084,8 @@ impl Forge {
     pub fn run_init_dry_run(
         &self,
         project_type: Option<String>,
+        author: Option<String>,
+        license: Option<String>,
         non_interactive: bool,
         from_config: Option<PathBuf>,
     ) -> Result<()> {
@@ -1096,7 +1103,9 @@ impl Forge {
                 ForgeConfig::load()?
             };
 
-            let project_type_str = project_type.unwrap_or_else(|| "cli-tool".to_string());
+            let project_type_str = project_type
+                .or_else(|| config.preferred_project_types.first().cloned())
+                .unwrap_or_else(|| "cli-tool".to_string());
             let project_type = self.parse_project_type(&project_type_str)?;
 
             let context = ProjectContext {
@@ -1107,9 +1116,9 @@ impl Forge {
                     .get(&project_type_str)
                     .cloned()
                     .unwrap_or_default(),
-                author: config.default_author,
+                author: author.or(config.default_author),
                 description: None,
-                license: config.default_license,
+                license: license.or(config.default_license),
                 edition: config.edition.unwrap_or_else(|| "2021".to_string()),
                 target: None,
                 esp32_chip: None,
@@ -1124,9 +1133,15 @@ impl Forge {
             };
 
             let features = self.prompt_features(&project_type, None)?;
-            let author = self.prompt_optional_field("Author", "your-name")?;
+            let author = match author {
+                Some(author) => Some(author),
+                None => self.prompt_optional_field("Author", "your-name")?,
+            };
             let description = self.prompt_optional_field("Description", "A new Rust project")?;
-            let license = self.prompt_license()?;
+            let license = match license {
+                Some(license) => Some(license),
+                None => self.prompt_license()?,
+            };
 
             let context = ProjectContext {
                 name: project_name,
@@ -1278,13 +1293,11 @@ impl Forge {
 
     /// Preview directory structure
     fn preview_directory_structure(&self, context: &ProjectContext) {
+        // Note: `license` is written to Cargo.toml as a manifest field (the
+        // same convention as `cargo new --license`), not as a LICENSE file.
         println!("  {}/", context.name.bright_yellow());
         println!("  ├── {}", "Cargo.toml".bright_green());
         println!("  ├── {}", "README.md".bright_green());
-
-        if context.license.is_some() {
-            println!("  ├── {}", "LICENSE".bright_green());
-        }
 
         println!("  ├── {}/ ", "src".bright_blue());
 

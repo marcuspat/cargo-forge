@@ -16,7 +16,8 @@ fn test_api_server_project_type() {
         description: Some("Test API Server".to_string()),
         features: vec![],
         target: None,
-        esp32_chip: None
+        license: None,
+        esp32_chip: None,
     };
 
     let generator = Generator::new();
@@ -83,7 +84,8 @@ fn test_cli_tool_project_type() {
         description: Some("Test CLI Tool".to_string()),
         features: vec![],
         target: None,
-        esp32_chip: None
+        license: None,
+        esp32_chip: None,
     };
 
     let generator = Generator::new();
@@ -142,7 +144,8 @@ fn test_library_project_type() {
         description: Some("Test Library".to_string()),
         features: vec![],
         target: None,
-        esp32_chip: None
+        license: None,
+        esp32_chip: None,
     };
 
     let generator = Generator::new();
@@ -201,7 +204,8 @@ fn test_wasm_app_project_type() {
         description: Some("Test WASM App".to_string()),
         features: vec![],
         target: None,
-        esp32_chip: None
+        license: None,
+        esp32_chip: None,
     };
 
     let generator = Generator::new();
@@ -216,18 +220,8 @@ fn test_wasm_app_project_type() {
         output_dir.join("index.html").exists(),
         "WASM app should have index.html"
     );
-    assert!(
-        output_dir.join("index.js").exists(),
-        "WASM app should have index.js"
-    );
-    assert!(
-        output_dir.join("package.json").exists(),
-        "WASM app should have package.json"
-    );
-    assert!(
-        output_dir.join("webpack.config.js").exists(),
-        "WASM app should have webpack config"
-    );
+    // The wasm starter follows the documented wasm-pack flow — no node
+    // scaffolding files are generated.
 
     // Check Cargo.toml for WASM dependencies
     let cargo_content = fs::read_to_string(output_dir.join("Cargo.toml")).unwrap();
@@ -250,12 +244,6 @@ fn test_wasm_app_project_type() {
     assert!(
         cargo_content.contains(r#"crate-type = ["cdylib"]"#),
         "WASM app should be cdylib"
-    );
-
-    // Check for build script
-    assert!(
-        output_dir.join("build.sh").exists() || output_dir.join("build.rs").exists(),
-        "WASM app should have build script"
     );
 }
 
@@ -281,8 +269,8 @@ fn test_project_type_specific_readme() {
         ),
         (
             ProjectType::WasmApp,
-            "WASM App",
-            vec!["webpack", "install", "build"],
+            "WebAssembly App",
+            vec!["wasm-pack", "webassembly"],
         ),
     ];
 
@@ -299,7 +287,8 @@ fn test_project_type_specific_readme() {
             description: Some(format!("Test {}", type_name)),
             features: vec![],
             target: None,
-            esp32_chip: None
+            license: None,
+            esp32_chip: None,
         };
 
         let generator = Generator::new();
@@ -333,7 +322,8 @@ fn test_project_type_specific_gitignore() {
         description: None,
         features: vec![],
         target: None,
-        esp32_chip: None
+        license: None,
+        esp32_chip: None,
     };
 
     let generator = Generator::new();
@@ -367,7 +357,8 @@ fn test_game_engine_project_type() {
         description: Some("Test Game Engine".to_string()),
         features: vec![],
         target: None,
-        esp32_chip: None
+        license: None,
+        esp32_chip: None,
     };
 
     let generator = Generator::new();
@@ -430,7 +421,8 @@ fn test_embedded_project_type() {
         description: Some("Test Embedded System".to_string()),
         features: vec![],
         target: None,
-        esp32_chip: None
+        license: None,
+        esp32_chip: None,
     };
 
     let generator = Generator::new();
@@ -490,7 +482,8 @@ fn test_workspace_project_type() {
         description: Some("Test Workspace".to_string()),
         features: vec![],
         target: None,
-        esp32_chip: None
+        license: None,
+        esp32_chip: None,
     };
 
     let generator = Generator::new();
