@@ -97,7 +97,7 @@ jobs:
         run: |
           set -euo pipefail
           cargo install cargo-cyclonedx --locked --version "${CYCLONEDX_VERSION}"
-          cargo cyclonedx --format json --describe binaries             --target "${{ matrix.target }}" --target-in-filename
+          cargo cyclonedx --format json --describe binaries --target "${{ matrix.target }}" --target-in-filename
           set -- *_bin_${{ matrix.target }}.cdx.json
           if [ "$#" -ne 1 ] || [ ! -f "$1" ]; then
             echo "expected exactly one SBOM for ${{ matrix.target }}, got: $*" >&2
@@ -107,7 +107,10 @@ jobs:
 
       # SLSA build provenance: binds the binary's digest to this workflow run
       # and commit.
+      # Never on pull_request: PR builds are tests, not releases — minting
+      # signed attestations for unmerged code (and fork PRs have no OIDC).
       - name: Attest build provenance
+        if: github.event_name != 'pull_request'
         uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # v2.4.0
         with:
           subject-path: dist/cargo-forge-${{ matrix.target }}
