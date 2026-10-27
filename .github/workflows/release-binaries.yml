@@ -1,6 +1,8 @@
 name: Release binaries
 
 on:
+  pull_request:
+    branches: [main]
   push:
     tags: ["v*"]
   workflow_dispatch:
@@ -76,10 +78,6 @@ jobs:
         if: matrix.musl
         run: sudo apt-get update && sudo apt-get install -y musl-tools
 
-      - name: Install libpcap (linux)
-        if: matrix.pcap
-        run: sudo apt-get update && sudo apt-get install -y libpcap-dev
-
       - name: Build
         run: cargo build --release --locked --target ${{ matrix.target }} --bin cargo-forge
 
@@ -100,12 +98,12 @@ jobs:
           set -euo pipefail
           cargo install cargo-cyclonedx --locked --version "${CYCLONEDX_VERSION}"
           cargo cyclonedx --format json --describe binaries             --target "${{ matrix.target }}" --target-in-filename
-          cdx=$(ls *_bin_${{ matrix.target }}.cdx.json 2>/dev/null | head -1)
-          if [ -n "$cdx" ]; then
-            cp "$cdx" "dist/cargo-forge-${{ matrix.target }}.cdx.json"
-          else
-            echo "no cdx.json produced; continuing without SBOM" >&2
+          set -- *_bin_${{ matrix.target }}.cdx.json
+          if [ "$#" -ne 1 ] || [ ! -f "$1" ]; then
+            echo "expected exactly one SBOM for ${{ matrix.target }}, got: $*" >&2
+            exit 1
           fi
+          cp "$1" "dist/cargo-forge-${{ matrix.target }}.cdx.json"
 
       # SLSA build provenance: binds the binary's digest to this workflow run
       # and commit.
@@ -122,6 +120,7 @@ jobs:
 
   release:
     name: Attach to GitHub Release
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     needs: binaries
     permissions:
