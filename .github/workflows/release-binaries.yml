@@ -1,0 +1,147 @@
+name: Release binaries
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to (re-)release, e.g. v0.1.0"
+        required: true
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+  CYCLONEDX_VERSION: "0.5.9"
+
+jobs:
+  verify:
+    name: Verify the tag builds
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+
+      - name: Install Rust (stable)
+        uses: dtolnay/rust-toolchain@7e38f4b43b4db5c8dd498af069a4f6196df1d067 # master
+
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+
+      # Fail fast on a tag that does not compile before burning matrix minutes.
+      - name: cargo build (host)
+        run: cargo build --release --locked
+
+  binaries:
+    name: ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    needs: verify
+    permissions:
+      contents: read
+      id-token: write # sign the provenance attestation (Sigstore, keyless)
+      attestations: write # store it against the repository
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+          - target: x86_64-unknown-linux-musl
+            os: ubuntu-latest
+            musl: true
+          - target: aarch64-apple-darwin
+            os: macos-latest
+          - target: x86_64-apple-darwin
+            os: macos-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+
+      - name: Install Rust (stable)
+        uses: dtolnay/rust-toolchain@7e38f4b43b4db5c8dd498af069a4f6196df1d067 # master
+        with:
+          targets: ${{ matrix.target }}
+
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          key: ${{ matrix.target }}
+
+      - name: Install musl tooling
+        if: matrix.musl
+        run: sudo apt-get update && sudo apt-get install -y musl-tools
+
+      - name: Install libpcap (linux)
+        if: matrix.pcap
+        run: sudo apt-get update && sudo apt-get install -y libpcap-dev
+
+      - name: Build
+        run: cargo build --release --locked --target ${{ matrix.target }} --bin cargo-forge
+
+      - name: Package
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          cp "target/${{ matrix.target }}/release/cargo-forge" "dist/cargo-forge-${{ matrix.target }}"
+          cd dist
+          shasum -a 256 "cargo-forge-${{ matrix.target }}" > "cargo-forge-${{ matrix.target }}.sha256"
+
+      # CycloneDX SBOM of exactly the dependency set compiled into this
+      # target's binary, published next to it.
+      - name: Generate SBOM
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo install cargo-cyclonedx --locked --version "${CYCLONEDX_VERSION}"
+          cargo cyclonedx --format json --describe binaries             --target "${{ matrix.target }}" --target-in-filename
+          cdx=$(ls *_bin_${{ matrix.target }}.cdx.json 2>/dev/null | head -1)
+          if [ -n "$cdx" ]; then
+            cp "$cdx" "dist/cargo-forge-${{ matrix.target }}.cdx.json"
+          else
+            echo "no cdx.json produced; continuing without SBOM" >&2
+          fi
+
+      # SLSA build provenance: binds the binary's digest to this workflow run
+      # and commit.
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # v2.4.0
+        with:
+          subject-path: dist/cargo-forge-${{ matrix.target }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: cargo-forge-${{ matrix.target }}
+          path: dist/
+
+  release:
+    name: Attach to GitHub Release
+    runs-on: ubuntu-latest
+    needs: binaries
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+
+      - name: Download artifacts
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Attach to release
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
+        with:
+          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
+          name: cargo-forge ${{ github.event.inputs.tag || github.ref_name }}
+          generate_release_notes: true
+          prerelease: ${{ contains(github.event.inputs.tag || github.ref_name, '-') }}
+          files: artifacts/*
