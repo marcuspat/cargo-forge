@@ -5,18 +5,17 @@ on:
     branches: [main]
   push:
     tags: ["v*"]
+  # To (re-)release an EXISTING tag, dispatch with the tag as the ref:
+  #   gh workflow run release-binaries.yml --ref v0.2.10
+  # Starting a dispatch from a branch fails fast in `verify`.
   workflow_dispatch:
-    inputs:
-      tag:
-        description: "Existing tag to (re-)release, e.g. v0.1.0"
-        required: true
 
 permissions:
   contents: read
 
 # Two runs for the same tag (push + manual) must not race the release.
 concurrency:
-  group: release-${{ github.event.inputs.tag || github.ref_name }}
+  group: release-${{ github.ref_name }}
   cancel-in-progress: false
 
 env:
@@ -31,12 +30,20 @@ jobs:
     permissions:
       contents: read
     steps:
+      - name: Dispatch must run on a tag
+        if: github.event_name == 'workflow_dispatch' && github.ref_type != 'tag'
+        run: |
+          echo "::error::start the dispatch with the tag as the ref: gh workflow run release-binaries.yml --ref <tag>" >&2
+          exit 1
+
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
-          ref: ${{ github.event.inputs.tag || github.ref }}
+          ref: ${{ github.ref }}
 
       - name: Install Rust (stable)
         uses: dtolnay/rust-toolchain@7e38f4b43b4db5c8dd498af069a4f6196df1d067 # master
+        with:
+          toolchain: stable
 
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
 
@@ -66,12 +73,20 @@ jobs:
           - target: x86_64-apple-darwin
             os: macos-latest
     steps:
+      - name: Dispatch must run on a tag
+        if: github.event_name == 'workflow_dispatch' && github.ref_type != 'tag'
+        run: |
+          echo "::error::start the dispatch with the tag as the ref: gh workflow run release-binaries.yml --ref <tag>" >&2
+          exit 1
+
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
-          ref: ${{ github.event.inputs.tag || github.ref }}
+          ref: ${{ github.ref }}
 
       - name: Install Rust (stable)
         uses: dtolnay/rust-toolchain@7e38f4b43b4db5c8dd498af069a4f6196df1d067 # master
+        with:
+          toolchain: stable
         with:
           targets: ${{ matrix.target }}
 
@@ -103,7 +118,7 @@ jobs:
           set -euo pipefail
           cargo install cargo-cyclonedx --locked --version "${CYCLONEDX_VERSION}"
           cargo cyclonedx --format json --describe binaries --target "${{ matrix.target }}" --target-in-filename
-          set -- *_bin_${{ matrix.target }}.cdx.json
+          set -- cargo-forge_bin_${{ matrix.target }}.cdx.json
           if [ "$#" -ne 1 ] || [ ! -f "$1" ]; then
             echo "expected exactly one SBOM for ${{ matrix.target }}, got: $*" >&2
             exit 1
@@ -138,10 +153,6 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-        with:
-          ref: ${{ github.event.inputs.tag || github.ref }}
-
       - name: Download artifacts
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
@@ -151,8 +162,8 @@ jobs:
       - name: Attach to release
         uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
         with:
-          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
-          name: cargo-forge ${{ github.event.inputs.tag || github.ref_name }}
+          tag_name: ${{ github.ref_name }}
+          name: cargo-forge ${{ github.ref_name }}
           generate_release_notes: true
-          prerelease: ${{ contains(github.event.inputs.tag || github.ref_name, '-') }}
+          prerelease: ${{ contains(github.ref_name, '-') }}
           files: artifacts/*
