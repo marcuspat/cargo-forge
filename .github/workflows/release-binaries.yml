@@ -14,6 +14,11 @@ on:
 permissions:
   contents: read
 
+# Two runs for the same tag (push + manual) must not race the release.
+concurrency:
+  group: release-${{ github.event.inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
 env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1
@@ -107,10 +112,14 @@ jobs:
 
       # SLSA build provenance: binds the binary's digest to this workflow run
       # and commit.
-      # Never on pull_request: PR builds are tests, not releases — minting
-      # signed attestations for unmerged code (and fork PRs have no OIDC).
+      # Attestations name the RUN's ref/sha, so only sign when the run is
+      # the tag itself: a tag push, or a dispatch started with
+      #   gh workflow run release-binaries.yml --ref vX.Y.Z
+      # (a dispatch from a branch would otherwise attest that branch's sha,
+      # not the tag actually built). Never on pull_request: fork PRs have no
+      # OIDC and unmerged code shouldn't be attested.
       - name: Attest build provenance
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' && github.ref_type == 'tag'
         uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # v2.4.0
         with:
           subject-path: dist/cargo-forge-${{ matrix.target }}
