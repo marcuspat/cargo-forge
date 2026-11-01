@@ -30,6 +30,10 @@ jobs:
     permissions:
       contents: read
     steps:
+      # The ONLY dispatch guard — lives in `verify`, which every downstream
+      # job needs, so a branch dispatch fails the whole run here before any
+      # build minute is spent. (The binaries job previously carried an
+      # accidental second copy; this diff removes that duplicate.)
       - name: Dispatch must run on a tag
         if: github.event_name == 'workflow_dispatch' && github.ref_type != 'tag'
         run: |
