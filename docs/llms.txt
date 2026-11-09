@@ -1,0 +1,15 @@
+# cargo-forge
+
+> Rust project generator with 7 typed templates — CLI, API server, WASM, game engine, embedded, library, workspace. cargo install cargo-forge.
+
+cargo-forge is maintained by marcuspat (Agentic Engineer — Platform Engineering × AI-assisted development).
+
+## Links
+
+- [Landing page](https://marcuspat.github.io/cargo-forge/): overview, features, FAQ
+- [Source code](https://github.com/marcuspat/cargo-forge): README, issues, releases
+## Install
+
+```
+cargo install cargo-forge
+```
