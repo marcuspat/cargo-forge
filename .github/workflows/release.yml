@@ -13,6 +13,26 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # Release guard (2026-11-17, fleet sweep): a mis-cut tag must never
+      # publish. Refuse unless the ref is a v-tag whose version equals the
+      # manifest, AND the tagged commit is on main — releases are cut from
+      # main HEAD only, never re-tagged from stale commits.
+      - name: Guard tag version and main ancestry
+        run: |
+          set -euo pipefail
+          tag="${GITHUB_REF_NAME}"
+          case "$tag" in v[0-9]*) ;; *) echo "::error::refusing: pushed ref '$tag' is not a version tag"; exit 1;; esac
+          ver="$(grep -m1 -E '^version = ' Cargo.toml | sed -E 's/^version = "([^"]*)".*/\1/')"
+          if [ "$ver" != "${tag#v}" ]; then
+            echo "::error::refusing: tag $tag does not match Cargo.toml version $ver"
+            exit 1
+          fi
+          git fetch -q origin main
+          if ! git merge-base --is-ancestor HEAD origin/main; then
+            echo "::error::refusing: tagged commit ${GITHUB_SHA::7} is not on main — releases are cut from main HEAD only"
+            exit 1
+          fi
+
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
