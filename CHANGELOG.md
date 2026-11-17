@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Planned
+- 1.0.0: API-stable milestone (planned)
+
 ## [0.2.0] - 2026-10-14
 
 > 0.2.0 rather than 0.1.8: this release removes the public `TemplateEngine`
