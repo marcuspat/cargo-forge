@@ -9,7 +9,6 @@
 [![Crates.io](https://img.shields.io/crates/v/cargo-forge.svg)](https://crates.io/crates/cargo-forge)
 [![Documentation](https://docs.rs/cargo-forge/badge.svg)](https://docs.rs/cargo-forge)
 [![License](https://img.shields.io/crates/l/cargo-forge.svg)](https://github.com/marcuspat/cargo-forge#license)
-[![Test Coverage](https://img.shields.io/badge/coverage-45.84%25-yellow.svg)](https://github.com/marcuspat/cargo-forge)
 
 *Generate Rust projects with templates and optional features*
 
