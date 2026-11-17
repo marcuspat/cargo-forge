@@ -28,8 +28,9 @@ jobs:
             exit 1
           fi
           git fetch -q origin main
-          if ! git merge-base --is-ancestor HEAD origin/main; then
-            echo "::error::refusing: tagged commit ${GITHUB_SHA::7} is not on main — releases are cut from main HEAD only"
+          main_head="$(git rev-parse origin/main)"
+          if [ "$GITHUB_SHA" != "$main_head" ]; then
+            echo "::error::refusing: tagged commit ${GITHUB_SHA::7} is not main HEAD (${main_head::7}) — releases are cut from main HEAD only, never re-tagged from stale commits"
             exit 1
           fi
 
